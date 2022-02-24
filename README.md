@@ -52,4 +52,4 @@ yarn run preview
 ```
 
 ## 프로젝트 세부내용
-[블로그 바로가기](https://aibees.github.io)
+[블로그 바로가기](https://aibees.github.io/storeAdmin-project-1/)
