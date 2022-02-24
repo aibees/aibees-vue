@@ -1,5 +1,9 @@
 # 매입출 관리 및 장부관리 개발 프로젝트
 홀로 장사하시는 어머니를 위한 아들의 웹 개발 프로젝트
+
+### 프로젝트 세부내용
+[블로그 바로가기](https://aibees.github.io/storeAdmin-project-1/)
+
 ## 개발 Stack
 - Vue.js (v3.2.25)
 - Vite (v2.8.0)
@@ -50,6 +54,3 @@ yarn run preview
    │   └─except/  # Error Page Component vue
    └─scripts/     # javascript files
 ```
-
-## 프로젝트 세부내용
-[블로그 바로가기](https://aibees.github.io/storeAdmin-project-1/)
