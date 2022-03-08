@@ -1,25 +1,28 @@
-<script setup>
-import { ref } from 'vue'
-
-defineProps({
-  msg: String
-})
-
-const count = ref(0)
-</script>
-
 <template>
-  <img alt="Vue logo" src="../../assets/cameu_logo.png" />
-  <h1>{{ msg }}</h1>
+  <Header msg="Store" />
 
-  <p>
-    스마트스토어 관리페이지
-  </p>
+  <div id="search-tab">
+    여기에 검색 탭 들어갈거에요
+    <button > 검색 </button>
+  </div>
+  <StoreList />
 </template>
 
-<style scoped>
-    img {
-        width: 300px;
-        height: 300px;
+
+<script setup>
+  import Header from '@/components/common/commonView/Header.vue'
+  import StoreList from './sub/StoreList.vue'
+
+  defineProps({
+    msg: String,
+    Header: Header,
+    StoreList: StoreList
+  })
+
+</script>
+
+<style lang="scss" scoped>
+    #search-tab {
+      margin: 50px 0px;
     }
 </style>

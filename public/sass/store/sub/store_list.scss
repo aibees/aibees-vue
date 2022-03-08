@@ -1,0 +1,52 @@
+// StoreList.vue
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding&display=swap');
+@import "@@/__variables";
+
+#list-tab {
+    ul {
+        list-style-type: none;
+        li {
+            text-decoration: none;
+            margin-bottom: 8px;
+            border-bottom: 2px solid darkgray;
+            #tags {
+                text-align: left;
+                .tag-platform {
+                    font-weight: 600;
+                    margin-right: 10px;
+                    padding: 3px 5px;
+                    background-color: #f6ff77;
+                }
+                .tag-span {
+                    font-weight: 600;
+                    margin-right: 10px;
+                    padding: 3px 5px;
+                    background-color: lightgray;
+                }
+            }
+
+            .product {
+                display: flex;
+                justify-content: space-between;
+                .product_left {
+                    float: left;
+                    .name {
+                        text-align: left;
+                        margin-left: 25px;
+                    }
+                }
+                .product_right {
+                    float: right;
+                    line-height: 10px;
+                    text-align: right;
+                    p a {
+                        text-decoration: none;
+                    }
+                }
+                @include storeMobile {
+                    display: block;
+                }
+            }
+        }
+    }
+}

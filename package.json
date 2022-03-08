@@ -1,7 +1,8 @@
 {
   "name": "cameu-vue",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "0.0.1",
+  "main": "src/scripts/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,6 +14,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^2.2.0",
+    "sass": "^1.49.8",
     "vite": "^2.8.0"
   }
 }

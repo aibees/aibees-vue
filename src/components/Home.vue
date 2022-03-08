@@ -1,24 +1,22 @@
 <script setup>
-import { ref } from 'vue'
 
 defineProps({
   msg: String
 })
 
-const count = ref(0)
 </script>
 
 <template>
-  <img alt="Vue logo" src="../assets/logo.png" />
-  <h1>{{ msg }}</h1>
-
-  <p>
-    Recommended IDE setup:
-  </p>
+  <div class="container">
+    <div id="left">
+      <router-link to="/cafe"><img src="@/assets/cameu_logo.png" /></router-link>
+    </div>
+    <div id="right">
+      <router-link to="/store"><img src="@/assets/store_logo.png" /></router-link>
+    </div>
+  </div>
 </template>
 
-<style scoped>
-a {
-  color: #42b983;
-}
+<style lang="scss" scoped>
+  @import '@@/home.scss'
 </style>
