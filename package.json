@@ -11,11 +11,8 @@
   "dependencies": {
     "vue": "^3.2.25",
     "vue-router": "^4.0.12",
-    "vite": "^2.8.0"
-  },
-  "devDependencies": {
+    "vite": "^2.8.0",
     "@vitejs/plugin-vue": "^2.2.0",
-    "sass": "^1.49.8",
-    "vite": "^2.8.0"
+    "sass": "^1.49.8"
   }
 }
