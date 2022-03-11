@@ -34,13 +34,25 @@
                         text-align: left;
                         margin-left: 25px;
                     }
+                    .amounts {
+                        text-align: left;
+                    }
                 }
                 .product_right {
                     float: right;
                     line-height: 10px;
                     text-align: right;
-                    p a {
-                        text-decoration: none;
+                    p {
+                        display: block;
+                        font-size: 1.17em;
+                        margin-block-start: 1em;
+                        margin-block-end: 1em;
+                        font-weight: bold;
+                        line-height: 1.2em;
+                        
+                        a {
+                            text-decoration: none;
+                        }
                     }
                 }
                 @include storeMobile {
