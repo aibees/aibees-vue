@@ -1,6 +1,8 @@
 import { createWebHistory, createRouter } from 'vue-router'
 import Home from '@/components/Home.vue'
 import Stores from '@/components/stores'
+import Cafes from '@/components/cafes'
+import Aibees from '@/components/aibees'
 import NotFound from '@/components/except/NotFound.vue'
 
 const routes=[
@@ -28,6 +30,16 @@ const routes=[
                 component: Stores.StoreLogin
             }
         ]
+    },
+    {
+        path: '/cafe',
+        name: 'CafeHome',
+        component: Cafes.CafeHome
+    },
+    {
+        path: "/aibees",
+        name: "Aibees",
+        component: Aibees.AibeesHome
     }
 ]
 
