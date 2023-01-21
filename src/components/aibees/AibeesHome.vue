@@ -1,30 +1,22 @@
 <template>
   <div class="aibees">
     <div class="aibees-header">
-        hello
+        <div class="aibees-header-title">
+            {{  title }}
+        </div>
+        <div class="aibees-header-search">
+            검색
+        </div>
     </div>
   </div>
 </template>
 
 <script setup>
     import { ref, markRaw } from 'vue'
-
+    let title = ref("MARIA");
 
 </script>
 
-<style lang="scss">
-    #app {
-        margin : 0;
-        width: 100%;
-    }
-
-    .aibees {
-        width: 100%;
-        background-color: aquamarine;
-        margin: 0;
-
-        .aibees-header {
-            margin: 0;
-        }
-    }
+<style lang="scss" scoped>
+    @import '@@/aibees/aibees_home.scss'
 </style>

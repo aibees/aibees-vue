@@ -1,0 +1,46 @@
+@import "@@/__variables";
+
+
+.aibees {
+    width: 90%;
+    height: 54px;
+    min-width: 1150px;
+    background-color: aquamarine;
+    margin: auto;
+    padding-top: 17px;
+
+
+    .aibees-header {
+        display: flex;
+        justify-content: space-between;
+        aibees-header-title {
+            float: left;
+            font-weight: bolder;
+            font-size: 20px;
+        }
+        aibees-header-search {
+            float: right;
+            font-weight: bolder;
+            font-size: 20px;
+        }
+    }
+
+    @include mobile {
+        min-width: 0;
+        max-width: 600px;
+
+        .aibees-header {
+            display: block;
+            background-color: bisque;
+
+            aibees-header-title {
+                font-weight: bolder;
+                font-size: 20px;
+            }
+            aibees-header-search {
+                font-weight: bolder;
+                font-size: 20px;
+            }
+        }
+    }
+}
