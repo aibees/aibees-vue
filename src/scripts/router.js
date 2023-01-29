@@ -43,7 +43,19 @@ const routes=[
     }
 ]
 
-export const router = createRouter({
-    history: createWebHistory(),
-    routes
-})
+export const setRouterToApp = () => {
+    const router = createRouter({
+        history: createWebHistory(),
+        routes
+    })
+
+    router.beforeEach((to, from, next) => {
+        console.log("router:before each : " + to.fullPath)
+        next()
+    })
+
+    router.afterEach((to, from) => {
+        console.log("router::after each : " + to)
+    })
+    return router
+}
