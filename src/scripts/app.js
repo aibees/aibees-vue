@@ -15,9 +15,9 @@ app.provide('$axios', axiosInstance)
 // ===== FontAwesomeIcon Add =====
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 
-library.add(faMagnifyingGlass);
+library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash);
 app.component("font-awesome-icons", FontAwesomeIcon)
 // ===============================
 
