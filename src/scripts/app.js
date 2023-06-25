@@ -1,6 +1,5 @@
 import { createApp } from 'vue'
 import App from '../components/App.vue'
-
 const app = createApp(App)
 
 // ===== global axios =====
@@ -12,12 +11,17 @@ const axiosInstance = axios.create({
 app.provide('$axios', axiosInstance)
 // ========================
 
+// ===== vuex store Add =====
+import store from './store';
+app.use(store);
+// ===========================
+
 // ===== FontAwesomeIcon Add =====
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload } from "@fortawesome/free-solid-svg-icons";
 
-library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash);
+library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload);
 app.component("font-awesome-icons", FontAwesomeIcon)
 // ===============================
 

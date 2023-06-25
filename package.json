@@ -13,10 +13,12 @@
     "@fortawesome/free-solid-svg-icons": "^6.2.1",
     "@fortawesome/vue-fontawesome": "^3.0.3",
     "@vitejs/plugin-vue": "^2.2.0",
-    "axios": "^1.2.5",
+    "axios": "^1.4.0",
     "sass": "^1.49.8",
     "vite": "^2.8.0",
     "vue": "^3.2.25",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "vuex": "^4.1.0",
+    "vuex-persistedstate": "^4.1.0"
   }
 }

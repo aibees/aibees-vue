@@ -20,6 +20,15 @@
                 </button>
             </span>
         </div>
+        <div class="aibees-header-buttons">
+            <div class="buttons-left">
+                <button class="headerButton" id="uploadButton"><font-awesome-icons v-bind:icon="['fa-solid', 'fa-upload']" /> 올리기</button>
+                <button class="headerButton" id="mkdir">폴더 만들기</button>
+            </div>
+            <div class="buttons-right">
+
+            </div>
+        </div>
     </div>
     <div class="aibees-body">
         <div class="aibees-body-condition">
@@ -27,28 +36,31 @@
         </div>
         <div class="aibees-body-list">
             <ul>
-                <li v-for="item in searchResultList" v-bind:key="item.path+item.id">
-                    <div class="listItem">
-                        <div class="item-left-image" @click="viewImageDetail(item)">
-                            <img v-bind:src="'https://static.aibeesworld.com'+item.path+item.id" oncontextmenu="return false;" />
+                <li v-for="(item, idx) in searchResultList" v-bind:key="item.path+item.id">
+                    <div class="listItem" :index="idx" :id="`itemBox-${idx}`">
+                        <div class="item-left-image" @click="viewImageDetail(item, idx)">
+                            <img v-bind:src="(item.ext!='dir')?('https://static.aibeesworld.com'+item.path+item.id):('https://static.aibeesworld.com/image/asset/directory.png')" oncontextmenu="return false;" />
                         </div>
-                        <div class="item-center-display" @click="viewImageDetail(item)">
+                        <div class="item-center-display" @click="viewImageDetail(item, idx)">
                             <div class="display-name">
-                                {{ item.name }}
+                                {{ item.fileName }}
                             </div>
                             <div class="display-meta-path">
                                 {{ item.pathName }}<br/>{{ item.time }}
                             </div>
                         </div>
-                        <div class="item-right-buttons">
-                            <button @click="itemEvent(item, 'download')"><font-awesome-icons :icon="['fa-solid', 'fa-download']" /></button>
-                            <button @click="itemEvent(item, 'update')"><font-awesome-icons :icon="['fa-solid', 'fa-pen']" /></button>
-                            <button @click="itemEvent(item, 'delete')"><font-awesome-icons :icon="['fa-solid', 'fa-trash']" /></button>
+                        <div id="buttonGroup" class="item-right-buttons" @click="if(item.ext=='dir') { viewImageDetail(item, idx); }">
+                            <button v-if="item.ext!='dir'" @click="itemEvent(item, 'download')"><font-awesome-icons :icon="['fa-solid', 'fa-download']" /></button>
+                            <button v-if="item.ext!='dir'" @click="itemEvent(item, 'update')"><font-awesome-icons :icon="['fa-solid', 'fa-pen']" /></button>
+                            <button v-if="item.ext!='dir'" @click="itemEvent(item, 'delete')"><font-awesome-icons :icon="['fa-solid', 'fa-trash']" /></button>
                         </div>
                     </div>
                 </li>
             </ul>
         </div>
+    </div>
+    <div class="aibees-add">
+      <input type="file" accept="image/*" />
     </div>
   </div>
 </template>
@@ -59,6 +71,7 @@
     import AibeesMetaEditVue from './comp/AibeesMetaEdit.vue';
 
     // variable
+    let fileId = ref("0"); // start : root
     let title = ref("MARIA");
     let searchInput = ref("");
     let searchResultList = ref([]);
@@ -66,6 +79,7 @@
 
 
     // function
+    // lifeCycle
     onBeforeMount(() => {
         document.body.style.backgroundColor="rgb(231, 231, 231)";
     })
@@ -80,16 +94,28 @@
         document.addEventListener('keydown', escapeHandler);
     })
 
-    const viewImageDetail = (item) => {
+    // custom
+    // 이미지 상세보기 오픈 function
+    const viewImageDetail = (item, idx) => {
+        // directory는 파랗게만 된다.
+        if(item.ext=='dir') {
+            console.log(idx);
+            $("[id^='itemBox']").css('background-color', 'white');
+            document.getElementById('itemBox-' + idx).style.backgroundColor = '#bde7ff66'
+            return false;
+        }
+        
+        // image static 주소
         const imgSrc = 'https://static.aibeesworld.com'+item.path+item.id;
 
+        // display 열어주고 block에 이미지 넣기
         const displayStatus = document.getElementById('popupImage');
         displayStatus.style.display = 'block';
-
         const displayImageSrc = document.getElementById('popupImageSrc');
         displayImageSrc.src = imgSrc;
     }
 
+    // 이미지 상세보기 닫기 function
     const closePopupImage = () => {
         if('block' == document.getElementById('popupImage').style.display) {
             document.getElementById('popupImageSrc').src = '';
@@ -97,43 +123,44 @@
         }
     }
 
+    const getFileList = (item) => {
+         
+    }
+
     const clickSearchBtn = e => {
         //alert("input : " + searchInput.value);
 
         searchResultList.value = [
-            {
-                pathName: '/이미지/여자친구/2023년01월',
-                path: '/image/girlfriend/202301',
-                name: '여자친구와의 추억4',
-                time: '2022.12.22 13:40:29',
-                id: '/000004.jpg'
+        {
+                pathName: '',
+                path: '',
+                filename: '..',
+                ext: 'dir',
+                time: '',
+                id: '',
+                option: 'back'
             }
             ,{
                 pathName: '/이미지/여자친구/2023년01월',
                 path: '/image/girlfriend/202301',
-                name: '여자친구와의 추억34',
+                fileName: '문서',
+                ext: 'dir',
+                time: null,
+                id: 'documents'
+            },{
+                pathName: '/이미지/여자친구/2023년01월',
+                path: '/image/girlfriend/202301',
+                fileName: '여자친구와의 추억34',
+                ext: 'jpg',
                 time: '2022.12.22 13:40:29',
                 id: '/000034.jpg'
-            }
-            ,{
-                pathName: '/이미지/여자친구/2023년01월',
-                path: '/image/girlfriend/202301',
-                name: '여자친구와의 추억54',
-                time: '2022.12.22 13:40:29',
-                id: '/000054.jpg'
-            }
-            ,{
-                pathName: '/이미지/여자친구/2023년01월',
-                path: '/image/girlfriend/202301',
-                name: '여자친구와의 추억74',
-                time: '2022.12.22 13:40:29',
-                id: '/000074.jpg'
             }
         ]
 
         searchInput.value = '';
     }
 
+    // button event controller
     const itemEvent = (cur, eventType) => {
         curItem.value = cur;
         console.log(curItem.value);
@@ -143,8 +170,13 @@
         } else if('update' == eventType) {
             document.getElementById('metaEditPopup').style.display = 'block';
         } else if('delete' == eventType) {
-            alert('delete')
+            imageDeleteEvent();
         }
+    }
+
+    const imageDeleteEvent = () => {
+        var selection = confirm("이미지를 삭제하시겠습니까?");
+        alert(selection);
     }
 </script>
 

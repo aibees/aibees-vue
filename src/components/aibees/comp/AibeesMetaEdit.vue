@@ -4,6 +4,7 @@
         <div class="metaEdit-editor">
             <div class="editor-inputGroup">
                 <input id="item_title" v-model="input_title" />
+                <input id="item_title" v-model="input_title" />
             </div>
             <div class="editor-btnGroup">
                 <button class="edit-button btn-color-green" @click="saveEditor()">저장</button>
