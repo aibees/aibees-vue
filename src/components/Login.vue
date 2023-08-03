@@ -1,7 +1,7 @@
 <template>
   <div id="loginComponent">
     <div class="loginLogo">
-        <img src="https://static.aibeesworld.com/image/asset/directory.png" />
+        <img src="https://static.aibeesworld.com/image/asset/login_logo.png" />
     </div>
     <div class="loginform">
         <form>
@@ -23,7 +23,6 @@
     // lifeCycle
     onMounted(() => {
         const escapeHandler = (e) => {
-            console.log(e.key)
             if(e.key == 'Enter') {
                 loginProcess();
             }
@@ -40,8 +39,6 @@
             alert("정상적으로 입력되지 않았습니다.");
             return false;
         }
-
-        alert("login : " + loginId + ", " + loginPw);
     }
 
     const MngContractEvent = () => {
@@ -63,6 +60,12 @@
             width: 100%;
             height: auto;
             margin: 20px auto 30px;
+
+            img {
+                width: inherit;
+                height: auto;
+                margin-top: 40px;
+            }
         }
     }
 

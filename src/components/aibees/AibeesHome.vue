@@ -22,7 +22,8 @@
         </div>
         <div class="aibees-header-buttons">
             <div class="buttons-left">
-                <button class="headerButton" id="uploadButton"><font-awesome-icons v-bind:icon="['fa-solid', 'fa-upload']" /> 올리기</button>
+                <button class="headerButton" id="uploadButton" @click="uploadClick();"><font-awesome-icons v-bind:icon="['fa-solid', 'fa-upload']" /> 올리기</button>
+                <input id="uploadFileInput" type="file" accept="image/*" style="display:none;" @change="uploadFileChange" />
                 <button class="headerButton" id="mkdir">폴더 만들기</button>
             </div>
             <div class="buttons-right">
@@ -32,7 +33,7 @@
     </div>
     <div class="aibees-body">
         <div class="aibees-body-condition">
-
+            <span>위치 : </span><span id="current_path">{{ currentPath }}</span>
         </div>
         <div class="aibees-body-list">
             <ul>
@@ -59,15 +60,13 @@
             </ul>
         </div>
     </div>
-    <div class="aibees-add">
-      <input type="file" accept="image/*" />
-    </div>
   </div>
 </template>
 
 <script setup>
     // import declaration
     import { ref, onBeforeMount, onMounted } from 'vue'
+    import { testFunc, axiosGet } from '@/scripts/util/axios.js'
     import AibeesMetaEditVue from './comp/AibeesMetaEdit.vue';
 
     // variable
@@ -76,7 +75,7 @@
     let searchInput = ref("");
     let searchResultList = ref([]);
     let curItem = ref(null);
-
+    let currentPath = ref("/");
 
     // function
     // lifeCycle
@@ -123,13 +122,25 @@
         }
     }
 
-    const getFileList = (item) => {
-         
+    const displayItemAfterSearch = (item) => {
+        console.log("callBack :: displayItemAfterSearch");
+        console.log(item)
+    }
+
+    const getFileList = (param) => {
+         //testFunc(param, displayItemAfterSearch);
+         const url = "http://localhost:19010/file/list?";
+         const variable = "fileId=" + "0";
+         axiosGet(url+variable, displayItemAfterSearch);
     }
 
     const clickSearchBtn = e => {
+        var param = {
+            'search': 'search param',
+            'path' : 'path param'
+        }
         //alert("input : " + searchInput.value);
-
+        getFileList(param);
         searchResultList.value = [
         {
                 pathName: '',
@@ -158,6 +169,37 @@
         ]
 
         searchInput.value = '';
+    }
+
+
+    // fileUpload
+    const uploadClick = () => {
+        $("#uploadFileInput").click();
+    }
+
+    const uploadFileChange = (e) => {
+        let uploadForm = new FormData();
+        let file = e.target.files[0];
+        console.log(file)
+
+        uploadForm.append('file', file);
+
+        $.ajax({
+            url : 'http://localhost:19010/image/upload',
+            data: uploadForm,
+            enctype: 'multipart/form-data',
+            async: false,
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            success: function(data) {
+                console.log("success");
+                console.log(data);
+            },
+            error: function(err) {
+                console.log(err);
+            }
+        });
     }
 
     // button event controller

@@ -164,6 +164,7 @@
                         margin-right: 7px;
                         border: none;
                         border-radius: 5px;
+                        cursor: pointer;
                     }
 
                 }
@@ -176,8 +177,16 @@
         .aibees-body {
 
             .aibees-body-condition {
+                text-align: left;
                 background-color: beige;
                 height: 30px;
+
+                span {
+                    margin-left: 10px;
+                    font-family: 'Malgun Gothic';
+                    font-size: 14px;
+                    font-weight: 680;
+                }
             }
             .aibees-body-list {
                 ul {

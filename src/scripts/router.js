@@ -43,7 +43,10 @@ const routes=[
         path: "/aibees",
         name: "Aibees",
         component: Aibees.AibeesHome,
-        meta: { auth: true }
+        meta: { 
+            auth: true,
+            title: 'MARIA'
+        }
     },
     {
         path: "/login",
@@ -68,7 +71,7 @@ export const setRouterToApp = () => {
     })
 
     router.afterEach((to, from) => {
-        console.log("router::after each : " + to)
+        document.title = to.meta.title === undefined ? 'Aibees-Page' : to.meta.title;
     })
     return router
 }
