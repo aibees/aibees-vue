@@ -38,13 +38,13 @@
         <div class="aibees-body-list">
             <ul>
                 <li v-for="(item, idx) in searchResultList" v-bind:key="item.path+item.id">
-                    <div class="listItem" :index="idx" :id="`itemBox-${idx}`">
+                    <div class="listItem" :index="idx" :id="`itemBox-${idx}`" @dblclick="fileDbclick(item)">
                         <div class="item-left-image" @click="viewImageDetail(item, idx)">
-                            <img v-bind:src="(item.ext!='dir')?('https://static.aibeesworld.com'+item.path+item.id):('https://static.aibeesworld.com/image/asset/directory.png')" oncontextmenu="return false;" />
+                            <img v-bind:src="('dir' == item.ext)?('https://static.aibeesworld.com/image/asset/directory.png'):('https://static.aibeesworld.com'+item.path)" oncontextmenu="return false;" />
                         </div>
                         <div class="item-center-display" @click="viewImageDetail(item, idx)">
                             <div class="display-name">
-                                {{ item.fileName }}
+                                {{ item.name }}
                             </div>
                             <div class="display-meta-path">
                                 {{ item.pathName }}<br/>{{ item.time }}
@@ -84,6 +84,9 @@
     })
 
     onMounted(() => {
+        getCurrentPath();
+
+        // 단축키 설정
         const escapeHandler = (e) => {
             if(e.key == 'Escape' && 'block' == document.getElementById('popupImage').style.display) {
                 closePopupImage();
@@ -91,9 +94,25 @@
         }
 
         document.addEventListener('keydown', escapeHandler);
+
+        // default search
+        getFileList(null);
     })
 
     // custom
+    const getCurrentPath = () => {
+        const callback = (result) => {
+            console.log(result.data.absoluePath);
+            currentPath.value = result.data.absoluePath;
+        }
+        const requestUrl = "http://localhost:19010/file/";
+        axiosGet(requestUrl+fileId.value, callback);
+    }
+
+    const fileDbclick = (item) => {
+        console.log(item)
+    }
+
     // 이미지 상세보기 오픈 function
     const viewImageDetail = (item, idx) => {
         // directory는 파랗게만 된다.
@@ -124,9 +143,11 @@
 
     const displayItemAfterSearch = (item) => {
         console.log("callBack :: displayItemAfterSearch");
-        console.log(item)
+        console.log(item.data)
+        searchResultList.value = item.data;
     }
 
+    // 파일 조회
     const getFileList = (param) => {
          //testFunc(param, displayItemAfterSearch);
          const url = "http://localhost:19010/file/list?";
@@ -139,35 +160,7 @@
             'search': 'search param',
             'path' : 'path param'
         }
-        //alert("input : " + searchInput.value);
         getFileList(param);
-        searchResultList.value = [
-        {
-                pathName: '',
-                path: '',
-                filename: '..',
-                ext: 'dir',
-                time: '',
-                id: '',
-                option: 'back'
-            }
-            ,{
-                pathName: '/이미지/여자친구/2023년01월',
-                path: '/image/girlfriend/202301',
-                fileName: '문서',
-                ext: 'dir',
-                time: null,
-                id: 'documents'
-            },{
-                pathName: '/이미지/여자친구/2023년01월',
-                path: '/image/girlfriend/202301',
-                fileName: '여자친구와의 추억34',
-                ext: 'jpg',
-                time: '2022.12.22 13:40:29',
-                id: '/000034.jpg'
-            }
-        ]
-
         searchInput.value = '';
     }
 
