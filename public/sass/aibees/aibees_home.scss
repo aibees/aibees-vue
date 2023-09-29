@@ -95,7 +95,35 @@
                 z-index: 2;
             }
 
-            button {
+            .input-box {
+                margin: 20vh auto 0;
+                padding: 20px 0 40px;
+                border-radius: 5px;
+                background-color: white;
+                position: relative;
+                width: 80%;
+                height: auto;
+                opacity: 100%;
+                z-index: 2;
+            }
+
+            .mkdirPopupLabel {
+                
+            }
+
+            .mkdirButtons {
+                display: flex;
+                justify-content: center;
+                .mkdirButton {
+                    position: inherit;
+                    border: none;
+                    width: 100px;
+                    height: 30px;
+                    margin: 15px;
+                }
+            }
+
+            .closePopup {
                 position: absolute;
                 border: none;
                 border-radius: 2px;

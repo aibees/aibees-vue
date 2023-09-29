@@ -17,4 +17,17 @@ const axiosGet = (url, callback) => {
     })
 }
 
-export { testFunc, axiosGet }
+const axiosPost = (url, data, callback) => {
+    axios.post(url, data, {
+
+    })
+    .then((res) => {
+        callback(res);
+    })
+    .catch(err => {
+        console.log(err);
+        alert(err);
+    })
+}
+
+export { testFunc, axiosGet, axiosPost }
