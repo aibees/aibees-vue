@@ -1,10 +1,16 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 const path = require('path')
+const env = loadEnv('', process.cwd());
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    aibeesGlobal: {
+      API_SERVER_URL : env.VITE_SERVER_URL
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -12,6 +18,9 @@ export default defineConfig({
     }
   },
   server: {
+    watch: {
+      usePolling: true
+    },
     host: '0.0.0.0',
     port: 7077
   },

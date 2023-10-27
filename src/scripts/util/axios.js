@@ -1,11 +1,6 @@
 import axios from 'axios';
 
 
-const testFunc = (msg, callback) => {
-    console.log("test : " + msg);
-    callback(msg);
-}
-
 const axiosGet = (url, callback) => {
     axios.get(url)
     .then((res) => {
@@ -30,4 +25,19 @@ const axiosPost = (url, data, callback) => {
     })
 }
 
-export { testFunc, axiosGet, axiosPost }
+const axiosPostForFile = (url, data, callback) => {
+    axios.post(url, data, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+    .then((res) => {
+        callback(res);
+    })
+    .catch(err => {
+        console.log(err);
+        alert(err);
+    })
+}
+
+export { axiosPostForFile, axiosGet, axiosPost }

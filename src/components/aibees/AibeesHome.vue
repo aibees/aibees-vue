@@ -24,7 +24,7 @@
     <AibeesMetaEditVue :curItem="curItem" />
     <div class="aibees-header">
         <div class="aibees-header-title">
-            {{  title }}
+            <router-link to="/aibees">{{  title }}</router-link>
         </div>
         <div class="aibees-header-search">
             <span>
@@ -115,6 +115,7 @@
     })
 
     // custom
+
     /*
      * 현재 위치를 조회해온다.
      */

@@ -1,8 +1,6 @@
 import { createWebHistory, createRouter } from 'vue-router'
-import Home from '@/components/Home.vue'
 import Login from '@/components/Login.vue'
-import Stores from '@/components/stores'
-import Cafes from '@/components/cafes'
+import Account from '@/components/Account'
 import Aibees from '@/components/aibees'
 import NotFound from '@/components/except/NotFound.vue'
 
@@ -14,30 +12,27 @@ const routes=[
     },
     {
         path: "/",
-        name: "Home",
-        component: Home
+        name: "AibeesHome",
+        component: Aibees.AibeesHome,
+        meta: { 
+            auth: true,
+            title: 'MARIA'
+        }
     },
     {
-        path: '/store',
-        name: 'StoreHome',
-        component: Stores.StoreView,
+        path: "/account",
+        name: "Account",
+        component: Account.AccountHome,
         children: [
             {
-                path: '',
-                component: Stores.StoreHome
+                path: 'card',
+                component: Account.CardView
             },
             {
-                path: 'login',
-                component: Stores.StoreLogin
+                path: 'bank',
+                component: Account.BankView
             }
-        ],
-        meta: { auth: true }
-    },
-    {
-        path: '/cafe',
-        name: 'CafeHome',
-        component: Cafes.CafeHome,
-        meta: { auth: true }
+        ]
     },
     {
         path: "/aibees",
@@ -62,6 +57,8 @@ export const setRouterToApp = () => {
     })
 
     router.beforeEach((to, from, next) => {
+        console.log(to)
+        console.log(from)
         // if(to.matched.some(r => r.)) {
         //     alert("로그인이 필요한 페이지입니다.");
         //     next('/login');
