@@ -26,7 +26,21 @@ const routes=[
         children: [
             {
                 path: 'card',
-                component: Account.CardView
+                component: Account.CardView,
+                children: [
+                    {
+                        path: 'list',
+                        component: Account.CardList
+                    },
+                    {
+                        path: 'excel',
+                        component: Account.CardUpload
+                    },
+                    {
+                        path: 'statics',
+                        component: Account.CardStatistics
+                    }
+                ]
             },
             {
                 path: 'bank',
@@ -57,8 +71,6 @@ export const setRouterToApp = () => {
     })
 
     router.beforeEach((to, from, next) => {
-        console.log(to)
-        console.log(from)
         // if(to.matched.some(r => r.)) {
         //     alert("로그인이 필요한 페이지입니다.");
         //     next('/login');

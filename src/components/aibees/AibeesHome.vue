@@ -1,26 +1,7 @@
 <template>
   <div class="aibees">
-    <div id="popupImage" class="aibees-popup-image">
-        <div class="popupImageBack"></div>
-        <img id="popupImageSrc" src="" oncontextmenu="return false;" />
-        <button class="closePopup" @click="closePopupImage('mkdirPopup')">
-            <font-awesome-icons v-bind:icon="['fa-solid', 'fa-xmark']" />
-        </button>
-    </div>
-    <div id="mkdirPopup" class="aibees-popup-image">
-        <div class="popupImageBack"></div>
-        <div class="input-box">
-            <p>생성할 폴더명 입력</p>
-            <br/><label class="mkdirPopupLabel">폴더 ID (영문과 숫자만)</label><br/>
-            <input id="newFolderIdInput" placeholder="New Folder" />
-            <br/><label class="mkdirPopupLabel">폴더 이름</label><br/>
-            <input id="newFolderNameInput" placeholder="New Folder" />
-            <div class="mkdirButtons">
-                <button class="mkdirButton" id="confirmMkdir" @click="confirmMkdir()" style="background-color:#03C75A;">생성</button>
-                <button class="mkdirButton" id="cancelMkder" @click="closePopupImage('mkdirPopup')">취소</button>
-            </div>
-        </div>
-    </div>
+    <AibeesPopupImage style="display:none;" />
+    <AibeesMkdir style="display:none;" />
     <AibeesMetaEditVue :curItem="curItem" />
     <div class="aibees-header">
         <div class="aibees-header-title">
@@ -51,10 +32,10 @@
         </div>
         <div class="aibees-body-list">
             <ul>
-                <li v-for="(item, idx) in searchResultList" v-bind:key="item.path+item.id">
+                <li v-for="(item, idx) in searchResultList" v-bind:key="item.id">
                     <div class="listItem" :index="idx" :id="`itemBox-${idx}`" @dblclick="fileDbclick(item)">
                         <div class="item-left-image" @click="viewImageDetail(item, idx)">
-                            <img v-bind:src="('dir' == item.ext)?('https://static.aibeesworld.com/image/asset/directory.png'):('https://static.aibeesworld.com'+item.path)" oncontextmenu="return false;" />
+                            <img v-bind:src="('dir' == item.ext)?('https://static.aibeesworld.com/image/asset/directory.png'):('https://static.aibeesworld.com'+item.path+'.'+item.ext)" oncontextmenu="return false;" />
                         </div>
                         <div class="item-center-display" @click="viewImageDetail(item, idx)">
                             <div class="display-name">
@@ -82,6 +63,8 @@
     import { ref, onBeforeMount, onMounted } from 'vue'
     import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
     import AibeesMetaEditVue from './comp/AibeesMetaEdit.vue';
+    import AibeesMkdir from './comp/AibeesMkdir.vue';
+    import AibeesPopupImage from './comp/AibeesPopupImage.vue';
     import constants from '../../scripts/util/constant.js'
 
     // variable
@@ -99,7 +82,6 @@
     })
 
     onMounted(() => {
-        getCurrentPath();
 
         // 단축키 설정
         const escapeHandler = (e) => {
@@ -111,21 +93,20 @@
         document.addEventListener('keydown', escapeHandler);
 
         // default search
-        getFileListWithFileId(fileId.value);
+        getCurrentPath();
+        getChildListWithFileId(fileId.value);
     })
 
     // custom
-
     /*
      * 현재 위치를 조회해온다.
      */
     const getCurrentPath = () => {
+        const uri = "/file/detail?fileId=" + fileId.value;
         const callback = (result) => {
-            console.log(result.data.absoluePath);
-            currentPath.value = result.data.absoluePath;
+        currentPath.value = result.data.absoluePath;
         }
-        const requestUrl = "http://localhost:19010/file/";
-        axiosGet(requestUrl+fileId.value, callback);
+        axiosGet(constants.MARIA_DOMAIN+uri, callback);
     }
 
     /**
@@ -134,7 +115,7 @@
      */
     const fileDbclick = (item) => {
         console.log(item.id);
-        getFileListWithFileId(item.id);
+        getChildListWithFileId(item.id);
         fileId.value = item.id;
         getCurrentPath();
     }
@@ -153,23 +134,13 @@
         }
         
         // image static 주소
-        const imgSrc = 'https://static.aibeesworld.com'+item.path+item.id;
+        const imgSrc = 'https://static.aibeesworld.com'+item.path+'.'+item.ext;
 
         // display 열어주고 block에 이미지 넣기
         const displayStatus = document.getElementById('popupImage');
         displayStatus.style.display = 'block';
         const displayImageSrc = document.getElementById('popupImageSrc');
         displayImageSrc.src = imgSrc;
-    }
-
-    /**
-     * 이미지 상세보기 popup 닫기 
-     */
-    const closePopupImage = (target) => {
-        if('block' == document.getElementById(target).style.display) {
-            document.getElementById('popupImageSrc').src = '';
-            document.getElementById(target).style.display = 'none';
-        }
     }
 
     /**
@@ -181,32 +152,32 @@
     }
 
     /**
-     * 폴더생성 확인버튼
+     * 파일 Detail 조회
+     * @param {} param 
      */
-    const confirmMkdir = () => {
-        const dirName = document.getElementById('newFolderNameInput').value;
-        alert(dirName);
-    }
-
-    // 파일 조회
-    const getFileList = (param) => {
+    const getFileList = (mockParam) => {
          //testFunc(param, displayItemAfterSearch);
          const url = constants.MARIA_DOMAIN + '/file/list';
-         const variable = "?fileId=" + "0";
-         axiosGet(url, displayItemAfterSearch);
+         const param = {
+            'fileId' : fileId
+         }
+         axiosPost(url, param, displayItemAfterSearch);
     }
 
-    const getFileListWithFileId = (fileId) => {
+    const getChildListWithFileId = (fileId) => {
          //testFunc(param, displayItemAfterSearch);
          const url = constants.MARIA_DOMAIN + '/file/list';
-         const variable = "?fileId=" + fileId;
-         axiosGet(url + variable, displayItemAfterSearch);
+         const param = {
+            'fileId' : fileId
+         }
+         axiosPost(url, param, displayItemAfterSearch);
     }
 
     const displayItemAfterSearch = (item) => {
         console.log("callBack :: displayItemAfterSearch");
         console.log(item.data)
         searchResultList.value = item.data;
+        currentPath.value = item.data.absoluePath;
 
     }
 

@@ -1,7 +1,6 @@
 <template>
   <div class="account">
     <router-view />
-    hello
   </div>
 </template>
 
