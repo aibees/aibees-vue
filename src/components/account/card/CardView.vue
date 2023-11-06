@@ -46,11 +46,11 @@
       },
       {
         'name': '통계1',
-        'value': 'card_statics'
+        'value': 'card_statistics'
       },
       {
         'name': '통계2',
-        'value': 'card_statics2'
+        'value': 'card_statistics'
       }
     ]
   };
@@ -58,9 +58,8 @@
   const callMenu = (item) => {
 
     const to = item.value.split('_')[1];
-
     router.push({
-      path: to
+      name: 'Card-' + to
     })
   }
 
@@ -114,7 +113,7 @@
   }
 
   .card-nav:hover {
-    width: 150px;
+    width: 160px;
 
     .burger {
       display: none;

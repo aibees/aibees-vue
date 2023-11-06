@@ -1,11 +1,16 @@
 <template>
+    <AccountHeader :prop_title=title />
   card excel upload
 </template>
 
 <script setup>
-// import declaration
-import { ref, onBeforeMount, onMounted } from 'vue'
+
+    // import declaration
+    import { ref, onBeforeMount, onMounted } from 'vue'
     import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
+    import AccountHeader from '../common/AccountHeader.vue';
+    
+    const title = ref('카드내역 엑셀업로드');
 
     const selectFile = () => {
       $("#fileUploadInput").click();

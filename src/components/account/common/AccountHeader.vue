@@ -38,9 +38,9 @@
         font-weight: 800;
         color: black;
     }
-    .logo {
+    // .logo {
 
-    }
+    // }
 }
 
 </style>

@@ -26,18 +26,22 @@ const routes=[
         children: [
             {
                 path: 'card',
+                name: "Card-Home",
                 component: Account.CardView,
                 children: [
                     {
                         path: 'list',
+                        name: "Card-list",
                         component: Account.CardList
                     },
                     {
                         path: 'excel',
+                        name: "Card-excel",
                         component: Account.CardUpload
                     },
                     {
-                        path: 'statics',
+                        path: 'statistics',
+                        name: "Card-statistics",
                         component: Account.CardStatistics
                     }
                 ]
