@@ -2,6 +2,7 @@ import { createWebHistory, createRouter } from 'vue-router'
 import Login from '@/components/Login.vue'
 import Account from '@/components/Account'
 import Aibees from '@/components/aibees'
+import Master from '@/components/master/Master.vue'
 import NotFound from '@/components/except/NotFound.vue'
 
 const routes=[
@@ -60,6 +61,11 @@ const routes=[
             auth: true,
             title: 'MARIA'
         }
+    },
+    {
+        path: "/master",
+        name: "Master",
+        component: Master
     },
     {
         path: "/login",
