@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "main": "src/scripts/main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --watch",
     "build": "vite build",
     "preview": "vite preview --port 7077"
   },

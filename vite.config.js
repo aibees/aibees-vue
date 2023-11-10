@@ -19,10 +19,11 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 7077
-  },
-  chokidarWatchOptions: {
-    usePolling: true
+    port: 7077,
+
+    watch: {
+      usePolling: true
+    }
   },
   plugins: [vue()]
-})
+}) 
