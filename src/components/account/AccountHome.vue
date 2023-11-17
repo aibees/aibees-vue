@@ -7,6 +7,6 @@
 <script setup>
 </script>
 
-<style lang="sass" scoped>
-
+<style lang="scss" scoped>
+@import url(//fonts.googleapis.com/earlyaccess/nanumgothic.css);
 </style>

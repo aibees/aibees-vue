@@ -19,9 +19,9 @@ app.use(store);
 // ===== FontAwesomeIcon Add =====
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload, faBars } from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload, faBars, faSave } from "@fortawesome/free-solid-svg-icons";
 
-library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload, faBars);
+library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload, faBars, faSave);
 app.component("font-awesome-icons", FontAwesomeIcon)
 // ===============================
 
