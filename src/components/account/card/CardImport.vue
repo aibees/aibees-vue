@@ -18,7 +18,7 @@
             <div style="display: none"><input type="file" id="fileUploadInput" @change="putFileName();" /></div>
         </div>
         <div class="buttons-right">
-            <button>제출</button>
+            <button @click="transferData()">제출</button>
         </div>
       </div>
       <div class="import-rows">
@@ -26,11 +26,11 @@
           <thead>
             <tr>
               <th class="table-th" style="width: 180px;">카드명</th>
-              <th class="table-th" style="width: 150px;">일자</th>
+              <th class="table-th" style="width: 150px;" @click="dataSort('date')">일자</th>
               <th class="table-th" style="width: 90px;">승인번호</th>
               <th class="table-th" style="width: 100px;">분류</th>
               <th class="table-th" style="width: 80px;">금액</th>
-              <th class="table-th" style="width: 400px;">적요</th>
+              <th class="table-th" style="width: 400px;" @click="dataSort('remark')">적요</th>
             </tr>
           </thead>
           <tbody>
@@ -39,24 +39,13 @@
                 <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
                 <td>{{ state.approvNum }}</td>
                 <td>
-                    <select :id="`itemBox-${idx}`" class="use-type select-transparent" @change="changeColor($event)" >
-                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color">{{ usage.name }}</option>
+                    <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" >
+                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="`option == ${state.usageCd}`">{{ usage.name }}</option>
                     </select>
                 </td>
-                <td style="text-align: right;">{{ state.amount }}</td>
-                <td class="text-left"><input :id="`state-remark_${idx}`" :value="state.remark" style="width: 80%; height: 30px; background-color: white; border: none;"/></td>
+                <td style="text-align: right;">￦ <strong>{{ state.amount }}</strong>원</td>
+                <td class="text-remark"><input :id="`state-remark_${idx}`" :value="state.remark" style="width: 80%; height: 30px; background-color: white; border: none;"/></td>
             </tr>
-            <!-- <tr>
-              <td>하나카드_T다운(SK)</td>
-              <td><div class="date">2023-12-31</div><div class="time">23:23:23</div></td>
-              <td>28394873</td>
-              <td><select id="selectrow_1" class="use-type select-transparent" @change="changeColor($event)" >
-                    <option value="99" :color="'#efefef'">미분류</option>
-                    <option value="05" :color="'#f0a574'">식비</option>
-                  </select></td>
-              <td>580,000</td>
-              <td class="text-left">배달의 민족-검암-페리카나치킨_후라이드 한마리</td>
-            </tr> -->
           </tbody>
         </table>
       </div>
@@ -68,31 +57,94 @@
     // import declaration
     import { ref, onBeforeMount, onMounted } from 'vue'
     import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
+    import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
     import AccountHeader from '../common/AccountHeader.vue';
     
+  /******************************
+   ******* Const  Variable ******
+   ******************************/
     const title = ref('카드내역 엑셀업로드');
     const dataList = ref([]);
+    const useTypeMap = ref({});
 
-    const useTypeMap = {
-        '05' : {
-            'name' : '식비',
-            'value' : '05',
-            'color' : '#f0a574'
-        },
-        '99' : {
-            'name' : '전체',
-            'value' : '99',
-            'color' : '#afafaf'
+    let dateSortFlag = 'desc';
+    let remarkSortFlag = 'desc';
+
+    /******************************
+     ******* Vue  Lift Cycle ******
+      ******************************/
+    onMounted(() => {
+      getUsageOption();
+    })
+
+    /******************************
+     ***** Element Init Func. *****
+     ******************************/
+    const getUsageOption = () => {
+      const usageData = {};
+      getResourceList('ACCOUNT', 'COMBO', 'USAGE')
+      .forEach(data => {
+        let usageColor = '#FFFFFF';
+        if(data.attribute03 != null && data.attribute03 != '' && typeof data.attribute03 != "undefined") {
+          usageColor = '#' + data.attribute03;
         }
+
+        usageData[data.code] = {
+          'name'  : data.name,
+          'value' : data.code,
+          'color' : usageColor
+        }
+      });
+      useTypeMap.value = usageData;
     }
 
+    const dataSort = (type) => {
+      console.log("type : " + type);
+
+      if('date' === type) {
+        if('desc' == dateSortFlag) {
+          dateSortFlag = 'asc';
+        } else {
+          dateSortFlag = 'desc';
+        }
+        console.log("date flag : " + dateSortFlag);
+        dataList.value = dataList.value.sort((a, b) => {
+          if('desc' == dateSortFlag) {
+            return (a.ymd+a.times) >= (a.ymd+a.times);
+          } else {
+            return (a.ymd+a.times) < (a.ymd+a.times);
+          }
+        });
+      } else if('remark' === type) {
+        if('desc' == remarkSortFlag) {
+          remarkSortFlag = 'asc';
+        } else {
+          remarkSortFlag = 'desc';
+        }
+
+        console.log("remark flag : " + dateSortFlag);
+        dataList.value = dataList.value.sort((a, b) => {
+          if('desc' == remarkSortFlag) {
+            return a.remark >= b.remark;
+          } else {
+            return a.remark < b.remark;
+          }
+        });
+      } else {
+
+      }
+    }
+
+    /******************************
+     ******* Event  Function ******
+     ******************************/
     const uploadFile = () => {
       $("#fileUploadInput").click();
     }
 
-    const changeColor = () => {
-        const color_data = useTypeMap[event.target.value].color;
-        document.getElementById('selectrow_1').style.backgroundColor = color_data;
+    const changeColor = (event, idx) => {
+        const color_data = useTypeMap.value[event.target.value].color;
+        document.getElementById('itemBox_' + idx).style.backgroundColor = color_data;
     }
 
     const putFileName = () => {
@@ -101,6 +153,10 @@
         document.getElementById('importfileText').value = fileName;
     }
 
+    /******************************
+     ******* Main  Function *******
+     ******************************/
+    // 파일 제출
     const submitFile = () => {
         const data = new FormData();
         var fileInput = document.getElementById('fileUploadInput');
@@ -128,17 +184,50 @@
         axiosPostForFile(url, data, callback);
     }
 
+    // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
 
         const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?fileId=" + fileId;
 
         const callback = (res) => {
-            console.log(res.data);
             document.getElementById('loading_bar').style.display='none';
             dataList.value = res.data;
         }
 
         axiosGet(url, callback);
+    }
+
+    // tmp 데이터 마스터 테이블로 이관
+    const transferData = () => {
+      const dataSize = dataList.value.length;
+      if(dataSize == 0) {
+        alert("데이터 로딩부터 합시다.");
+        return false;
+      }
+
+      const isReal = confirm("최종적이고, 데이터 변경은 DB에서만 가능하다는 것 인지 바람");
+      
+      if(isReal == true) {
+        for(let i = 0; i < dataSize; i++) {
+          let data = dataList.value[i];
+          data['usageCd'] = document.getElementById('itemBox_'+i).value;
+          data['remark'] = document.getElementById('state-remark_'+i).value;
+          data['status'] = 'INSERT';
+        }
+
+        // send to Server
+        const url = aibeesGlobal.API_SERVER_URL + '/account/transfer';
+        const callback = (res) => {
+          if(res.data.result == 'SUCCESS') {
+            alert("저장 완료");
+          } else {
+            console.log(res);
+            alert("문제 발생");
+          }
+        }
+
+        // axiosPost(url, data, callback);
+      }
     }
 </script>
 
@@ -157,14 +246,13 @@
   width: 1000px;
   border-left: 1px solid grey;
   border-right: 1px solid grey;
-  margin: auto;
+  margin: 0 auto 60px;
 
   .select-transparent {
     text-align: center;
     background-color: transparent;
     padding: 5px 15px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    appearance: none;
     text-indent: 1px;
     text-overflow: '';
     border: none;
@@ -245,6 +333,7 @@
 
             .use-type {
               border-radius: 15px;
+              width: 120px;
               height: 35px;
             }
 
@@ -256,6 +345,11 @@
             .time {
               font-size: 12px;
               color: rgb(120, 120, 120);
+            }
+
+            .text-remark {
+              display: flex;
+              justify-content: right;
             }
           }
         }

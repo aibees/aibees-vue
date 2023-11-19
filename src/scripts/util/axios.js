@@ -40,4 +40,4 @@ const axiosPostForFile = (url, data, callback) => {
     })
 }
 
-export { axiosPostForFile, axiosGet, axiosPost }
+export { axiosPostForFile, axiosGet, axiosPost } 
