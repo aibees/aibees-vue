@@ -13,8 +13,10 @@
     "@fortawesome/free-solid-svg-icons": "^6.2.1",
     "@fortawesome/vue-fontawesome": "^3.0.3",
     "axios": "^1.4.0",
+    "chart.js": "^4.4.0",
     "sass": "^1.49.8",
     "vue": "^3.2.25",
+    "vue-chartjs": "^5.2.0",
     "vue-router": "^4.0.12",
     "vuex": "^4.1.0",
     "vuex-persistedstate": "^4.1.0"

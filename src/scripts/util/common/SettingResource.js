@@ -9,7 +9,7 @@ const getResourceList = (depart, category, title) => {
         'title' : title
     }
 
-    let result = {};
+    let result = [];
 
     $.ajax({
         'method': 'POST',

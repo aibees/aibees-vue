@@ -15,7 +15,9 @@
                     <div class="statement-item">
                         <div class="item-info">
                             <strong>우아한형제들_현대카드 애플페이 - (주)우아한형제들_설빙</strong>
-                            <div class="item-subinfo">23.11.04 · 18:20 <span class="usage">교통비</span></div>
+                            <div class="item-subinfo">
+                                <strong style="font-weight: 850; font-size:12px;">23.11.04</strong> · 18:20:35 <span class="usage" style="background-color: #CACACA; margin-left: 10px;">미분류</span>
+                            </div>
                         </div>
                         <div class="item-amount">
                             999,000 원

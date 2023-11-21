@@ -3,14 +3,21 @@
     <div id="loading_bar">
         Progressing....
     </div>
+    <div id="toTopButton" @click="toTop()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+           stroke="#4a5568"
+           stroke-width="1" stroke-linecap="square" stroke-linejoin="arcs">
+        <path d="M18 15l-6-6-6 6"/>
+      </svg>
+    </div>
     <div class="cardImport">
       <div class="import-buttons">
         <div class="buttons-left">
-            <select class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
-                <option value="HANA">하나카드</option>
-                <option value="SAMSUNG">삼성카드</option>
-                <option value="SHINHAN">신한카드</option>
-                <option value="HYUNDAE">현대카드</option>
+            <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
+                <option value="HANACARD">하나카드</option>
+                <option value="SAMSUNGCARD">삼성카드</option>
+                <option value="SHINHANCARD">신한카드</option>
+                <option value="HYUNDAICARD">현대카드</option>
             </select>
             <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
             <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
@@ -18,6 +25,11 @@
             <div style="display: none"><input type="file" id="fileUploadInput" @change="putFileName();" /></div>
         </div>
         <div class="buttons-right">
+            <select id="uploadedFileSelect">
+              <option value=""></option>
+              <option value="202311203sfho">HYUNDAICARD_20230720-2038.xlsx</option>
+            </select>
+            <button @click="selectData()">조회</button>
             <button @click="transferData()">제출</button>
         </div>
       </div>
@@ -29,8 +41,8 @@
               <th class="table-th" style="width: 150px;" @click="dataSort('date')">일자</th>
               <th class="table-th" style="width: 90px;">승인번호</th>
               <th class="table-th" style="width: 100px;">분류</th>
-              <th class="table-th" style="width: 80px;">금액</th>
-              <th class="table-th" style="width: 400px;" @click="dataSort('remark')">적요</th>
+              <th class="table-th" style="width: 100px;">금액</th>
+              <th class="table-th" style="width: 380px;" @click="dataSort('remark')">적요</th>
             </tr>
           </thead>
           <tbody>
@@ -40,7 +52,7 @@
                 <td>{{ state.approvNum }}</td>
                 <td>
                     <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" >
-                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="`option == ${state.usageCd}`">{{ usage.name }}</option>
+                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="`option == ${state.usageCd}`" :style="{ 'background-color': usage.color}">{{ usage.name }}</option>
                     </select>
                 </td>
                 <td style="text-align: right;">￦ <strong>{{ state.amount }}</strong>원</td>
@@ -67,6 +79,7 @@
     const dataList = ref([]);
     const useTypeMap = ref({});
 
+    let curFileHash = '';
     let dateSortFlag = 'desc';
     let remarkSortFlag = 'desc';
 
@@ -96,6 +109,7 @@
         }
       });
       useTypeMap.value = usageData;
+      console.log(useTypeMap.value);
     }
 
     const dataSort = (type) => {
@@ -167,7 +181,7 @@
         }
 
         const url = aibeesGlobal.API_SERVER_URL + "/account/file";
-        data.append('type', 'HANA');
+        data.append('type', document.getElementById('uploadTypeSelect').value);
         data.append('file', fileInput.files[0]);
 
         const callback = (res) => {
@@ -186,15 +200,21 @@
 
     // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
+      curFileHash = fileId;
+      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?fileId=" + fileId;
 
-        const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?fileId=" + fileId;
+      const callback = (res) => {
+        document.getElementById('loading_bar').style.display='none';
+        dataList.value = res.data;
+      }
 
-        const callback = (res) => {
-            document.getElementById('loading_bar').style.display='none';
-            dataList.value = res.data;
-        }
+      axiosGet(url, callback);
+    }
 
-        axiosGet(url, callback);
+    // 기존에 조회했던 파일데이터 불러오기
+    const selectData = () => {
+      const fileHashId = document.getElementById('uploadedFileSelect').value;
+      alert(fileHashId);
     }
 
     // tmp 데이터 마스터 테이블로 이관
@@ -205,7 +225,7 @@
         return false;
       }
 
-      const isReal = confirm("최종적이고, 데이터 변경은 DB에서만 가능하다는 것 인지 바람");
+      const isReal = confirm("최종이고, 데이터 변경은 DB에서만 가능하다는 것 인지 바람");
       
       if(isReal == true) {
         for(let i = 0; i < dataSize; i++) {
@@ -217,17 +237,32 @@
 
         // send to Server
         const url = aibeesGlobal.API_SERVER_URL + '/account/transfer';
+        const reqData = {
+          'data' : dataList.value,
+          'fileHash' : curFileHash
+        }
         const callback = (res) => {
+          document.getElementById('loading_bar').style.display='none';
           if(res.data.result == 'SUCCESS') {
             alert("저장 완료");
+            dataList.value = [];
+            // link to card statement list
           } else {
             console.log(res);
             alert("문제 발생");
           }
         }
-
-        // axiosPost(url, data, callback);
+        console.log(reqData);
+        document.getElementById('loading_bar').style.display='block';
+        axiosPost(url, reqData, callback);
       }
+    }
+
+    const toTop = () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     }
 </script>
 
@@ -239,6 +274,12 @@
     left: 50%;
     font-weight: 850;
     font-size: 20px;
+}
+
+#toTopButton {
+    position: fixed;
+    right: 240px;
+    bottom: 50px;
 }
 
 .cardImport {

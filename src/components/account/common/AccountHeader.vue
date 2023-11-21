@@ -28,7 +28,7 @@
 .header {
     display: flex;
     justify-content: space-between;
-    background-color: lightgrey;
+    background-color: rgb(0, 0, 50);
     width: 100%;
     height: 50px;
     .title {
@@ -36,7 +36,7 @@
         margin-left: 10px;
         font-size: 14px;
         font-weight: 800;
-        color: black;
+        color: white;
     }
     // .logo {
 
