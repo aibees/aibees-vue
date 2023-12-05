@@ -18,19 +18,37 @@
 </template>
 
 <script setup>
+    // import declaration
     import { ref, onMounted } from 'vue';
+    import { useStore } from 'vuex';
+    import { useRouter } from 'vue-router';
 
-    // lifeCycle
+    /******************************
+     ******* Const  Variable ******
+     ******************************/
+    const sessionStore = useStore();
+    const router = useRouter();
+
+    /******************************
+     ******* Vue  Lift Cycle ******
+     ******************************/
     onMounted(() => {
         const escapeHandler = (e) => {
-            if(e.key == 'Enter') {
-                loginProcess();
-            }
+            if(e.key == 'Enter') { loginProcess(); }
         }
         document.addEventListener('keydown', escapeHandler);
     })
 
-    // function
+    /******************************
+     ******* Event  Function ******
+     ******************************/
+    const MngContractEvent = () => {
+        alert("qwt0326@gmail.com");
+    }
+
+    /******************************
+     ******* Main  Function *******
+     ******************************/
     const loginProcess = () => {
         let loginId = document.getElementById('loginId').value;
         let loginPw = document.getElementById('loginPw').value;
@@ -38,11 +56,21 @@
         if(loginId == '' || loginPw == '') {
             alert("정상적으로 입력되지 않았습니다.");
             return false;
+        } else {
+            const loginParam = {
+                userId : loginId,
+                userPw : loginPw
+            }
+            // todo : server axios for check id / password
+            
+            const user = {
+                id: loginId,
+                userName: 'aibees',
+                userToken: '182y37yqwie72'
+            }
+            sessionStore.commit("setUser", user);
+            router.push('/account');
         }
-    }
-
-    const MngContractEvent = () => {
-        alert("담당자 연락처");
     }
 </script>
 

@@ -21,15 +21,16 @@
             </select>
             <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
             <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
-            <div><input type="text" id="importfileText" style="width: 300px; border: 0px; background-color:transparent; margin-left: 20px; margin-top: 12px;" readonly /></div>
+            <div><input type="text" id="importfileText" onfocus="this.blur();" style="width: 300px; height: 30px; border: 0px; background-color:transparent; margin-left: 20px; margin-top: 4px;" readonly /></div>
             <div style="display: none"><input type="file" id="fileUploadInput" @change="putFileName();" /></div>
         </div>
         <div class="buttons-right">
             <select id="uploadedFileSelect">
               <option value=""></option>
-              <option value="202311203sfho">HYUNDAICARD_20230720-2038.xlsx</option>
+              <option v-for="opt in fileHashComboList" :key="opt.fileId" :value="opt.fileId">{{ opt.fileName }}</option>
             </select>
             <button @click="selectData()">조회</button>
+            <button @click="selectData()">임시저장</button>
             <button @click="transferData()">제출</button>
         </div>
       </div>
@@ -78,6 +79,7 @@
     const title = ref('카드내역 엑셀업로드');
     const dataList = ref([]);
     const useTypeMap = ref({});
+    const fileHashComboList = ref([]);
 
     let curFileHash = '';
     let dateSortFlag = 'desc';
@@ -85,14 +87,24 @@
 
     /******************************
      ******* Vue  Lift Cycle ******
-      ******************************/
+     ******************************/
     onMounted(() => {
+      getFilenameList();
       getUsageOption();
     })
 
     /******************************
      ***** Element Init Func. *****
      ******************************/
+    const getFilenameList = () => {
+      const url = aibeesGlobal.API_SERVER_URL + '/account/import/list?type=CARD';
+      const callback = (res) => {
+        fileHashComboList.value = res.data;
+      }
+
+      axiosGet(url, callback);
+    }
+
     const getUsageOption = () => {
       const usageData = {};
       getResourceList('ACCOUNT', 'COMBO', 'USAGE')
@@ -109,7 +121,6 @@
         }
       });
       useTypeMap.value = usageData;
-      console.log(useTypeMap.value);
     }
 
     const dataSort = (type) => {
@@ -186,12 +197,12 @@
 
         const callback = (res) => {
           if(res.data.result == 'SUCCESS') {
-            console.log(res.data);
             selectImportedFileData(res.data.fileId);
           } else {
             document.getElementById('loading_bar').style.display='none';
             alert(res.data.message);
           }
+          getFilenameList();
         }
 
         document.getElementById('loading_bar').style.display='block';
@@ -201,11 +212,12 @@
     // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
       curFileHash = fileId;
-      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?fileId=" + fileId;
+      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list/card?fileId=" + fileId;
 
       const callback = (res) => {
         document.getElementById('loading_bar').style.display='none';
         dataList.value = res.data;
+        getFilenameList();
       }
 
       axiosGet(url, callback);
@@ -214,7 +226,7 @@
     // 기존에 조회했던 파일데이터 불러오기
     const selectData = () => {
       const fileHashId = document.getElementById('uploadedFileSelect').value;
-      alert(fileHashId);
+      selectImportedFileData(fileHashId);
     }
 
     // tmp 데이터 마스터 테이블로 이관
@@ -325,7 +337,7 @@
     }
     .buttons-right {
         button {
-            margin: 5px 20px;
+            margin: 5px 10px;
             height: 30px;
             padding: 2px 10px;
             border: none;
@@ -338,7 +350,6 @@
 
         button:hover {
             background-color: #2c2ccc;
-            border: 2px solid black;
         }
     }
   }

@@ -33,8 +33,6 @@
   });
 
   const getCardMenu = () => {
-    console.log("mockup : getCardMenu List");
-    //axiosGet(url, callback);
     menuList.value = [
       {
         'name': '전체조회',
@@ -51,21 +49,36 @@
       {
         'name': '통계2',
         'value': 'card_statistics'
+      },
+      {
+        'name': '돌아가기',
+        'value': 'back'
       }
     ]
   };
 
   const callMenu = (item) => {
-
     const to = item.value.split('_')[1];
-    router.push({
-      name: 'Card-' + to
-    })
+    
+    if(to === "excel") {
+      console.log("to Excel!!");
+      window.resizeTo(1200, 900);
+      console.log(window.outerWidth + ' / ' + window.outerHeight);
+    }
+
+    if(item.value == 'back') {
+      router.push( '/account' );
+    } else {
+      router.push({
+        name: 'Card-' + to
+      })
+    }
   }
 
 </script>
 
 <style lang="scss" scoped>
+
 
 .prevent-select {
   -webkit-user-select: none; /* Safari */
@@ -126,7 +139,6 @@
 
   .card-view {
     margin-left: 50px;
-    
   }
 }
 </style>

@@ -14,7 +14,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@@': path.resolve(__dirname, './public/sass')
+      '@@': path.resolve(__dirname, './public/sass'),
+      '@image': path.resolve(__dirname, './public/img')
     }
   },
   server: {
