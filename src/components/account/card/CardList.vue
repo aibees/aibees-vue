@@ -205,7 +205,8 @@
 
     const createDateValue = (obj) => {
         const mm = obj.getMonth()+1;
-        return obj.getFullYear()+'-'+(mm < 10 ?  '0' : '')+mm+'-'+obj.getDate();
+        const dd = obj.getDate();
+        return obj.getFullYear()+'-'+(mm < 10 ?  '0' : '')+mm+'-'+(dd < 10 ?  '0' : '')+dd;
     }
 </script>
 

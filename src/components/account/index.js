@@ -1,4 +1,5 @@
 import AccountHome from './AccountHome.vue'
+import AccountMain from './AccountMain.vue'
 import CardView from './card/CardView.vue'
 import CardUpload from './card/CardImport.vue'
 import CardList from './card/CardList.vue'
@@ -7,6 +8,7 @@ import BankView from './bank/BankView.vue'
 
 export default {
     AccountHome
+   ,AccountMain 
    ,CardView
        ,CardUpload
        ,CardList

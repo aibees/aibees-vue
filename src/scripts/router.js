@@ -26,6 +26,11 @@ const routes=[
         component: Account.AccountHome,
         children: [
             {
+                path: "",
+                name: "AccountHome",
+                component: Account.AccountMain
+            },
+            {
                 path: 'card',
                 name: "Card-Home",
                 component: Account.CardView,
@@ -49,6 +54,7 @@ const routes=[
             },
             {
                 path: 'bank',
+                name: 'Bank-Home',
                 component: Account.BankView
             }
         ]

@@ -1,25 +1,42 @@
 <template>
-  <router-view />
+  <div id="account" class="account">
+    <div class="back-image">
+      <img src="@image/account_backimg.jpg" />
+    </div>
+
+    <div class="main-page">
+      <div class="main-title">AibeesWorld</div>
+      <div class="main-subtitle">가계장부 및 통계페이지</div>
+
+      <div class="router-button">
+        <div class="buttons" @click="toRouter('bank')">은행내역관리</div>
+        <div class="buttons" @click="toRouter('card')">카드내역관리</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
-import { useRouter, onBeforeRouteUpdate } from "vue-router";
-import { useStore } from 'vuex';
+    import { onMounted } from 'vue';
+    import { useRouter, onBeforeRouteUpdate } from "vue-router";
+    import { useStore } from 'vuex';
 
-const sessionStore = useStore();
-const router = useRouter();
+    const sessionStore = useStore();
+    const router = useRouter();
 
-onMounted(() => {
-  console.log(sessionStore.getters.logined)
-})
-const toRouter = (r) => {
-  if(r == 'card') {
-    router.push({ name: 'Card-Home' })
-  } else {
-    location.href('/account');
-  }
-}
+    onMounted(() => {
+        console.log(sessionStore.getters.logined)
+    })
+
+    const toRouter = (r) => {
+    if(r == 'card') {
+        router.push({ name: 'Card-Home' })
+    } else if(r == 'bank') {
+        router.push({ name: 'Bank-Home' })
+    } else {
+        location.href('/account')
+    }
+    }
 </script>
 
 <style lang="scss" scoped>
