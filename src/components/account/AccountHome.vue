@@ -13,13 +13,6 @@ const router = useRouter();
 onMounted(() => {
   console.log(sessionStore.getters.logined)
 })
-const toRouter = (r) => {
-  if(r == 'card') {
-    router.push({ name: 'Card-Home' })
-  } else {
-    location.href('/account');
-  }
-}
 </script>
 
 <style lang="scss" scoped>

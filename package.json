@@ -17,6 +17,7 @@
     "chartjs-plugin-datalabels": "^2.2.0",
     "chartjs-plugin-doughnutlabel": "^2.0.3",
     "chartjs-plugin-labels": "^1.1.0",
+    "mitt": "^3.0.1",
     "node-macaddress": "^0.2.4",
     "os": "^0.1.2",
     "sass": "^1.49.8",

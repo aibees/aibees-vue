@@ -1,5 +1,5 @@
 <template>
-    <AccountHeader :prop_title=title />
+<AccountHeader :prop_title=title />
     <div id="loading_bar">
         Progressing....
     </div>
@@ -10,14 +10,13 @@
         <path d="M18 15l-6-6-6 6"/>
       </svg>
     </div>
-    <div class="cardImport">
+    <div class="bankImport">
       <div class="import-buttons">
         <div class="buttons-left">
             <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
-                <option value="HANACARD">하나카드</option>
-                <option value="SAMSUNGCARD">삼성카드</option>
-                <option value="SHINHANCARD">신한카드</option>
-                <option value="HYUNDAICARD">현대카드</option>
+                <option value="HANABANK">하나은행</option>
+                <option value="SHINHANBANK">신한은행</option>
+                <option value="KAKAOBANK">카카오뱅크</option>
             </select>
             <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
             <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
@@ -38,17 +37,17 @@
         <table class="import-table">
           <thead>
             <tr>
-              <th class="table-th" style="width: 180px;">카드명</th>
-              <th class="table-th" style="width: 150px;" @click="dataSort('date')">일자</th>
-              <th class="table-th" style="width: 90px;">승인번호</th>
-              <th class="table-th" style="width: 100px;">분류</th>
+              <th class="table-th" style="width: 150px;">일자</th>
+              <th class="table-th" style="width: 180px;">은행명</th>
+              <th class="table-th" style="width: 100px;">구분</th>
+              <th class="table-th" style="width: 100px;">입출여부</th>
               <th class="table-th" style="width: 100px;">금액</th>
-              <th class="table-th" style="width: 380px;" @click="dataSort('remark')">적요</th>
+              <th class="table-th" style="width: 380px;">적요</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(state, idx) in dataList" v-bind:key="state.approvNum" v-bind:id="idx">
-                <td>{{ state.cardNm }}</td>
+                <td>{{ state.bankNm }}</td>
                 <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
                 <td>{{ state.approvNum }}</td>
                 <td>
@@ -66,17 +65,16 @@
 </template>
 
 <script setup>
-
     // import declaration
     import { ref, onBeforeMount, onMounted } from 'vue'
     import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
     import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
     import AccountHeader from '../common/AccountHeader.vue';
-    
-  /******************************
-   ******* Const  Variable ******
-   ******************************/
-    const title = ref('카드내역 결제확정처리');
+
+    /******************************
+     ******* Const  Variable ******
+     ******************************/
+    const title = ref('은행거래 결제확정처리');
     const dataList = ref([]);
     const useTypeMap = ref({});
     const fileHashComboList = ref([]);
@@ -85,19 +83,20 @@
     let dateSortFlag = 'desc';
     let remarkSortFlag = 'desc';
 
+
     /******************************
      ******* Vue  Lift Cycle ******
      ******************************/
     onMounted(() => {
-      getFilenameList();
-      getUsageOption();
+    //   getFilenameList();
+    //   getUsageOption();
     })
 
     /******************************
      ***** Element Init Func. *****
      ******************************/
     const getFilenameList = () => {
-      const url = aibeesGlobal.API_SERVER_URL + '/account/import/list?type=CARD';
+      const url = aibeesGlobal.API_SERVER_URL + '/account/import/list?type=BANK';
       const callback = (res) => {
         fileHashComboList.value = res.data;
       }
@@ -121,43 +120,6 @@
         }
       });
       useTypeMap.value = usageData;
-    }
-
-    const dataSort = (type) => {
-      console.log("type : " + type);
-
-      if('date' === type) {
-        if('desc' == dateSortFlag) {
-          dateSortFlag = 'asc';
-        } else {
-          dateSortFlag = 'desc';
-        }
-        console.log("date flag : " + dateSortFlag);
-        dataList.value = dataList.value.sort((a, b) => {
-          if('desc' == dateSortFlag) {
-            return (a.ymd+a.times) >= (a.ymd+a.times);
-          } else {
-            return (a.ymd+a.times) < (a.ymd+a.times);
-          }
-        });
-      } else if('remark' === type) {
-        if('desc' == remarkSortFlag) {
-          remarkSortFlag = 'asc';
-        } else {
-          remarkSortFlag = 'desc';
-        }
-
-        console.log("remark flag : " + dateSortFlag);
-        dataList.value = dataList.value.sort((a, b) => {
-          if('desc' == remarkSortFlag) {
-            return a.remark >= b.remark;
-          } else {
-            return a.remark < b.remark;
-          }
-        });
-      } else {
-
-      }
     }
 
     /******************************
@@ -212,7 +174,7 @@
     // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
       curFileHash = fileId;
-      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list/card?fileId=" + fileId;
+      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list/bank?fileId=" + fileId;
 
       const callback = (res) => {
         document.getElementById('loading_bar').style.display='none';
@@ -258,7 +220,7 @@
           if(res.data.result == 'SUCCESS') {
             alert("저장 완료");
             dataList.value = [];
-            // link to card statement list
+            // link to bank statement list
           } else {
             console.log(res);
             alert("문제 발생");
@@ -276,6 +238,8 @@
         behavior: 'smooth'
       });
     }
+
+
 </script>
 
 <style lang="scss" scoped>
@@ -294,7 +258,7 @@
     bottom: 50px;
 }
 
-.cardImport {
+.bankImport {
   font-family: 'Nanum Barun Gothic';
   width: 1000px;
   border-left: 1px solid grey;

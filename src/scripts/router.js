@@ -36,6 +36,11 @@ const routes=[
                 component: Account.CardView,
                 children: [
                     {
+                        path: '',
+                        name: 'Card-main',
+                        component: Account.CardMain
+                    },
+                    {
                         path: 'list',
                         name: "Card-list",
                         component: Account.CardList
@@ -55,7 +60,19 @@ const routes=[
             {
                 path: 'bank',
                 name: 'Bank-Home',
-                component: Account.BankView
+                component: Account.BankView,
+                children: [
+                    {
+                        path: '',
+                        name: 'Bank-main',
+                        component: Account.BankMain
+                    },
+                    {
+                        path: 'excel',
+                        name: 'Bank-excel',
+                        component: Account.BankUpload
+                    }
+                ]
             }
         ]
     },

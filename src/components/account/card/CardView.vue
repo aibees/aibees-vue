@@ -35,20 +35,24 @@
   const getCardMenu = () => {
     menuList.value = [
       {
+        'name': '홈',
+        'value': 'card_main'
+      },
+      {
         'name': '전체조회',
         'value': 'card_list'
       },
       {
-        'name': '엑셀업로드',
+        'name': '결제확정처리',
         'value': 'card_excel'
       },
       {
-        'name': '통계1',
+        'name': '통계청',
         'value': 'card_statistics'
       },
       {
-        'name': '통계2',
-        'value': 'card_statistics'
+        'name': '카드관리',
+        'value': 'card_admin'
       },
       {
         'name': '돌아가기',
@@ -59,19 +63,11 @@
 
   const callMenu = (item) => {
     const to = item.value.split('_')[1];
-    
-    if(to === "excel") {
-      console.log("to Excel!!");
-      window.resizeTo(1200, 900);
-      console.log(window.outerWidth + ' / ' + window.outerHeight);
-    }
 
     if(item.value == 'back') {
       router.push( '/account' );
     } else {
-      router.push({
-        name: 'Card-' + to
-      })
+      router.push({ name: 'Card-' + to })
     }
   }
 
@@ -93,7 +89,7 @@
     left: 0;
     width: 50px;
     height: 100%;
-    background-color: rgb(0, 0, 50);
+    background-color: #3c495a;
 
     .burger {
       position: absolute;
@@ -112,12 +108,12 @@
           font-size: 13px;
           text-align: left;
           padding: 10px 0px 10px 7px;
-          border-bottom: 0.5px solid lightblue;
+          border-bottom: 0.5px solid lightgrey;
         }
 
         li:hover {
           background-color: white;
-          color: rgb(0, 0, 50);
+          color: #3c495a;
           font-weight: 800;
           cursor: pointer;
         }

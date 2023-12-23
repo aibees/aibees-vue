@@ -30,4 +30,10 @@ import { setRouterToApp } from './router'
 app.use(setRouterToApp())
 // ===========================
 
+// ===== Event Bus =====
+import mitt from 'mitt';
+const emitter = new mitt();
+app.provide('emitter', emitter);
+// =====================
+
 export default app

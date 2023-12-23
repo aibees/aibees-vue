@@ -28,7 +28,7 @@
 .header {
     display: flex;
     justify-content: space-between;
-    background-color: rgb(0, 0, 50);
+    background-color: #3c495a;
     width: 100%;
     height: 50px;
     .title {

@@ -90,9 +90,9 @@
             margin: 20px auto 30px;
 
             img {
-                width: inherit;
+                width: 50%;
                 height: auto;
-                margin-top: 40px;
+                margin: 40px auto 0;
             }
         }
     }

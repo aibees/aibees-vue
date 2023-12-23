@@ -18,21 +18,21 @@
 
 <script setup>
     import { onMounted } from 'vue';
-    import { useRouter, onBeforeRouteUpdate } from "vue-router";
+    import { useRouter } from "vue-router";
     import { useStore } from 'vuex';
 
     const sessionStore = useStore();
     const router = useRouter();
 
     onMounted(() => {
-        console.log(sessionStore.getters.logined)
+        console.log(sessionStore.getters.logined);
     })
 
     const toRouter = (r) => {
     if(r == 'card') {
-        router.push({ name: 'Card-Home' })
+        router.push({ name: 'Card-main' })
     } else if(r == 'bank') {
-        router.push({ name: 'Bank-Home' })
+        router.push({ name: 'Bank-main' })
     } else {
         location.href('/account')
     }
