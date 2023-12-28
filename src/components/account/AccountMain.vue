@@ -11,6 +11,7 @@
       <div class="router-button">
         <div class="buttons" @click="toRouter('bank')">은행내역관리</div>
         <div class="buttons" @click="toRouter('card')">카드내역관리</div>
+        <div class="buttons" @click="toRouter('setting')">환경설정</div>
       </div>
     </div>
   </div>
@@ -81,15 +82,18 @@
     .router-button {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-between;
+      flex-direction: row;
+      justify-content: center;
       border-top: 1px solid lightgrey;
       padding-top: 30px;
       margin: auto;
       width: 60%;
       
       .buttons {
+        width: 96px;
         background-color: rgb(134, 219, 160);
         padding: 8px 16px;
+        margin: 10px 4px;
         border: none;
         border-radius: 5px;
         cursor: pointer;

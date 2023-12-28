@@ -196,7 +196,7 @@
         data.append('file', fileInput.files[0]);
 
         const callback = (res) => {
-          if(res.data.result == 'SUCCESS') {
+          if(res.data.RESULT == 'SUCCESS') {
             selectImportedFileData(res.data.fileId);
           } else {
             document.getElementById('loading_bar').style.display='none';
@@ -212,11 +212,11 @@
     // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
       curFileHash = fileId;
-      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list/card?fileId=" + fileId;
+      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?type=CARD&fileId=" + fileId;
 
       const callback = (res) => {
         document.getElementById('loading_bar').style.display='none';
-        dataList.value = res.data;
+        dataList.value = res.data.data;
         getFilenameList();
       }
 

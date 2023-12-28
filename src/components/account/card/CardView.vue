@@ -52,7 +52,7 @@
       },
       {
         'name': '카드관리',
-        'value': 'card_admin'
+        'value': 'card_info'
       },
       {
         'name': '돌아가기',

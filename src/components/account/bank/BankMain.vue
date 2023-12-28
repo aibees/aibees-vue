@@ -1,8 +1,7 @@
 <template>
     <AccountHeader :prop_title=title />
     <div class="bankMain">
-        <div class="main-container">
-        </div>
+        hello
     </div>
 </template>
 

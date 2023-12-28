@@ -16,7 +16,8 @@
     const submitCardText = () => {
         const txt = document.getElementById('card-daily-text').value;
         const data ={
-            'text': txt
+            'text': txt,
+            'type': "CARD"
         };
         const url = aibeesGlobal.API_SERVER_URL + '/account/card/paytext';
         const callback = (res) => {

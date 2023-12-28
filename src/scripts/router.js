@@ -54,6 +54,11 @@ const routes=[
                         path: 'statistics',
                         name: "Card-statistics",
                         component: Account.CardStatistics
+                    },
+                    {
+                        path: 'info',
+                        name: "Card-info",
+                        component: Account.CardInfo
                     }
                 ]
             },

@@ -1,67 +1,67 @@
 <template>
-<AccountHeader :prop_title=title />
-    <div id="loading_bar">
-        Progressing....
-    </div>
-    <div id="toTopButton" @click="toTop()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-           stroke="#4a5568"
-           stroke-width="1" stroke-linecap="square" stroke-linejoin="arcs">
-        <path d="M18 15l-6-6-6 6"/>
-      </svg>
-    </div>
-    <div class="bankImport">
-      <div class="import-buttons">
-        <div class="buttons-left">
-            <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
-                <option value="HANABANK">하나은행</option>
-                <option value="SHINHANBANK">신한은행</option>
-                <option value="KAKAOBANK">카카오뱅크</option>
-            </select>
-            <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
-            <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
-            <div><input type="text" id="importfileText" onfocus="this.blur();" style="width: 300px; height: 30px; border: 0px; background-color:transparent; margin-left: 20px; margin-top: 4px;" readonly /></div>
-            <div style="display: none"><input type="file" id="fileUploadInput" @change="putFileName();" /></div>
-        </div>
-        <div class="buttons-right">
-            <select id="uploadedFileSelect">
-              <option value=""></option>
-              <option v-for="opt in fileHashComboList" :key="opt.fileId" :value="opt.fileId">{{ opt.fileName }}</option>
-            </select>
-            <button @click="selectData()">조회</button>
-            <button @click="selectData()">임시저장</button>
-            <button @click="transferData()">제출</button>
-        </div>
+  <AccountHeader :prop_title=title />
+  <div id="loading_bar">
+      Progressing....
+  </div>
+  <div id="toTopButton" @click="toTop()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+          stroke="#4a5568"
+          stroke-width="1" stroke-linecap="square" stroke-linejoin="arcs">
+      <path d="M18 15l-6-6-6 6"/>
+    </svg>
+  </div>
+  <div class="bankImport">
+    <div class="import-buttons">
+      <div class="buttons-left">
+          <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
+              <option value="HANABANK">하나은행</option>
+              <option value="SHINHANBANK">신한은행</option>
+              <option value="KAKAOBANK">카카오뱅크</option>
+          </select>
+          <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
+          <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
+          <div><input type="text" id="importfileText" onfocus="this.blur();" style="width: 300px; height: 30px; border: 0px; background-color:transparent; margin-left: 20px; margin-top: 4px;" readonly /></div>
+          <div style="display: none"><input type="file" id="fileUploadInput" @change="putFileName();" /></div>
       </div>
-      <div class="import-rows">
-        <table class="import-table">
-          <thead>
-            <tr>
-              <th class="table-th" style="width: 150px;">일자</th>
-              <th class="table-th" style="width: 180px;">은행명</th>
-              <th class="table-th" style="width: 100px;">구분</th>
-              <th class="table-th" style="width: 100px;">입출여부</th>
-              <th class="table-th" style="width: 100px;">금액</th>
-              <th class="table-th" style="width: 380px;">적요</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(state, idx) in dataList" v-bind:key="state.approvNum" v-bind:id="idx">
-                <td>{{ state.bankNm }}</td>
-                <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
-                <td>{{ state.approvNum }}</td>
-                <td>
-                    <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" >
-                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="`option == ${state.usageCd}`" :style="{ 'background-color': usage.color}">{{ usage.name }}</option>
-                    </select>
-                </td>
-                <td style="text-align: right;">￦ <strong>{{ state.amount }}</strong>원</td>
-                <td class="text-remark"><input :id="`state-remark_${idx}`" :value="state.remark" style="width: 80%; height: 30px; background-color: white; border: none;"/></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="buttons-right">
+          <select id="uploadedFileSelect" style="width: 250px;">
+            <option value=""></option>
+            <option v-for="opt in fileHashComboList" :key="opt.fileId" :value="opt.fileId">{{ opt.fileName }}</option>
+          </select>
+          <button @click="selectData()">조회</button>
+          <button @click="selectData()">임시저장</button>
+          <button @click="transferData()">제출</button>
       </div>
     </div>
+    <div class="import-rows">
+      <table class="import-table">
+        <thead>
+          <tr>
+            <th class="table-th" style="width: 180px;">은행명</th>
+            <th class="table-th" style="width: 150px;">일자</th>
+            <th class="table-th" style="width: 100px;">구분</th>
+            <th class="table-th" style="width: 100px;">입출여부</th>
+            <th class="table-th" style="width: 100px;">금액</th>
+            <th class="table-th" style="width: 380px;">적요</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(state, idx) in dataList" v-bind:key="idx" v-bind:id="idx">
+              <td>{{ state.bankNm }}</td>
+              <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
+              <td>
+                  <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" :style="{ 'background-color': '#' + state.usageColor}">
+                      <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="usage.value == `${state.usageCd}`" :style="{ 'background-color': usage.color}">{{ usage.name }}</option>
+                  </select>
+              </td>
+              <td>{{ state.entryNm }}</td>
+              <td style="text-align: right;">￦ <strong>{{ state.amount }}</strong>원</td>
+              <td class="text-remark"><input :id="`state-remark_${idx}`" :value="state.remark" style="width: 80%; height: 30px; background-color: white; border: none;"/></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -88,8 +88,8 @@
      ******* Vue  Lift Cycle ******
      ******************************/
     onMounted(() => {
-    //   getFilenameList();
-    //   getUsageOption();
+      getFilenameList();
+      getUsageOption();
     })
 
     /******************************
@@ -158,7 +158,7 @@
         data.append('file', fileInput.files[0]);
 
         const callback = (res) => {
-          if(res.data.result == 'SUCCESS') {
+          if(res.data.RESULT == 'SUCCESS') {
             selectImportedFileData(res.data.fileId);
           } else {
             document.getElementById('loading_bar').style.display='none';
@@ -174,11 +174,12 @@
     // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
       curFileHash = fileId;
-      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list/bank?fileId=" + fileId;
+      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?type=BANK&fileId=" + fileId;
 
       const callback = (res) => {
         document.getElementById('loading_bar').style.display='none';
-        dataList.value = res.data;
+        dataList.value = res.data.data;
+        console.log(dataList.value);
         getFilenameList();
       }
 
@@ -212,12 +213,13 @@
         // send to Server
         const url = aibeesGlobal.API_SERVER_URL + '/account/transfer';
         const reqData = {
+          'type' : document.getElementById('uploadTypeSelect').value,
           'data' : dataList.value,
           'fileHash' : curFileHash
         }
         const callback = (res) => {
           document.getElementById('loading_bar').style.display='none';
-          if(res.data.result == 'SUCCESS') {
+          if(res.data.RESULT == 'SUCCESS') {
             alert("저장 완료");
             dataList.value = [];
             // link to bank statement list
@@ -225,6 +227,7 @@
             console.log(res);
             alert("문제 발생");
           }
+          getFilenameList();
         }
         console.log(reqData);
         document.getElementById('loading_bar').style.display='block';
@@ -261,9 +264,11 @@
 .bankImport {
   font-family: 'Nanum Barun Gothic';
   width: 1000px;
+  height: 90vh;
   border-left: 1px solid grey;
   border-right: 1px solid grey;
   margin: 0 auto 60px;
+  overflow: auto;
 
   .select-transparent {
     text-align: center;

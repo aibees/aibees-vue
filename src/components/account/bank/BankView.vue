@@ -35,7 +35,11 @@
   const getBankMenu = () => {
     menuList.value = [
       {
-        'name': '전체조회',
+        'name': '홈',
+        'value': 'bank_main'
+      },
+      {
+        'name': '조회',
         'value': 'bank_list'
       },
       {

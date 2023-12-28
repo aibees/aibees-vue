@@ -106,6 +106,8 @@
         document.getElementById('toDate').value = createDateValue(today);
         today.setMonth(today.getMonth()-1);
         document.getElementById('fromDate').value = createDateValue(today);
+
+        searchData();
     });
 
     /******************************
@@ -128,7 +130,7 @@
             statementList.value = res.data;
         }
 
-        document.querySelector('.card-list-option').classList.toggle('active');
+        document.querySelector('.card-list-option').classList.remove('active');
         axiosPost(url, param, callback);
     }
 
