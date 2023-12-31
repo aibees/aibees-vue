@@ -52,8 +52,8 @@
                 <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
                 <td>{{ state.approvNum }}</td>
                 <td>
-                    <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" >
-                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="`option == ${state.usageCd}`" :style="{ 'background-color': usage.color}">{{ usage.name }}</option>
+                    <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" :style="{ 'background-color': '#' + state.usageColor}" >
+                        <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="usage.value == `${state.usageCd}`" :style="{ 'background-color': usage.color}">{{ usage.name }}</option>
                     </select>
                 </td>
                 <td style="text-align: right;">￦ <strong>{{ state.amount }}</strong>원</td>
@@ -250,18 +250,19 @@
         // send to Server
         const url = aibeesGlobal.API_SERVER_URL + '/account/transfer';
         const reqData = {
+          'type' : 'CARD',
           'data' : dataList.value,
           'fileHash' : curFileHash
         }
         const callback = (res) => {
           document.getElementById('loading_bar').style.display='none';
-          if(res.data.result == 'SUCCESS') {
+          if(res.data.RESULT == 'SUCCESS') {
             alert("저장 완료");
             dataList.value = [];
             // link to card statement list
           } else {
             console.log(res);
-            alert("문제 발생");
+            alert("문제 발생" + " / " + res.data.message);
           }
         }
         console.log(reqData);
