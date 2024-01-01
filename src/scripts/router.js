@@ -76,6 +76,16 @@ const routes=[
                         path: 'excel',
                         name: 'Bank-excel',
                         component: Account.BankUpload
+                    },
+                    {
+                        path: 'closing',
+                        name: 'Bank-closing',
+                        component: Account.BankClose
+                    },
+                    {
+                        path: 'closing',
+                        name: 'Bank-statistics',
+                        component: Account.BankClose
                     }
                 ]
             }

@@ -47,11 +47,11 @@
         'value': 'bank_excel'
       },
       {
-        'name': '통계1',
-        'value': 'bank_statistics'
+        'name': '월별 회계결산',
+        'value': 'bank_closing'
       },
       {
-        'name': '통계2',
+        'name': '통장통계',
         'value': 'bank_statistics'
       },
       {

@@ -9,6 +9,8 @@ import CardInfo from './card/CardInfo.vue'
 import BankView from './bank/BankView.vue'
 import BankMain from './bank/BankMain.vue'
 import BankUpload from './bank/BankImport.vue'
+import BankClose from './bank/BankClose.vue'
+import BankStatistics from './bank/BankStatistics.vue'
 
 export default {
     AccountHome
@@ -22,4 +24,6 @@ export default {
    , BankView
        ,BankMain
        ,BankUpload
+       ,BankClose
+       ,BankStatistics
 }
