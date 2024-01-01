@@ -43,7 +43,7 @@
                                                 지난달 잔금 : <strong>{{ closeData.lastAmt }} 원</strong>
                                             </div>
                                             <div style="width: fit-content">
-                                                <button disabled>확정하기</button>
+                                                <button class="confirm-btn" disabled>확정하기</button>
                                             </div>
                                         </div>
                                     </th>
@@ -213,8 +213,24 @@
 
     }
 
-    const checkData = (data) => {
-        alert("check");
+    const checkData = (param) => {
+        console.log(param);
+        const url = aibeesGlobal.API_SERVER_URL + "/close/detail";
+        const data = {
+            'type': 'BANK',
+            'bankId': param.bankId,
+            'entryCd': param.entryCd,
+            'usageCd': param.usageCd,
+            'ym': param.ym
+        }
+        const callback = (res) => {
+            if("SUCCESS" == res.data.RESULT) {
+                console.log(res.data.DATA)
+            } else {
+                alert(res.data.message);
+            }
+        }
+        axiosPost(url, data, callback);
     }
 </script>
 
@@ -230,6 +246,10 @@ button {
     color: white;
     font-weight: 750;
     cursor: pointer;
+}
+
+.confirm-btn {
+    background-color: #7a7aa6;
 }
 .bank-close {
     width: 88vw;
