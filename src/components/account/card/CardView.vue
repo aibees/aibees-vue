@@ -5,10 +5,15 @@
         <font-awesome-icons :icon="['fa-solid', 'fa-bars']" />
       </div>
       <div class="menuList">
-        <ul>
-          <li v-for="(item) in menuList" v-bind:key="item.value" class="menu-item prevent-select" @click="callMenu(item)">
+        <ul v-for="item in menuList" :key="item.value">
+          <li class="menu-item prevent-select" @click="clickMenu(item)">
             {{ item.name }}
           </li>
+          <ul style="margin-block-left: 1em; display: none;" name="sub-menu" :id="`sub-menu-${item.value}`">
+            <li v-for="subItem in item.child" v-bind:key="subItem.value" class="menu-item prevent-select" style="margin-left: 10px; background-color: #6f8097;" @click="clickMenu(subItem)">
+              {{ subItem.name }}
+            </li>
+          </ul>
         </ul>
       </div>
     </div>
@@ -48,7 +53,17 @@
       },
       {
         'name': '통계청',
-        'value': 'card_statistics'
+        'value': 'card_statistics',
+        'child': [
+          {
+            'name': '도넛통계',
+            'value': 'card_statistics'
+          },
+          {
+            'name': '막대그래프통계',
+            'value': 'card_statistics'
+          }
+        ]
       },
       {
         'name': '카드관리',
@@ -61,13 +76,37 @@
     ]
   };
 
-  const callMenu = (item) => {
+  const clickMenu = (item) => {
+    if(item.child != null) {
+      openSubMenu(item);
+      return false;
+    }
+
     const to = item.value.split('_')[1];
 
     if(item.value == 'back') {
       router.push( '/account' );
     } else {
       router.push({ name: 'Card-' + to })
+    }
+  }
+
+  const openSubMenu = (item) => {
+    const submenuObj = document.getElementById('sub-menu-' + item.value);
+
+    if(submenuObj.style.display == 'block') {
+      submenuObj.style.display = 'none';
+      return false;
+    }
+
+    // 전체 none
+    document.getElementsByName('sub-menu').forEach(sub => {
+      sub.style.display = 'none';
+    });
+
+    // 여기서 item은 sub의 item이 아니라 parent의 item임
+    if(submenuObj.style.display == 'none') {
+      submenuObj.style.display = 'block';
     }
   }
 
@@ -100,10 +139,13 @@
 
     .menuList {
       display: none;
+      margin-top: 50px;
+
 
       ul {
         list-style: none;
         padding-inline: 0px;
+        margin-block: 0px;
         li {
           font-size: 13px;
           text-align: left;

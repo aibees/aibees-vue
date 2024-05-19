@@ -26,13 +26,14 @@
         </div>
         <div class="bank-close-container">
             <ul>
+                <!-- 은행 구분항목 별 수입 및 지출 검토 -->
                 <li v-for="(closeData, idx) in closeDataList" :key="closeData.bankId">
                     <div :id="`close_${idx}`" class="bank-close-data">
                         <table class="usage-table">
                             <thead>
                                 <tr>
                                     <th colspan="4" class="acc">
-                                        <div class="acc-container">
+                                        <div class="acc-container"> <!-- 누적금액 표시 -->
                                             <div style="width: fit-content; padding-top: 10px">
                                                 {{ closeData.bankNm }}
                                             </div>
@@ -43,7 +44,9 @@
                                                 지난달 잔금 : <strong>{{ closeData.lastAmt }} 원</strong>
                                             </div>
                                             <div style="width: fit-content">
-                                                <button :id="`closeBtn_${idx}`" class="confirm-btn" :disabled="`${closeData.closeFlag}` != 'Y'" :style="{ 'background-color' : `${closeData.closeColor}`}" @click="processClose(closeData, idx)">확정하기</button>
+                                                <button :id="`closeBtn_${idx}`" class="confirm-btn" :disabled="`${closeData.completeDisabledFlag}` == 'Y'" :style="{ 'background-color' : `${closeData.closeColor}`}" @click="processClose(closeData, idx)">
+                                                    {{ closeData.completeBtn }}
+                                                </button>
                                             </div>
                                         </div>
                                     </th>
@@ -57,7 +60,7 @@
                             </thead>
                             <tbody>
                                 <tr v-for="(profit, pidx) in closeData.profitData" :id="`profit_${idx}_${pidx}`" :key="`profit_${idx}_${pidx}`" style="background-color: #dffdf8">
-                                    <td :rowspan="`(${closeData.profitSize > 1})? ${closeData.profitSize}: 1`"><input type="hidden" :id="`entryCd_${idx}_${pidx}`" :value="profit.entryCd" />수입</td>
+                                    <td><input type="hidden" :id="`entryCd_${idx}_${pidx}`" :value="profit.entryCd" />수입</td>
                                     <td>{{ profit.usageNm }}</td>
                                     <td class="amount">+{{ profit.amount }} 원</td>
                                     <td class="check" @click="checkData(profit, idx, pidx)">{{  profit.confirmMsg  }}</td>
@@ -76,7 +79,7 @@
                                     </td>
                                 </tr>
                                 <tr v-for="(loss, lidx) in closeData.lossData" :id="`loss_${idx}_${lidx}`" :key="`loss_${idx}_${lidx}`" style="background-color: #ffdddd">
-                                    <td :rowspan="`(${closeData.lossSize > 1})? ${closeData.lossSize}: 1`"><input type="hidden" :id="`entryCd_${idx}_${lidx}`" :value="loss.entryCd" />지출</td>
+                                    <td><input type="hidden" :id="`entryCd_${idx}_${lidx}`" :value="loss.entryCd" />지출</td>
                                     <td>{{ loss.usageNm }}</td>
                                     <td class="amount">-{{ loss.amount }} 원</td>
                                     <td class="check" @click="checkData(loss, idx, lidx)">{{  loss.confirmMsg  }}</td>
@@ -146,8 +149,8 @@
                                     <td>{{detail.times}}</td>
                                     <td>{{detail.amount}}</td>
                                     <td>{{detail.remark}}</td>
-                                    <td><input :id="`confirm_${idx}_${dIdx}`" type="checkbox" :checked="`${detail.confirmStatus}` == 'CONFIRM'" /></td>
-                                    <td><input :id="`waste_${idx}_${dIdx}`" type="checkbox" :checked="`${detail.wasteCheck}` == 'Y'"/></td>
+                                    <td><input :id="`confirm_${idx}_${dIdx}`" type="checkbox" v-model="detail.confirmStatus" /></td>
+                                    <td><input :id="`waste_${idx}_${dIdx}`" type="checkbox" v-model="detail.wasteCheck"/></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -193,7 +196,7 @@
             if(res.data.RESULT == 'SUCCESS') {
                 closeDataList.value = res.data.DATA;
 
-                closeDataList.value.forEach((close, idx) => {
+                closeDataList.value.forEach((close) => {
                     close.limitAmt = addComma(close.limitAmt);
 
                     if(typeof close.profitAcc  != 'undefined')
@@ -229,15 +232,24 @@
                             if(line.confirmCnt != line.count) {
                                 canClose = false;
                             }
+                            
                         });
                         if(canClose) {
                             close['closeFlag'] = 'Y';
                             close['closeColor'] = '#000032';
                         }
                     }
+                    if(typeof close.completeFlag != 'undefined' && close.completeFlag == 'Y') {
+                        close['closeColor'] = '#002bff';
+                    }
 
+                    if(close.completeFlag == 'Y' || close.closeFlag != 'Y') { // 확정이 완료된 건이거나 검토가 완료되지 않은 건은 disabled
+                        close['completeDisabledFlag'] = 'Y';
+                    } else {
+                        close['completeDisabledFlag'] = 'N';
+                    }
                 });
-
+                
             } else {
                 alert(res.data.RESULT + " / " + res.data.message);
             }
@@ -270,7 +282,7 @@
             alert("모두 확정체크 해주세요");
             return false;
         } else {
-            const confirmAlert = confirm("확정하시겠습니까?");
+            const confirmAlert = confirm("검토 완료하시겠습니까?");
             if(confirmAlert) {
                 const url = aibeesGlobal.API_SERVER_URL + "/close/detail"
                 const data = {
@@ -313,16 +325,25 @@
         if(confirm("확정하시겠습니까")) {
             const url = aibeesGlobal.API_SERVER_URL + "/close/confirm";
             const callback = (res) => {
-                if(res.data.status == 200) {
+                console.log(res);
+                if(res.status == 200) {
                     const btnObj = document.getElementById('closeBtn_'+idx);
                     btnObj.textContent = '확정완료'
                     btnObj.style.backgroundColor = '#7a7aa6';
+
+                    selectData();
                 }
             }
             axiosPost(url, confirmData, callback);
         }
     }
 
+    /**
+     * 항목 별 검토하기 누를 시 디테일 조회 및 하단 검토화면 노출
+     * @param param :해당항목 라인데이터
+     * @param idx :은행 별 idx
+     * @param didx :은행데이터 안에서 라인 별 idx
+     */
     const checkData = (param, idx, didx) => {
         const entryCd = param.entryCd;
         let trPrefix;
@@ -332,17 +353,20 @@
             trPrefix = 'loss';
         }
 
+        // 각 은행에 대한 closeDetail이 있기에 다른 은행 선택 시 남아있는 경우가 있어서 모두 display none 처리 후 선택된 detail 창을 노출
         document.getElementsByName('close-detail').forEach(d => d.style.display = 'none');
         document.getElementById('detail_'+idx).style.display = 'block';
 
-        if(param.count == param.confirmCnt) {
+        // 검토완료 버튼 활성화 여부
+        if(param.count == param.confirmCnt) { // 모두 검토 완료되었으면
             document.getElementById('detailCheckBtn_'+idx).disabled = true;
             document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#7a7aa6';
-        } else {
+        } else { // 검토 진행 중이라면
             document.getElementById('detailCheckBtn_'+idx).disabled = false;
             document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#000032';
         }
 
+        // 검토대상 디테일리스트 조회
         const url = aibeesGlobal.API_SERVER_URL + "/close/detail/list";
         const data = {
             'type': 'BANK',
@@ -352,13 +376,11 @@
             'ym': param.ym
         }
         const callback = (res) => {
-            if("SUCCESS" == res.data.RESULT) {
+            if("SUCCESS" == res.data.RESULT) { // 정상적으로 조회해왔다면
                 closeDetailList.value = res.data.DATA;
+                console.log("closeDetailList : ");
+                console.log(closeDetailList.value);
 
-                for(let i = 0; i < res.data.DATA.length; i++) {
-                    document.getElementById('confirm_'+idx+'_'+i).readOnly = true;
-                    document.getElementById('waste_'+idx+'_'+i).readOnly = true;
-                }
             } else {
                 alert(res.data.message);
             }

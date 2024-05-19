@@ -51,9 +51,14 @@ const routes=[
                         component: Account.CardUpload
                     },
                     {
-                        path: 'statistics',
-                        name: "Card-statistics",
-                        component: Account.CardStatistics
+                        path: 'statics1',
+                        name: "Card-statistics-doughnut",
+                        component: Account.CardStaticsDoughnutByUsage
+                    },
+                    {
+                        path: 'statics2',
+                        name: "Card-statistics-line-amount",
+                        component: Account.CardStaticsLineWithAmount
                     },
                     {
                         path: 'info',
@@ -86,6 +91,11 @@ const routes=[
                         path: 'closing',
                         name: 'Bank-statistics',
                         component: Account.BankClose
+                    },
+                    {
+                        path: 'info',
+                        name: "Bank-info",
+                        component: Account.BankInfo
                     }
                 ]
             }

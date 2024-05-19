@@ -55,6 +55,10 @@
         'value': 'bank_statistics'
       },
       {
+        'name': '통장정보',
+        'value': 'bank_info'
+      },
+      {
         'name': '돌아가기',
         'value': 'back'
       }

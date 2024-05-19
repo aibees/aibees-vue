@@ -4,9 +4,9 @@ const url = aibeesGlobal.API_SERVER_URL + "/master/detail"
 
 const getResourceList = (depart, category, title) => {
     const data = {
-        'depart': depart,
-        'category' : category,
-        'title' : title
+        'mainCategory': depart,
+        'subCategory' : category,
+        'hCode' : title
     }
 
     let result = [];
@@ -14,12 +14,14 @@ const getResourceList = (depart, category, title) => {
     $.ajax({
         'method': 'POST',
         'url' : url,
-        'data': data,
+        'data': JSON.stringify(data),
         'async': false,
-        'content-type': 'application/json',
+        'headers' : {
+            'content-type': 'application/json'
+        },
         'dataType': 'json',
         'success': function(res) {
-            result = res;
+            result = res.data;
         },
         'failed': function(err) {
             alert(err);

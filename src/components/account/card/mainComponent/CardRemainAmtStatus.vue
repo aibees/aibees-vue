@@ -11,7 +11,8 @@
                 <div class="card-used card-desc">사용금액 : <strong>{{ remain.usedAmt }}</strong> / {{ remain.limitedAmt }} 원 ({{ remain.usedPercentage }}%)</div>
                 
                 <div class="percentage">
-                    <div class="percentage-active" :style="{'width':remain.usedPercentage+'%'}">{{ remain.usedPercentage }}%</div>
+                    <div class="percentage-value">{{ remain.usedPercentage }}%</div>
+                    <div class="percentage-active" :style="{'width':remain.usedPercentage+'%', 'background-color':remain.backColor}"></div>
                 </div>
             </div>
         </div>
@@ -38,10 +39,21 @@
         const url = aibeesGlobal.API_SERVER_URL + "/account/card/status";
         const callback = (res) => {
             remainData.value = res.data;
-            remainData.value.forEach(data => {
-                data.remainAmt = addComma(data.remainAmt);
-                data.usedAmt = addComma(data.usedAmt);
-                data.limitedAmt = addComma(data.limitedAmt);
+            remainData.value.forEach(remain => {
+                remain.remainAmt = addComma(remain.remainAmt);
+                remain.usedAmt = addComma(remain.usedAmt);
+                remain.limitedAmt = addComma(remain.limitedAmt);
+                
+                const percentage = remain.usedPercentage;
+                if(percentage <= 33) {
+                    remain['backColor'] = 'green';
+                } else if(percentage <= 66) {
+                    remain['backColor'] = 'yellow';
+                } else if(percentage <= 100) {
+                    remain['backColor'] = 'red';
+                } else {
+                    remain['backColor'] = '#7a2b2b';
+                }
             })
         }
         axiosGet(url, callback);
@@ -73,6 +85,7 @@
             margin-bottom: 20px;
 
             .percentage {
+                position: relative;
                 width: 90%;
                 height: 30px;
                 margin: 10px auto;
@@ -80,6 +93,12 @@
                 border: 1px solid lightgrey;
                 overflow: hidden;
 
+                .percentage-value {
+                    position: absolute;
+                    top: 6px;
+                    left: 10px;
+                    font-weight: 650;
+                }
                 .percentage-active {
                     height: 30px;
                     font-weight: 700;

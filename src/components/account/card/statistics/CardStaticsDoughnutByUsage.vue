@@ -27,7 +27,7 @@
     import chartjsPluginDatalabels from "chartjs-plugin-datalabels";
     import { Chart, registerables } from 'chart.js';
 
-    import AccountHeader from '../common/AccountHeader.vue';
+    import AccountHeader from '../../common/AccountHeader.vue';
   
     // don't forget to use register
     Chart.register(...registerables, chartjsPluginDatalabels);
