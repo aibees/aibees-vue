@@ -6,11 +6,15 @@
             <button class="buttons" @click="saveData()">저장</button>
         </div>
         <div class="cardinfo-container">
+<<<<<<< HEAD
             <button @click="apiTest()">apiTest</button>
+=======
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
             <table id="cardinfo-table">
                 <thead>
                     <th style="width:70px">계좌ID</th>
                     <th style="width:200px">계좌명</th>
+<<<<<<< HEAD
                     <th style="width:120px">계좌번호</th>
                     <th style="width:90px">계좌유형</th>
                     <th style="width:90px">시작일</th>
@@ -20,11 +24,24 @@
                     <tr v-for="(data, idx) in dataList" :key="data.cardNo">
                         <td :id="`cardNo_${idx}`" class="cardNo">{{ data.cardNo }}</td>
                         <td><input :id="`cardName_${idx}`" :value="`${data.cardName}`" /></td>
+=======
+                    <th style="width:120px">은행</th>
+                    <th style="width:90px">유형</th>
+                    <th style="width:150px">사용한도</th>
+                    <th style="width:100px">사용시작일자</th>
+                    <th style="width:100px">사용여부</th>
+                </thead>
+                <tbody>
+                    <tr v-for="(data, idx) in dataList" :key="data.bankId">
+                        <td :id="`bankId_${idx}`" class="bankId">{{ data.bankId }}</td>
+                        <td><input :id="`bankName_${idx}`" :value="`${data.bankNm}`" /></td>
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
                         <td>
                             <select :id="`bankCd_${idx}`">
                                 <option v-for="bank in bankOptionList" :key="bank.value" :value="bank.value" :selected="bank.value == `${data.bankCd}`">{{ bank.name }}</option>
                             </select>
                         </td>
+<<<<<<< HEAD
                         <td>{{ data.deadlineDate }}일</td>
                         <td>{{ data.paymentDate }}일</td>
                         <td><input :id="`expiredYm_${idx}`" type="month" :value="`${data.expiredYm}`" /></td>
@@ -34,17 +51,25 @@
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.creditYn}`">{{ yn.name }}</option>
                             </select>
                         </td>
+=======
+                        <td><input :id="`bankType_${idx}`" :value="`${data.bankType}`" /></td>
+                        <td><input :id="`limitAmt_${idx}`" :value="`${data.limitAmt}`" style="width: 80%; text-align: right" /> 원</td>
+                        <td><input :id="`startDate_${idx}`" :value="`${data.startDate}`"/></td>
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
                         <td>
                             <select :id="`useYn_${idx}`">
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.useYn}`">{{ yn.name }}</option>
                             </select>
                         </td>
+<<<<<<< HEAD
                         <td>
                             <select :id="`selectedMain_${idx}`">
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.selectedMain}`">{{ yn.name }}</option>
                             </select>
                         </td>
                         <td><input :id="`company_${idx}`" :value="`${data.company}`" /></td>
+=======
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
                     </tr>
                 </tbody>
             </table>
@@ -62,14 +87,22 @@
     /******************************
      ******* Const  Variable ******
      ******************************/
+<<<<<<< HEAD
     const title = ref('카드정보관리');
+=======
+    const title = ref('계좌정보관리');
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
     const dataList = ref([]);
     const bankOptionList = ref([]);
     const ynOptionList = ref([{'value': 'Y', 'name': 'Y'}, {'value': 'N', 'name': 'N'}]);
 
     onMounted(() => {
         getBankCdOptionList();
+<<<<<<< HEAD
         getCardInfoList();
+=======
+        getBankInfoList();
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
     });
 
     const getBankCdOptionList = () => {
@@ -81,6 +114,7 @@
         ]
     }
 
+<<<<<<< HEAD
     const getCardInfoList = () => {
         const url = aibeesGlobal.API_SERVER_URL + "/account/info/list";
         const data = {
@@ -89,15 +123,32 @@
         const callback = (res) => {
             if(res.data.RESULT == 'SUCCESS') {
                 dataList.value = res.data.DATA
+=======
+    const getBankInfoList = () => {
+        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/info/list";
+
+        const callback = (res) => {
+            console.log(res.data);
+            if(res.data.message == 'SUCCESS') {
+                dataList.value = res.data.data
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
             } else {
                 alert(res.data.message);
             }
         }
+<<<<<<< HEAD
         axiosPost(url, data, callback);
     }
 
     const selectData = () => {
         getCardInfoList();
+=======
+        axiosGet(url, callback);
+    }
+
+    const selectData = () => {
+        getBankInfoList();
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
     }
 
     const saveData = () => {
@@ -136,6 +187,7 @@
         }
         axiosPost(url, data, callback);
     }
+<<<<<<< HEAD
 
     const apiTest = () => {
         const url = "https://api.aibeesworld.com/product/main/best";
@@ -145,6 +197,8 @@
 
         axiosGet(url, callback);
     }
+=======
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
 </script>
 
 <style lang="scss" scoped>
@@ -178,8 +232,13 @@
     }
 
     .cardinfo-container {
+<<<<<<< HEAD
         table {
             width: fit-content;
+=======
+        #cardinfo-table {
+            width: 100%;
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
             border-spacing: 0px;
             border-collapse: collapse;
             th {

@@ -13,10 +13,9 @@
   <div class="bankImport">
     <div class="import-buttons">
       <div class="buttons-left">
-          <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
-              <option value="HANABANK">하나은행</option>
-              <option value="SHINHANBANK">신한은행</option>
-              <option value="KAKAOBANK">카카오뱅크</option>
+          <select id="uploadType3Select" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
+              <option value="81">하나은행</option>
+              <option value="88">신한은행</option>
           </select>
           <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
           <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
@@ -78,6 +77,7 @@
     const dataList = ref([]);
     const useTypeMap = ref({});
     const fileHashComboList = ref([]);
+    const bankSelectList = ref([]);
 
     let curFileHash = '';
     let dateSortFlag = 'desc';
@@ -89,6 +89,7 @@
      ******************************/
     onMounted(() => {
       getFilenameList();
+      getBankSelectList();
       getUsageOption();
     })
 
@@ -96,16 +97,28 @@
      ***** Element Init Func. *****
      ******************************/
     const getFilenameList = () => {
-      const url = aibeesGlobal.API_SERVER_URL + '/account/import/list?type=BANK';
+      const url = aibeesGlobal.API_SERVER_URL + '/account/common/import/list?type=BANK';
       const callback = (res) => {
-        fileHashComboList.value = res.data;
+        fileHashComboList.value = res.data.data;
       }
+      axiosGet(url, callback);
+    }
 
+    const getBankSelectList = () => {
+      const callback = (res) => {
+        bankSelectList.value = res.data;
+      }
+      return getBankOption('BANK_SELECT', callback);
+    }
+
+    const getBankOption = (tag, callback) => {
+      const url = aibeesGlobal.API_SERVER_URL + '/account/bank/option?tag=' + tag;
       axiosGet(url, callback);
     }
 
     const getUsageOption = () => {
       const usageData = {};
+
       getResourceList('ACCOUNT', 'COMBO', 'USAGE')
       .forEach(data => {
         let usageColor = '#FFFFFF';
@@ -113,9 +126,9 @@
           usageColor = '#' + data.attribute03;
         }
 
-        usageData[data.code] = {
+        usageData[data.detailCode] = {
           'name'  : data.name,
-          'value' : data.code,
+          'value' : data.detailCode,
           'color' : usageColor
         }
       });
@@ -136,7 +149,6 @@
 
     const putFileName = () => {
         const fileName = document.getElementById('fileUploadInput').files[0].name;
-        console.log(fileName);
         document.getElementById('importfileText').value = fileName;
     }
 
@@ -153,7 +165,7 @@
           return false;
         }
 
-        const url = aibeesGlobal.API_SERVER_URL + "/account/file";
+        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/file";
         data.append('type', document.getElementById('uploadTypeSelect').value);
         data.append('file', fileInput.files[0]);
 
@@ -174,7 +186,7 @@
     // import 된 tmp 데이터 조회, 출력
     const selectImportedFileData = (fileId) => {
       curFileHash = fileId;
-      const url = aibeesGlobal.API_SERVER_URL + "/account/file/list?type=BANK&fileId=" + fileId;
+      const url = aibeesGlobal.API_SERVER_URL + "/account/bank/temp/list?hashId=" + fileId;
 
       const callback = (res) => {
         document.getElementById('loading_bar').style.display='none';
@@ -211,7 +223,7 @@
         }
 
         // send to Server
-        const url = aibeesGlobal.API_SERVER_URL + '/account/transfer';
+        const url = aibeesGlobal.API_SERVER_URL + '/account/bank';
         const reqData = {
           'type' : document.getElementById('uploadTypeSelect').value,
           'data' : dataList.value,

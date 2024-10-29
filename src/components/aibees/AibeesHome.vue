@@ -1,11 +1,11 @@
 <template>
     <div class="aibees">
     <AibeesPopupImage style="display:none;" />
-    <AibeesMkdir style="display:none;" />
+    <AibeesMkdir style="display:none;" :curPath="currentPath" />
     <AibeesMetaEditVue :curItem="curItem" />
     <div class="aibees-header">
         <div class="aibees-header-title">
-            <router-link to="/aibees">{{  title }}</router-link>
+            <div @click="toHome()">{{ title }}</div>
         </div>
         <div class="aibees-header-search">
             <span>
@@ -103,8 +103,9 @@
      */
     const getCurrentPath = () => {
         const uri = "/file/detail?fileId=" + fileId.value;
+        
         const callback = (result) => {
-        currentPath.value = result.data.absoluePath;
+            currentPath.value = result.data.absoluePath;
         }
         axiosGet(constants.MARIA_DOMAIN+uri, callback);
     }
@@ -114,10 +115,8 @@
      * @param {*} item 
      */
     const fileDbclick = (item) => {
-        console.log(item.id);
         getChildListWithFileId(item.id);
         fileId.value = item.id;
-        getCurrentPath();
     }
 
     /**
@@ -148,6 +147,8 @@
      */
     const createDirectory = () => {
         const displayMkdirs = document.getElementById('mkdirPopup');
+        document.getElementById('mkdirCurrpath').value = currentPath.value;
+        document.getElementById('mkdirCurrFileId').value = fileId.value;
         displayMkdirs.style.display = 'block';
     }
 
@@ -166,19 +167,21 @@
 
     const getChildListWithFileId = (fileId) => {
          //testFunc(param, displayItemAfterSearch);
+<<<<<<< HEAD
         const url = constants.MARIA_DOMAIN + '/file/list';
         const param = {
             'fileId' : fileId
         }
         axiosPost(url, param, displayItemAfterSearch);
+=======
+         const url = constants.MARIA_DOMAIN + '/file/list?fileId='+fileId;
+         axiosGet(url, displayItemAfterSearch);
+>>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
     }
 
     const displayItemAfterSearch = (item) => {
-        console.log("callBack :: displayItemAfterSearch");
-        console.log(item.data)
-        searchResultList.value = item.data;
-        currentPath.value = item.data.absoluePath;
-
+        searchResultList.value = item.data.data.childList;
+        currentPath.value = item.data.data.absPathName;
     }
 
     const clickSearchBtn = e => {
@@ -190,6 +193,10 @@
         searchInput.value = '';
     }
 
+    const toHome = () => {
+        fileId.value = '0';
+        getChildListWithFileId(fileId.value);
+    }
 
     // fileUpload
     const uploadClick = () => {
@@ -199,7 +206,6 @@
     const uploadFileChange = (e) => {
         let uploadForm = new FormData();
         let file = e.target.files[0];
-        console.log(file)
 
         uploadForm.append('file', file);
 
@@ -224,7 +230,6 @@
     // button event controller
     const itemEvent = (cur, eventType) => {
         curItem.value = cur;
-        console.log(curItem.value);
 
         if('download' == eventType) {
             alert('download')

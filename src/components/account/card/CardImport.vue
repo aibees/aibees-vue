@@ -11,9 +11,10 @@
       </svg>
     </div>
     <div class="cardImport">
+      <span id="upload-anounce"></span>
       <div class="import-buttons">
         <div class="buttons-left">
-            <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
+            <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);" @change="changeCardType()">
                 <option value="HANACARD">하나카드</option>
                 <option value="SAMSUNGCARD">삼성카드</option>
                 <option value="SHINHANCARD">신한카드</option>
@@ -178,6 +179,16 @@
         document.getElementById('importfileText').value = fileName;
     }
 
+
+    const changeCardType = () => {
+      const anounce = document.getElementById('upload-anounce');
+      if(document.getElementById('uploadTypeSelect').value == 'HYUNDAICARD') {
+        anounce.innerText = '현대카드는 승인상태를 \'실시간 승인\' 으로 선택 후 엑셀 다운로드 바랍니다.';
+      } else {
+        anounce.innerText = '';
+      }
+    }
+
     /******************************
      ******* Main  Function *******
      ******************************/
@@ -301,6 +312,11 @@
   border-left: 1px solid grey;
   border-right: 1px solid grey;
   margin: 0 auto 60px;
+
+  #upload-anounce {
+    font-size: 12px;
+    font-weight: 650;
+  }
 
   .select-transparent {
     text-align: center;
