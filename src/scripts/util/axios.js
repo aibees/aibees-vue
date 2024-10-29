@@ -2,6 +2,8 @@ import axios from 'axios';
 
 
 const axiosGet = (url, callback) => {
+    axios.get()
+
     axios.get(url)
     .then((res) => {
         callback(res);
@@ -31,6 +33,17 @@ const axiosPostForFile = (url, data, callback) => {
             'Content-Type': 'multipart/form-data'
         }
     })
+    .then((res) => {
+        callback(res);
+    })
+    .catch(err => {
+        console.log(err);
+        alert(err);
+    })
+}
+
+const axiosPut = (url, data, callback) => {
+    axios.put(url, data, {})
     .then((res) => {
         callback(res);
     })

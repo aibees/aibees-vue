@@ -10,20 +10,25 @@ import BankView from './bank/BankView.vue'
 import BankMain from './bank/BankMain.vue'
 import BankUpload from './bank/BankImport.vue'
 import BankClose from './bank/BankClose.vue'
+import BankInfo from './bank/BankInfo.vue'
 import BankStatistics from './bank/BankStatistics.vue'
+import JournalView from './journal/JournalView.vue'
+import JournalMain from './journal/JournalMain.vue'
 
 export default {
     AccountHome
-   ,AccountMain 
-   ,CardView
-       ,CardMain
-       ,CardUpload
-       ,CardList
-       ,CardStatistics
-       ,CardInfo
-   , BankView
-       ,BankMain
-       ,BankUpload
-       ,BankClose
-       ,BankStatistics
+    , AccountMain
+    , CardView
+    , CardMain
+    , CardUpload
+    , CardList
+    , CardStatistics
+    , CardInfo
+    , BankView
+    , BankMain
+    , BankUpload
+    , BankClose
+    , BankInfo
+    , BankStatistics
+    , JournalView
 }

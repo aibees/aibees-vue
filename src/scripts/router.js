@@ -1,9 +1,10 @@
 import { createWebHistory, createRouter } from 'vue-router'
-import Login from '@/components/Login.vue'
+import Login from '@/components/login/Login.vue'
 import Account from '@/components/Account'
 import Aibees from '@/components/aibees'
 import Master from '@/components/master/Master.vue'
 import NotFound from '@/components/except/NotFound.vue'
+import NAVERLogin from '@/components/login/NaverLogin.vue'
 
 const routes=[
     {
@@ -21,6 +22,15 @@ const routes=[
         }
     },
     {
+        path: "/home",
+        name: "AibeesHome",
+        component: Aibees.AibeesHome,
+        meta: { 
+            auth: true,
+            title: 'MARIA'
+        }
+    },
+    {
         path: "/account",
         name: "Account",
         component: Account.AccountHome,
@@ -29,6 +39,18 @@ const routes=[
                 path: "",
                 name: "AccountHome",
                 component: Account.AccountMain
+            },
+            {
+                path: 'journal',
+                name: "Journal-Home",
+                component: Account.JournalView,
+                children: [
+                    {
+                        path: '',
+                        name: 'Journal-main',
+                        component: Account.JournalMain
+                    }
+                ]
             },
             {
                 path: 'card',
@@ -83,7 +105,12 @@ const routes=[
                         component: Account.BankClose
                     },
                     {
-                        path: 'closing',
+                        path: 'info',
+                        name: 'Bank-info',
+                        component: Account.BankInfo
+                    },
+                    {
+                        path: 'statistics',
                         name: 'Bank-statistics',
                         component: Account.BankClose
                     }
@@ -104,6 +131,11 @@ const routes=[
         path: "/master",
         name: "Master",
         component: Master
+    },
+    {
+        path: "/oauth",
+        name: "naverLogin",
+        component: NAVERLogin
     },
     {
         path: "/login",

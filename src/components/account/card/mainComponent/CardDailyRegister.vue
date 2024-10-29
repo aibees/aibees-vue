@@ -19,6 +19,7 @@
             'text': txt,
             'type': "CARD"
         };
+        console.log(data);
         const url = aibeesGlobal.API_SERVER_URL + '/account/card/paytext';
         const callback = (res) => {
             const result = res.data;

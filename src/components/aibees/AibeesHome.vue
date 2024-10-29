@@ -1,5 +1,5 @@
 <template>
-  <div class="aibees">
+    <div class="aibees">
     <AibeesPopupImage style="display:none;" />
     <AibeesMkdir style="display:none;" />
     <AibeesMetaEditVue :curItem="curItem" />
@@ -157,20 +157,20 @@
      */
     const getFileList = (mockParam) => {
          //testFunc(param, displayItemAfterSearch);
-         const url = constants.MARIA_DOMAIN + '/file/list';
-         const param = {
+        const url = constants.MARIA_DOMAIN + '/file/list';
+        const param = {
             'fileId' : fileId
-         }
-         axiosPost(url, param, displayItemAfterSearch);
+        }
+        axiosPost(url, param, displayItemAfterSearch);
     }
 
     const getChildListWithFileId = (fileId) => {
          //testFunc(param, displayItemAfterSearch);
-         const url = constants.MARIA_DOMAIN + '/file/list';
-         const param = {
+        const url = constants.MARIA_DOMAIN + '/file/list';
+        const param = {
             'fileId' : fileId
-         }
-         axiosPost(url, param, displayItemAfterSearch);
+        }
+        axiosPost(url, param, displayItemAfterSearch);
     }
 
     const displayItemAfterSearch = (item) => {

@@ -9,6 +9,7 @@
       <div class="main-subtitle">가계장부 및 통계페이지</div>
 
       <div class="router-button">
+        <div class="buttons" @click="toRouter('journal')">가계부 회계</div>
         <div class="buttons" @click="toRouter('bank')">은행내역관리</div>
         <div class="buttons" @click="toRouter('card')">카드내역관리</div>
         <div class="buttons" @click="toRouter('setting')">환경설정</div>
@@ -32,6 +33,8 @@
     const toRouter = (r) => {
     if(r == 'card') {
         router.push({ name: 'Card-main' })
+    } else if(r == 'journal') {
+        router.push({ name: 'Journal-main' })
     } else if(r == 'bank') {
         router.push({ name: 'Bank-main' })
     } else {
