@@ -3,22 +3,7 @@
     <div class="bank-close">
         <div class="bank-close-option">
             <div class="close-option-left">
-                <select id="close-ym">
-                    <option value="">선택하세요</option>
-                    <option value="202401">2024년 01월</option>
-                    <option value="202312">2023년 12월</option>
-                    <option value="202311">2023년 11월</option>
-                    <option value="202310">2023년 10월</option>
-                    <option value="202309">2023년 09월</option>
-                    <option value="202308">2023년 08월</option>
-                    <option value="202307">2023년 07월</option>
-                    <option value="202306">2023년 06월</option>
-                    <option value="202305">2023년 05월</option>
-                    <option value="202304">2023년 04월</option>
-                    <option value="202303">2023년 03월</option>
-                    <option value="202302">2023년 02월</option>
-                    <option value="202301">2023년 01월</option>
-                </select>
+                <input type="month" id="close-ym" />
             </div>
             <div class="close-option-right">
                 <button @click="selectData()">조회</button>
@@ -183,7 +168,8 @@
         const yy = toDate.getFullYear();
         const mm = toDate.getMonth()+1;
 
-        document.getElementById('close-ym').value = yy+(mm < 10? '0' : '')+mm;
+        document.getElementById('close-ym').value = yy+(mm < 10? '0' : '')+'-'+mm;
+        console.log(document.getElementById('close-ym').value);
     })
 
     /*********************
@@ -470,7 +456,8 @@ button {
         background-color: beige;
 
         .close-option-left {
-            select {
+            margin-left: 5px;
+            #close-ym {
                 border: none;
                 width: 120px;
                 height: 30px;

@@ -69,40 +69,43 @@
         </div>
         <div class="setting-detail-grid">
             <table class="table-common detail-table">
-            <!-- <table> -->
-                <tr>
-                    <th class="data-status">상태</th>
-                    <th class="data-text">코드</th>
-                    <th class="data-desc">이름</th>
-                    <th class="data-number">SORT</th>
-                    <th class="data-text">속성01 값</th>
-                    <th class="data-text">속성02 값</th>
-                    <th class="data-text">속성03 값</th>
-                    <th class="data-text">속성04 값</th>
-                    <th class="data-text">속성05 값</th>
-                </tr>
-                <tr>
-                    <td class="data-status"><div></div></td>
-                    <td class="data-text"><div>00</div></td>
-                    <td class="data-text"><div>전체</div></td>
-                    <td class="data-number"><div>0</div></td>
-                    <td class="data-text"><div></div></td>
-                    <td class="data-text"><div></div></td>
-                    <td class="data-text"><div></div></td>
-                    <td class="data-text"><div></div></td>
-                    <td class="data-text"><div></div></td>
-                </tr>
-                <tr>
-                    <td class="data-status"><div></div></td>
-                    <td class="data-text"><div>01</div></td>
-                    <td class="data-text"><div class="edit">aesfasefasefasfefasdfdsasdfasdf-카드정산</div></td>
-                    <td class="data-number"><div class="edit">2</div></td>
-                    <td class="data-text"><div class="edit">삼성</div></td>
-                    <td class="data-text"><div class="edit">CREDIT</div></td>
-                    <td class="data-text"><div class="edit"></div></td>
-                    <td class="data-text"><div class="edit"></div></td>
-                    <td class="data-text"><div class="edit"></div></td>
-                </tr>
+                <thead>
+                    <tr>
+                        <th class="data-status">상태</th>
+                        <th class="data-text">코드</th>
+                        <th class="data-desc">이름</th>
+                        <th class="data-number">SORT</th>
+                        <th class="data-text">속성01 값</th>
+                        <th class="data-text">속성02 값</th>
+                        <th class="data-text">속성03 값</th>
+                        <th class="data-text">속성04 값</th>
+                        <th class="data-text">속성05 값</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="data-status"><div></div></td>
+                        <td class="data-text"><div>00</div></td>
+                        <td class="data-text"><div>전체</div></td>
+                        <td class="data-number"><div>0</div></td>
+                        <td class="data-text"><div></div></td>
+                        <td class="data-text"><div></div></td>
+                        <td class="data-text"><div></div></td>
+                        <td class="data-text"><div></div></td>
+                        <td class="data-text"><div></div></td>
+                    </tr>
+                    <tr>
+                        <td class="data-status"><div></div></td>
+                        <td class="data-text"><div>01</div></td>
+                        <td class="data-text"><div class="edit">aesfasefasefasfefasdfdsasdfasdf-카드정산</div></td>
+                        <td class="data-number"><div class="edit">2</div></td>
+                        <td class="data-text"><div class="edit">삼성</div></td>
+                        <td class="data-text"><div class="edit">CREDIT</div></td>
+                        <td class="data-text"><div class="edit"></div></td>
+                        <td class="data-text"><div class="edit"></div></td>
+                        <td class="data-text"><div class="edit"></div></td>
+                    </tr>
+                </tbody>
             </table>
             <button @click="testEdit()">테스트버튼</button>
         </div>

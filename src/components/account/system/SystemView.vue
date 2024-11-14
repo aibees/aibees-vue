@@ -1,6 +1,6 @@
 <template>
-    <div class="journal">
-        <div class="journal-nav" id="journalNavBar">
+    <div class="system">
+        <div class="system-nav" id="systemNavBar">
             <div class="burger">
                 <font-awesome-icons :icon="['fa-solid', 'fa-bars']" />
             </div>
@@ -13,7 +13,7 @@
                 </ul>
             </div>
         </div>
-        <div class="journal-view">
+        <div class="system-view">
             <router-view />
         </div>
     </div>
@@ -30,31 +30,31 @@ let menuList = ref([]);
 
 onMounted(() => {
     document.body.style.margin = "0px";
-    getjournalMenu();
+    getsystemMenu();
 });
 
-const getjournalMenu = () => {
+const getsystemMenu = () => {
     menuList.value = [
         {
             'name': '홈',
-            'value': 'journal_main'
+            'value': 'system_main'
         }
         ,
-        // {
-        //     'name': '전체조회',
-        //     'value': 'journal_list'
-        // },
-        // {
-        //     'name': '결제확정처리',
-        //     'value': 'journal_excel'
-        // },
+        {
+            'name': '계정과목 설정',
+            'value': 'system_acctCd'
+        },
+        {
+            'name': '프리셋 설정',
+            'value': 'system_preset'
+        },
         // {
         //     'name': '통계청',
-        //     'value': 'journal_statistics'
+        //     'value': 'system_statistics'
         // },
         // {
         //     'name': '카드관리',
-        //     'value': 'journal_info'
+        //     'value': 'system_info'
         // },
         {
             'name': '돌아가기',
@@ -69,7 +69,7 @@ const callMenu = (item) => {
     if (item.value == 'back') {
         router.push('/account');
     } else {
-        router.push({ name: 'journal-' + to })
+        router.push({ name: 'System-' + to })
     }
 }
 
@@ -85,15 +85,15 @@ const callMenu = (item) => {
     /* Standard syntax */
 }
 
-.journal {
-    .journal-nav {
+.system {
+    .system-nav {
         color: white;
         position: absolute;
         top: 0;
         left: 0;
         width: 50px;
         height: 100%;
-        background-color: #5a7c4d;
+        background-color: #d56300;
 
         .burger {
             position: absolute;
@@ -126,7 +126,7 @@ const callMenu = (item) => {
         }
     }
 
-    .journal-nav:hover {
+    .system-nav:hover {
         width: 160px;
 
         .burger {
@@ -138,7 +138,7 @@ const callMenu = (item) => {
         }
     }
 
-    .journal-view {
+    .system-view {
         margin-left: 50px;
     }
 }</style>

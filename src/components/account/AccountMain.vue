@@ -12,7 +12,7 @@
         <div class="buttons" @click="toRouter('journal')">가계부 회계</div>
         <div class="buttons" @click="toRouter('bank')">은행내역관리</div>
         <div class="buttons" @click="toRouter('card')">카드내역관리</div>
-        <div class="buttons" @click="toRouter('setting')">환경설정</div>
+        <div class="buttons" @click="toRouter('system')">환경설정</div>
       </div>
     </div>
   </div>
@@ -37,6 +37,8 @@
         router.push({ name: 'Journal-main' })
     } else if(r == 'bank') {
         router.push({ name: 'Bank-main' })
+    } else if(r == 'system') {
+        router.push({ name: 'System-main' })
     } else {
         location.href('/account')
     }

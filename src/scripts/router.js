@@ -125,6 +125,28 @@ const routes=[
                         component: Account.BankInfo
                     }
                 ]
+            },
+            {
+                path: 'system',
+                name: 'System-Home',
+                component: Account.SystemView,
+                children: [
+                    {
+                        path: '',
+                        name: 'System-main',
+                        component: Account.SystemMain
+                    },
+                    {
+                        path: '',
+                        name: 'System-acctCd',
+                        component: Account.SystemAcctCd
+                    },
+                    {
+                        path: '',
+                        name: 'System-preset',
+                        component: Account.SystemPreset
+                    }
+                ]
             }
         ]
     },

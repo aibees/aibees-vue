@@ -167,16 +167,11 @@
 
     const getChildListWithFileId = (fileId) => {
          //testFunc(param, displayItemAfterSearch);
-<<<<<<< HEAD
         const url = constants.MARIA_DOMAIN + '/file/list';
         const param = {
             'fileId' : fileId
         }
         axiosPost(url, param, displayItemAfterSearch);
-=======
-         const url = constants.MARIA_DOMAIN + '/file/list?fileId='+fileId;
-         axiosGet(url, displayItemAfterSearch);
->>>>>>> ba5df745bb4c595756ed765d49f0b05f30d3a16a
     }
 
     const displayItemAfterSearch = (item) => {

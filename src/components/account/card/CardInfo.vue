@@ -9,18 +9,20 @@
         <div class="cardinfo-container">
             <table id="cardinfo-table">
                 <thead>
-                    <th style="width:40px">삭제</th>
-                    <th style="width:60px">카드ID</th>
-                    <th style="width:100px">회사이름</th>
-                    <th style="width:210px">카드명</th>
-                    <th style="width:120px">연결은행</th>
-                    <th style="width:90px">마감일</th>
-                    <th style="width:90px">결제일</th>
-                    <th style="width:130px">만료년월</th>
-                    <th style="width:100px">사용한도</th>
-                    <th style="width:100px">신용카드여부</th>
-                    <th style="width:100px">사용여부</th>
-                    <th style="width:100px">메인노출여부</th>
+                    <tr>
+                        <th style="width:40px">삭제</th>
+                        <th style="width:60px">카드ID</th>
+                        <th style="width:100px">회사이름</th>
+                        <th style="width:210px">카드명</th>
+                        <th style="width:120px">연결은행</th>
+                        <th style="width:90px">마감일</th>
+                        <th style="width:90px">결제일</th>
+                        <th style="width:130px">만료년월</th>
+                        <th style="width:100px">사용한도</th>
+                        <th style="width:100px">신용카드여부</th>
+                        <th style="width:100px">사용여부</th>
+                        <th style="width:100px">메인노출여부</th>
+                    </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(data, idx) in dataList" :key="data.cardNo">
