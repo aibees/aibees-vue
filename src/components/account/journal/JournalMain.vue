@@ -5,6 +5,7 @@
     <div class="journal-main">
         <div class="journal-info">
             <div class="container-block journal-main-buttons">
+                <div><button @click="reset">새로작성하기</button></div>
                 <div><button @click="openSearchModal">조회</button></div>
                 <div><button @click="saveJournal">저장</button></div>
                 <div><button>검증(개발예정)</button></div>
@@ -28,7 +29,7 @@
                         <span>출처</span>
                         <div class="input-box">
                             <select id="header-source" class="text-required" @change="setCategoryList()">
-                                <option v-for="source in sourceOptionList" :key="source.value" :value="source.value">
+                                <option v-for="source in sourceOptionList" :key="source.sourceCd" :value="source.sourceCd">
                                     {{ source.sourceNm }} / {{ source.sourceCd }}
                                 </option>
                             </select>
@@ -39,7 +40,7 @@
                         <span>범주</span>
                         <div class="input-box">
                             <select id="header-category" class="text-required">
-                                <option v-for="cate in categoryOptionList" :key="cate.value" :value="cate.value">
+                                <option v-for="cate in categoryOptionList" :key="cate.categoryCd" :value="cate.categoryCd">
                                     {{ cate.categoryNm }} / {{ cate.categoryCd }}
                                 </option>
                             </select>
@@ -65,13 +66,24 @@
                             </select>
                         </div>
                     </div>
+                    <div class="info-block journal-internal">
+                        <span>내부상계</span>
+                        <select id="header-internal">
+                            <option value="Y">Y</option>
+                            <option selected value="N">N</option>
+                        </select>
+                    </div>
                 </div>
             </div>
+        </div>
+        <div class="journal-validation">
+            [차변]  {{ DebitSum }} / [대변] {{ CreditSum }}
         </div>
         <div class="journal-grid">
             <div class="additional-option">
                 <div class="option-left">
                     <button @click="addLine">라인추가</button>
+                    <button @click="removeLine">라인삭제</button>
                     <button>라인복사</button>
                 </div>
                 <div class="option-right">
@@ -91,34 +103,41 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(line, idx) in journalDetailData" :key="idx" :id="`line_` + idx">
+                    <tr v-for="(line, idx) in journalDetailData" name="grid-line" :key="idx" :id="`line_` + idx" @click="selectTr(idx)">
                         <td>{{ idx }}</td>
                         <td>
-                            <div class="grid-input"><input :id="`acctNm_${idx}`" readonly /></div>
+                            <div class="grid-input"><input :id="`acctNm_${idx}`" :value="`${line.acctNm}`" readonly /></div>
                         </td>
                         <td>
                             <div class="grid-input">
-                                <input type="hidden" :id="`acctCd_${idx}`" @change="setAcctNm(line.acctCd, idx)" />
+                                <input type="hidden" :id="`acctCd_${idx}`" :value="`${line.acctCd}`" />
                                 <AutoSearch :input-id="`${idx}`" @searchConfirm="selectAcctCallback" />
                             </div>
                         </td>
                         <td>
-                            <div class="grid-input"><input :id="`drAmount_${idx}`" :value="`${line.drAmount}`"
+                            <!-- <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" autocomplete="off" -->
+                            <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" :value="`${line.drAmount}`" autocomplete="off"
                                     @change="resetAppo('dr', 'cr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
                             </div>
                         </td>
                         <td>
-                            <div class="grid-input"><input :id="`crAmount_${idx}`" :value="`${line.crAmount}`"
+                            <!-- <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" autocomplete="off" -->
+                            <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" :value="`${line.crAmount}`" autocomplete="off"
                                     @change="resetAppo('cr', 'dr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
                             </div>
                         </td>
                         <td>
-                            <div class="grid-input"><input :id="`remark_${idx}`" :value="`${line.remark}`"
+                            <div class="grid-input"><input :id="`remark_${idx}`" :value="`${line.remark}`" @input="inputRemark($event, idx)"
                                     style="text-align:left" /></div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="journal-attribute">
+            <div class="attribute-container">
+                hello
+            </div>
         </div>
     </div>
 </template>
@@ -141,6 +160,9 @@ const datePattern = ref("(?:19|20)(?:(?:[13579][26]|[02468][048])-(?:(?:0[1-9]|1
 const bankAccountList = ref([]);
 const sourceOptionList = ref([]);
 const categoryOptionList = ref([]);
+
+const CreditSum = ref(0);
+const DebitSum = ref(0);
 
 /*********************
  ** MODAL  VARIABLE **
@@ -172,10 +194,10 @@ onMounted(() => {
  *********************/
 
 const setBankList = () => {
-        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/info/list";
+        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
 
         const callback = (res) => {
-            if(res.data.message == 'SUCCESS') {
+            if(res.data.success) {
                 res.data.data.forEach(data => {
                     const tmp = {
                         'value': data.bankId,
@@ -186,7 +208,7 @@ const setBankList = () => {
                 })
                 bankAccountList.value.unshift({ 'value': '0000', 'name': '(0000) 해당없음' })
             } else {
-                alert(res.data.message);
+                alert(res.data.error);
             }
         }
         axiosGet(url, callback);
@@ -195,9 +217,13 @@ const setBankList = () => {
 const setSourceList = () => {
     const url = aibeesGlobal.API_SERVER_URL + '/system/sources';
     const callback = (res) => {
-        if (res.data.message = 'SUCCESS') {
-            console.log(res.data.data);
+        console.log(res)
+        if (res.data.success) {
             sourceOptionList.value = res.data.data;
+            sourceOptionList.value.unshift({
+                'sourceCd': '',
+                'sourceNm': '선택하세요'
+            })
         } else {
             alert(res.data.message);
         }
@@ -207,16 +233,16 @@ const setSourceList = () => {
 }
 
 const setCategoryList = () => {
-    const sourceCd = document.getElementById('header-source').value;
+    let sourceCd = document.getElementById('header-source').value;
 
     if (typeof sourceCd === 'undefined' || sourceCd === null || sourceCd === '') {
         return false;
     }
-
-    const url = aibeesGlobal.API_SERVER_URL + '/system/categories?sourceCd=' + sourceCd.replaceAll(' ', '').split('/')[1];
+    console.log(sourceCd);
+    const url = aibeesGlobal.API_SERVER_URL + '/system/categories?sourceCd=' + sourceCd.replaceAll(' ', '');
     const callback = (res) => {
-        if (res.data.message = 'SUCCESS') {
-            console.log(res.data.data)
+        if (res.data.success) {
+            console.log(res.data)
             categoryOptionList.value = res.data.data;
         } else {
             alert(res.data.message);
@@ -229,13 +255,30 @@ const setCategoryList = () => {
 /*********************
  ** BUTTON FUNCTION **
  *********************/
+const reset = () => {
+    journalDetailData.value = [];
+    document.getElementById('header-remark').value = '';
+    document.getElementById('header_no').value = '';
+    document.getElementById('header-internal').value = 'N';
+    CreditSum.value = 0;
+    DebitSum.value = 0;
+}
+
 const search = () => {
 
 }
 
 const searchByHeaderNo = (headerNo) => {
-    // document.getElementById('header_no').value = headerNo;
+    const url = aibeesGlobal.API_SERVER_URL + '/account/journal/' + headerNo;
+    const callback = (res) => {
+        const resultData = res.data.data;
+        console.log(resultData);
+        document.getElementById('header_no').value = resultData.jeHeaderNo;
+        document.getElementById('header-date').value = resultData.jeDate;
 
+        journalDetailData.value = resultData.jeLineList;
+    }
+    axiosGet(url, callback);
 }
 
 const saveJournal = () => {
@@ -246,14 +289,14 @@ const saveJournal = () => {
             'lineNo': i,
             'acctCd': document.getElementById('acctCd_'+i).value,
             'acctNm': document.getElementById('acctNm_'+i).value,
-            'amountDr': document.getElementById('drAmount_'+i).value,
-            'amountCr': document.getElementById('crAmount_'+i).value,
+            'amountDr': document.getElementById('drAmount_'+i).value.replaceAll(',', ''),
+            'amountCr': document.getElementById('crAmount_'+i).value.replaceAll(',', ''),
             'remark': document.getElementById('remark_'+i).value
         }
         jeLineList.push(tmp);
     }
-    const sourceCd = document.getElementById('header-source').value.replaceAll(' ', '').split('/')[1];
-    const categoryCd = document.getElementById('header-category').value.replaceAll(' ', '').split('/')[1];
+    const sourceCd = document.getElementById('header-source').value.replaceAll(' ', '');
+    const categoryCd = document.getElementById('header-category').value.replaceAll(' ', '');
 
     const saveData = {
         'jeDate': document.getElementById('header-date').value,
@@ -262,20 +305,25 @@ const saveJournal = () => {
         'sourceCd': sourceCd,
         'categoryCd': categoryCd,
         'remark': document.getElementById('header-remark').value,
-        'jeLineList': jeLineList
+        'jeLineList': journalDetailData.value,
+        'internalYn': document.getElementById('header-internal').value
     }
-
-    console.log(saveData);
 
     const url = aibeesGlobal.API_SERVER_URL + '/account/journal';
     const callback = (res) => {
         if (res.data.message = 'SUCCESS') {
             alert("저장완료");
+            searchByHeaderNo(res.data.data);
         } else {
             alert(res.data.message);
         }
     }
     axiosPost(url, saveData, callback);
+}
+
+const selectTr = (idx) => {
+    document.getElementsByName('grid-line').forEach(obj => { obj.style.backgroundColor = 'white' });
+    document.getElementById('line_'+idx).style.backgroundColor = '#fff7d1';
 }
 
 /***********************
@@ -289,9 +337,23 @@ const presetCheckCallback = (presetCd) => {
     document.getElementById('header-remark').value = presetCd;
 }
 
+/**
+ * AcctAutoSearch에서 검색, 선택된 계정코드 업데이트
+ * @param {*} acct 
+ * @param {*} idx 
+ */
 const selectAcctCallback = (acct, idx) => {
-    document.getElementById('acctCd_' + idx).value = acct.acctCd;
-    document.getElementById('acctNm_' + idx).value = acct.acctNm;
+    const dataInLine = journalDetailData.value[idx];
+    dataInLine.acctCd = acct.acctCd;
+    dataInLine.acctNm = acct.acctNm;
+
+    if (acct.additionalFalg === 'Y') {
+        createAdditionalLine(acct);
+    }
+}
+
+const createAdditionalLine = (acct) => {
+    
 }
 
 /*********************
@@ -309,8 +371,8 @@ const addLine = () => {
     const newData = {
         'acctCd': '',
         'acctNm': '',
-        'drAmount': 0,
-        'crAmount': 0,
+        'drAmount': '',
+        'crAmount': '',
         'remark': '',
         'additionalOpt': {
             'usage': ''
@@ -320,19 +382,52 @@ const addLine = () => {
     journalDetailData.value.push(newData);
 }
 
+const removeLine = () => {
+    journalDetailData.value.pop();
+}
+
 /*********************
  ** CHANGE FUNCTION **
  *********************/
+/**
+ * 차변/대변 금액 입력 업데이트
+ * 한 차변이 입력되면 상대 변 초기화
+ * 상단 차/대면 합산 업데이트
+ * @param {*} source 
+ * @param {*} target 
+ * @param {*} idx 
+ */
 const resetAppo = (source, target, idx) => {
     const currNum = document.getElementById(source + 'Amount_' + idx).value;
-    const commaNum = addComma(Number(currNum.replace(',', '')));
+    const amount = Number(currNum.replaceAll(',', ''));
     
-    document.getElementById(source + 'Amount_' + idx).value = commaNum;
+    if (source === 'dr') {
+        const dataInLine = journalDetailData.value[idx];
+        dataInLine.drAmount = addComma(amount);
+        dataInLine.crAmount = '0';
+    }
+    if (source === 'cr') {
+        const dataInLine = journalDetailData.value[idx];
+        dataInLine.crAmount = addComma(amount);
+        dataInLine.drAmount = '0';
+    }
+
+    document.getElementById(source + 'Amount_' + idx).value = addComma(amount);
     document.getElementById(target + 'Amount_' + idx).value = 0;
+
+    DebitSum.value = 0;
+    document.getElementsByName('drAmount').forEach(obj => {
+        DebitSum.value = DebitSum.value + Number(obj.value.replaceAll(',', ''));
+    });
+    CreditSum.value = 0;
+    document.getElementsByName('crAmount').forEach(obj => {
+        CreditSum.value = CreditSum.value + Number(obj.value.replaceAll(',', ''));
+    });
 }
 
-const setAcctNm = (acctCd, idx) => {
-
+const inputRemark = (event, idx) => {
+    const dataInLine = journalDetailData.value[idx];
+    dataInLine.remark = event.target.value;
 }
 
 const checkNumber = (event) => {
@@ -452,7 +547,19 @@ button {
         }
     }
 
+    .journal-validation {
+        border-radius: 5px;
+        margin: 10px 0px;
+        background-color: rgb(230, 230, 230);
+        height: 40px;
+        text-align: right;
+        padding-top: 5px;
+        padding-right: 20px;
+    }
+
     .journal-grid {
+        height: 600px;
+        overflow: scroll;
         .additional-option {
             height: 35px;
             background-color: rgb(230, 230, 230);
@@ -481,28 +588,58 @@ button {
                 border: 1px solid white;
             }
 
-            td {
-                height: 25px;
-                border: 1px solid rgb(230, 230, 230);
-                border-bottom: 1px solid grey;
+            tbody {
+                tr {
 
-                input {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    text-align: center;
-                    padding: 0px;
-                    padding-inline: 0px;
-                    padding-block: 0px;
+
+                    td {
+                        height: 25px;
+                        border: 1px solid rgb(230, 230, 230);
+                        border-bottom: 1px solid grey;
+
+                        input {
+                            width: 100%;
+                            height: 100%;
+                            border: none;
+                            text-align: center;
+                            padding: 0px;
+                            padding-inline: 0px;
+                            padding-block: 0px;
+                            background: transparent;
+                        }
+
+                        select {
+                            width: 100%;
+                            height: 100%;
+                            border: none;
+                            text-align: center;
+                            background: transparent;
+                        }
+                    }
                 }
 
-                select {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    text-align: center;
+                tr:hover {
+                    background-color: #fff7d1;
                 }
             }
+
+
+
+
+        }
+    }
+
+    .journal-attribute {
+        height: 150px;
+        border-radius: 5px;
+        margin: 10px 0px;
+        background-color: rgb(230, 230, 230);
+
+        .attribute-container {
+            display: flex;
+            margin: auto;
+            padding: 20px 40px;
+            background-color: blue;
         }
     }
 }</style>

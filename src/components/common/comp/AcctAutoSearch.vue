@@ -5,6 +5,7 @@
             :id="`acctSearch_${props.inputId}`"
             @input="searchSuggest($event)"
             @focus="inputFocuseCheck(true)"
+            autocomplete="off"
         />
         <ul v-show="suggested.length > 0 && inputFocus">
             <li v-for="(sug, idx) in suggested" :key="idx" :id="idx">
@@ -42,10 +43,10 @@ const searchSuggest = (ev) => {
 
     const url = aibeesGlobal.API_SERVER_URL + '/account/acct/popup?searchTxt=' + searchTxt;
     const callback = (res) => {
-        if(res.data.message == 'SUCCESS') {
+        if(res.data.success) {
             suggested.value = res.data.data;
         } else {
-            alert(res.data.message);
+            alert(res.data.error);
         }
     }
 

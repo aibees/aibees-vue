@@ -118,8 +118,8 @@
 
     const getCardInfoList = () => {
         const url = aibeesGlobal.API_SERVER_URL + "/account/card/infos";
+        
         const callback = (res) => {
-            console.log(res);
             if(res.data.message == 'SUCCESS') {
                 dataList.value = res.data.data;
                 dataList.value.forEach(data => {
@@ -233,7 +233,7 @@
     .cardinfo-container {
         table {
             font-size: 13px;
-            width: fit-content;
+            width: -webkit-fill-available;
             border-spacing: 0px;
             border-collapse: collapse;
             th {
