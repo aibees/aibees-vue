@@ -5,13 +5,13 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useRouter, onBeforeRouteUpdate } from "vue-router";
-import { useStore } from 'vuex';
+import { userSession } from '../../scripts/util/user-session';
 
-const sessionStore = useStore();
+const session = userSession();
 const router = useRouter();
 
 onMounted(() => {
-  console.log(sessionStore.getters.logined)
+  
 })
 </script>
 

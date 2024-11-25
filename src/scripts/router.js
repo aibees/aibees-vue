@@ -6,6 +6,8 @@ import Master from '@/components/master/Master.vue'
 import NotFound from '@/components/except/NotFound.vue'
 import NAVERLogin from '@/components/login/NaverLogin.vue'
 
+import { userSession } from './util/user-session'
+
 const routes=[
     {
         path: "/:catchAll(.*)",
@@ -176,19 +178,25 @@ const routes=[
     }
 ]
 
+
 export const setRouterToApp = () => {
+    const session = userSession();
+
     const router = createRouter({
         history: createWebHistory(),
         routes
     })
 
     router.beforeEach((to, from, next) => {
-        // if(to.matched.some(r => r.)) {
-        //     alert("로그인이 필요한 페이지입니다.");
-        //     next('/login');
-        // } else {
+        console.log(to.fullPath + " || isSession : " + session.isUserSession());
+        
+        if (to.fullPath == '/login') {
             next();
-        // }
+        } else if (to.fullPath !== '/login' && !session.isUserSession()) {
+            return next({ path: '/login' });
+        } else {
+            next();
+        }
     })
 
     router.afterEach((to, from) => {

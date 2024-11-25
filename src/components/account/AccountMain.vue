@@ -21,13 +21,13 @@
 <script setup>
     import { onMounted } from 'vue';
     import { useRouter } from "vue-router";
-    import { useStore } from 'vuex';
+    import { userSession } from '../../scripts/util/user-session';
 
-    const sessionStore = useStore();
+    const session = userSession();
     const router = useRouter();
 
     onMounted(() => {
-        console.log(sessionStore.getters.logined);
+        console.log(session.getUserInfo);
     })
 
     const toRouter = (r) => {

@@ -20,13 +20,14 @@
 <script setup>
     // import declaration
     import { ref, onMounted } from 'vue';
-    import { useStore } from 'vuex';
+    import { userSession } from '../../scripts/util/user-session';
+    import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
     import { useRouter } from 'vue-router';
 
     /******************************
      ******* Const  Variable ******
      ******************************/
-    const sessionStore = useStore();
+    const session = userSession();
     const router = useRouter();
 
     /******************************
@@ -50,6 +51,7 @@
      ******* Main  Function *******
      ******************************/
     const loginProcess = () => {
+        const loginKey = '63aa510c3ff68c332e48e6006342b9f706744223ad84a4bb20ee38168fd7ee8d';
         let loginId = document.getElementById('loginId').value;
         let loginPw = document.getElementById('loginPw').value;
 
@@ -59,16 +61,22 @@
         } else {
             const loginParam = {
                 userId : loginId,
-                userPw : loginPw
+                userPw : loginPw,
+                loginKey : loginKey
             }
-            // todo : server axios for check id / password
             
-            const user = {
-                id: loginId,
-                userName: 'aibees',
-                userToken: '182y37yqwie72'
+            
+
+            axiosPost();
+            
+            const loginData = {
+                loginInfo: {
+                    accessToken: "qwt0326@gmail.com",
+                    name: "aibees",
+                    admin: false
+                }
             }
-            sessionStore.commit("setUser", user);
+            session.loginUpdate(loginData)
             router.push('/account');
         }
     }
