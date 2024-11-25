@@ -1,35 +1,42 @@
 <template>
     <AccountHeader :prop_title=title />
-    <div class="cardinfo">
-        <div class="cardinfo-buttons">
+    <div class="bankinfo">
+        <div class="bankinfo-buttons">
+            <button class="buttons" @click="insertRow()">추가</button>
             <button class="buttons" @click="selectData()">조회</button>
             <button class="buttons" @click="saveData()">저장</button>
         </div>
-        <div class="cardinfo-container">
-            <table id="cardinfo-table">
+        <div class="bankinfo-container">
+            <table class="bankinfo-table">
                 <thead>
                     <tr>
-                        <th style="width:70px">계좌ID</th>
-                        <th style="width:200px">계좌명</th>
-                        <th style="width:120px">은행</th>
-                        <th style="width:90px">유형</th>
-                        <th style="width:150px">사용한도</th>
-                        <th style="width:100px">사용시작일자</th>
-                        <th style="width:100px">사용여부</th>
+                        <th style="width:40px">삭제</th>
+                        <th style="width:100px">계좌ID</th>
+                        <th>계좌명</th>
+                        <th style="width:150px">은행</th>
+                        <th style="width:120px">유형</th>
+                        <th style="width:180px">사용한도</th>
+                        <th style="width:150px">사용시작일자</th>
+                        <th style="width:150px">사용여부</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(data, idx) in dataList" :key="data.bankId">
-                        <td :id="`bankId_${idx}`" class="bankId">{{ data.bankId }}</td>
+                        <td><input type="checkbox" :id="`status_${idx}`" style="width:90%; height: auto" @change="checkBoxEvt(idx)" /></td>
+                        <td><input class="bankIdInput" :id="`bankId_${idx}`" :value="`${data.bankId}`" :readonly="data.bankId != ''" maxlength="6" /></td>
                         <td><input :id="`bankName_${idx}`" :value="`${data.bankNm}`" /></td>
                         <td>
                             <select :id="`bankCd_${idx}`">
                                 <option v-for="bank in bankOptionList" :key="bank.value" :value="bank.value" :selected="bank.value == `${data.bankCd}`">{{ bank.name }}</option>
                             </select>
                         </td>
-                        <td><input :id="`bankType_${idx}`" :value="`${data.bankType}`" /></td>
+                        <td>
+                            <select :id="`bankType_${idx}`">
+                                <option v-for="types in bankTypeOptList" :key="types.value" :value="types.value" :selected="types.value == `${data.bankType}`">{{ types.name }}</option>
+                            </select>
+                        </td>
                         <td><input :id="`limitAmt_${idx}`" :value="`${data.limitAmt}`" style="width: 80%; text-align: right" /> 원</td>
-                        <td><input :id="`startDate_${idx}`" :value="`${data.startDate}`"/></td>
+                        <td><input type="date" :id="`startDate_${idx}`" :value="`${data.startDate}`"/></td>
                         <td>
                             <select :id="`useYn_${idx}`">
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.useYn}`">{{ yn.name }}</option>
@@ -55,6 +62,7 @@
     const title = ref('계좌정보관리');
     const dataList = ref([]);
     const bankOptionList = ref([]);
+    const bankTypeOptList = ref([]);
     const ynOptionList = ref([{'value': 'Y', 'name': 'Y'}, {'value': 'N', 'name': 'N'}]);
 
     onMounted(() => {
@@ -62,21 +70,45 @@
         getBankInfoList();
     });
 
+    const checkBoxEvt = (idx) => {
+        const checked = document.getElementById('status_' + idx).checked;
+        
+        if (checked) {
+            if (dataList.value[idx].trxType == 'INSERT') {
+                dataList.value.splice(idx, 1);
+            } else {
+                dataList.value[idx].trxType ='DELETE';
+            }
+        } else {
+            dataList.value[idx].trxType =''
+        }
+    }
+
     const getBankCdOptionList = () => {
         bankOptionList.value = [
             { 'value': '88', 'name': '신한은행' },
             { 'value': '87', 'name': '제일은행' },
             { 'value': '82', 'name': '카카오뱅크' },
             { 'value': '81', 'name': '하나은행' }
+        ];
+
+        bankTypeOptList.value = [
+            { 'value': '입출금', 'name': '입출금' },
+            { 'value': '예적금', 'name': '예적금' },
+            { 'value': 'IRP', 'name': 'IRP' }
         ]
     }
-getBankInfoList = () => {
-        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/info/list";
+
+    const getBankInfoList = () => {
+        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
 
         const callback = (res) => {
-            console.log(res.data);
             if(res.data.message == 'SUCCESS') {
-                dataList.value = res.data.data
+                dataList.value = res.data.data;
+                dataList.value.forEach(data => {
+                    data['trxType'] = '';
+                    data['startDate'] = toDateForm(data['startDate']);
+                })
             } else {
                 alert(res.data.message);
             }
@@ -88,8 +120,41 @@ getBankInfoList = () => {
         getBankInfoList();
     }
 
+    const insertRow = () => {
+        const newData = {   
+            'trxType': 'INSERT',
+            'status': false,
+            'bankId': '',
+            'bankNm': '',
+            'bankCd': '',
+            'bankAcct': '',
+            'bankType': '',
+            'limitAmt': '0',
+            'startDate': '',
+            'useYn': 'Y'
+        }
+
+        dataList.value.push(newData);
+    }
+
     const saveData = () => {
+
+        console.log(dataList.value);
+
         const dataSize = dataList.value.length;
+
+        for(let i = 0; i < dataSize; i++) {
+            const data = dataList.value[i];
+            data['status'] = document.getElementById('status_'+i).checked;
+            data['bankId'] = document.getElementById('bankId_'+i).value;
+            data['bankNm'] = document.getElementById('bankName_'+i).value;
+            data['bankCd'] = document.getElementById('bankCd_'+i).value;
+            data['bankType'] = document.getElementById('bankType_'+i).value;
+            data['limitAmt'] = document.getElementById('limitAmt_'+i).value;
+            data['startDate'] = document.getElementById('startDate_'+i).value;
+            data['useYn'] = document.getElementById('useYn_'+i).value;
+        }
+        console.log(dataList.value);
 
         const isReal = confirm("저장하실건가");
 
@@ -97,41 +162,36 @@ getBankInfoList = () => {
             return false;
         }
 
-        for(let i = 0; i < dataSize; i++) {
-            const data = dataList.value[i];
-            data['cardName'] = document.getElementById('cardName_'+i).value;
-            data['bankCd'] = document.getElementById('bankCd_'+i).value;
-            data['expiredYm'] = document.getElementById('expiredYm_'+i).value;
-            data['limitAmt'] = document.getElementById('limitAmt_'+i).value;
-            data['creditYn'] = document.getElementById('creditYn_'+i).value;
-            data['useYn'] = document.getElementById('useYn_'+i).value;
-            data['selectedMain'] = document.getElementById('selectedMain_'+i).value;
-            data['company'] = document.getElementById('company_'+i).value;
-        }
-        console.log(dataList.value);
-        const url = aibeesGlobal.API_SERVER_URL + "/account/info/transfer";
+        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
         const data = {
-            'type': 'CARD',
-            'data': dataList.value
+            'bankInfoReqs': dataList.value
         }
         const callback = (res) => {
             if(res.data.RESULT == 'SUCCESS') {
                 alert("저장완료");
-                getCardInfoList();
+                getBankInfoList();
             } else {
-                alert(res.data.RESULT + " / " + res.data.message);
+                alert(res.data.message);
             }
         }
         axiosPost(url, data, callback);
     }
+
+    const toDateForm = (ymd) => {
+        const yy = ymd.substr(0, 4);
+        const mm = ymd.substr(4, 2);
+        const dd = ymd.substr(6, 2);
+        const result = yy + '-' + mm + '-' + dd;
+        return result;
+    }
 </script>
 
 <style lang="scss" scoped>
-.cardinfo {
-    width: 1250px;
+.bankinfo {
+    width: 1300px;
     margin: auto;
 
-    .cardinfo-buttons {
+    .bankinfo-buttons {
         display: flex;
         justify-content: right;
         width: 100%;
@@ -156,11 +216,10 @@ getBankInfoList = () => {
         }
     }
 
-    .cardinfo-container {
+    .bankinfo-container {
         table {
-            width: fit-content;
-        #cardinfo-table {
-            width: 100%;
+            font-size: 13px;
+            width: -webkit-fill-available;
             border-spacing: 0px;
             border-collapse: collapse;
             th {
@@ -191,6 +250,5 @@ getBankInfoList = () => {
             }
         }
     }
-}
 }
 </style>
