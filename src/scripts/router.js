@@ -51,6 +51,11 @@ const routes=[
                         path: '',
                         name: 'Journal-main',
                         component: Account.JournalMain
+                    },
+                    {
+                        path: 'cashflow',
+                        name: 'Journal-cashflow',
+                        component: Account.JournalCashFlow
                     }
                 ]
             },
@@ -151,8 +156,8 @@ const routes=[
                 ]
             }
         ]
-    },
-    {
+    }
+    , {
         path: "/aibees",
         name: "Aibees",
         component: Aibees.AibeesHome,
@@ -160,18 +165,18 @@ const routes=[
             auth: true,
             title: 'MARIA'
         }
-    },
-    {
+    }
+    , {
         path: "/master",
         name: "Master",
         component: Master
-    },
-    {
+    }
+    , {
         path: "/oauth",
         name: "naverLogin",
         component: NAVERLogin
-    },
-    {
+    }
+    , {
         path: "/login",
         name: "Login",
         component: Login
@@ -188,8 +193,6 @@ export const setRouterToApp = () => {
     })
 
     router.beforeEach((to, from, next) => {
-        console.log(to.fullPath + " || isSession : " + session.isUserSession());
-        
         if (to.fullPath == '/login') {
             next();
         } else if (to.fullPath !== '/login' && !session.isUserSession()) {

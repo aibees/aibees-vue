@@ -6,4 +6,8 @@ function addComma(x) {
     return x;
 }
 
-export { addComma }
+function removeComma(x) {
+  return Number(x.replaceAll(',', ''))
+}
+
+export { addComma, removeComma }

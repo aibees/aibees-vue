@@ -8,7 +8,8 @@ const env = loadEnv('', process.cwd());
 export default defineConfig({
   define: {
     aibeesGlobal: {
-      API_SERVER_URL : env.VITE_SERVER_URL
+      API_SERVER_URL : env.VITE_SERVER_URL,
+      SERVICE_KEY : env.VITE_SERVICE_KEY,
     }
   },
   resolve: {

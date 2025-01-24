@@ -7,12 +7,12 @@
         <form>
             <input id="loginId" class="loginInput" placeholder="아이디 입력해주세요." />
             <input id="loginPw" type="password" class="loginInput" placeholder="비밀번호 입력해주세요." autocomplete="off" />
-            <button id="loginButton" class="loginForm" @click="loginProcess();">로그인</button>
+            <div id="loginButton" class="loginForm" @click="login">로그인</div>
         </form>
     </div>
     <div class="loginAdditional">
         <hr style="width: 80%; border: 1.5px solid grey; margin: 30px auto 30px; color: lightgrey;" />
-        로그인이 안된다면 <span @click="MngContractEvent()"><a id="contract" href="#">담당자에게 연락하기</a></span>
+        로그인이 안된다면 <span @click="MngContractEvent()">담당자에게 연락하기</span>
     </div>
   </div>
 </template>
@@ -21,7 +21,8 @@
     // import declaration
     import { ref, onMounted } from 'vue';
     import { userSession } from '../../scripts/util/user-session';
-    import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
+    //import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
+    import mariaApi from '../../scripts/util/mariaApi';
     import { useRouter } from 'vue-router';
 
     /******************************
@@ -35,7 +36,7 @@
      ******************************/
     onMounted(() => {
         const escapeHandler = (e) => {
-            if(e.key == 'Enter') { loginProcess(); }
+            if(e.key == 'Enter') { login(); }
         }
         document.addEventListener('keydown', escapeHandler);
     })
@@ -50,7 +51,9 @@
     /******************************
      ******* Main  Function *******
      ******************************/
-    const loginProcess = () => {
+    const url = aibeesGlobal.API_SERVER_URL + "/user/ledger/login"
+
+    const login = async () => {
         const loginKey = '63aa510c3ff68c332e48e6006342b9f706744223ad84a4bb20ee38168fd7ee8d';
         let loginId = document.getElementById('loginId').value;
         let loginPw = document.getElementById('loginPw').value;
@@ -60,26 +63,54 @@
             return false;
         } else {
             const loginParam = {
-                userId : loginId,
-                userPw : loginPw,
+                email : loginId,
+                password : loginPw,
                 loginKey : loginKey
             }
-            
-            
 
-            axiosPost();
-            
-            const loginData = {
-                loginInfo: {
-                    accessToken: "qwt0326@gmail.com",
-                    name: "aibees",
-                    admin: false
-                }
-            }
-            session.loginUpdate(loginData)
-            router.push('/account');
+            const {data} = await mariaApi.post("/user/ledger/login", loginParam);
+            session.loginUpdate(data);
+            router.push("/account");
         }
     }
+
+    // const loginProcess = async () => {
+    //     const loginKey = '63aa510c3ff68c332e48e6006342b9f706744223ad84a4bb20ee38168fd7ee8d';
+    //     let loginId = document.getElementById('loginId').value;
+    //     let loginPw = document.getElementById('loginPw').value;
+
+    //     if(loginId == '' || loginPw == '') {
+    //         alert("정상적으로 입력되지 않았습니다.");
+    //         return false;
+    //     } else {
+    //         // alert(loginId + " / " + loginPw);
+    //         // const loginData = {};
+
+    //         // const loginParam = {
+    //         //     email : loginId,
+    //         //     password : loginPw,
+    //         //     loginKey : loginKey
+    //         // }
+    //         // alert(loginParam);
+
+    //         // // const { data } = await mariaApi.post("/user/ledger/login", loginParam);
+    //         // // alert("loginResult :: " + data);
+    //         // const callback = (res) => {
+    //         //     console.log(res.data);
+    //         //     const loginResultInfo = {
+    //         //         accessToken: res.data.accessToken,
+    //         //         name: res.data.name,
+    //         //         admin: res.data.admin
+    //         //     }
+    //         //     loginData.loginInfo = loginResultInfo;
+
+    //         //     session.loginUpdate(loginData);
+    //         //     router.push('/account');
+    //         // }
+
+    //         // axiosPost(url, loginParam, callback);
+    //     }
+    // }
 </script>
 
 <style lang="scss" scoped>
@@ -121,8 +152,9 @@
         }
 
         .loginForm {
-            width: 358px;
-            height: 40px;
+            width: 350px;
+            height: 30px;
+            padding-top: 7px;
             border: 2px solid black;
             border-radius: 3px;
             margin: 10px auto 0px;

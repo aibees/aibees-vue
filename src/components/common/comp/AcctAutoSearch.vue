@@ -4,7 +4,7 @@
             type="text"
             :id="`acctSearch_${props.inputId}`"
             @input="searchSuggest($event)"
-            @focus="inputFocuseCheck(true)"
+            @focus="inputFocusCheck(true)"
             autocomplete="off"
         />
         <ul v-show="suggested.length > 0 && inputFocus">
@@ -53,7 +53,7 @@ const searchSuggest = (ev) => {
     axiosGet(url, callback);
 }
 
-const inputFocuseCheck = (boo) => {
+const inputFocusCheck = (boo) => {
     inputFocus.value = boo;
 }
 

@@ -148,7 +148,7 @@
 
 <script setup>
     import { ref, onMounted } from 'vue'
-    import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
+    import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
     import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
     import AccountHeader from '../common/AccountHeader.vue';
     import { addComma } from '@/scripts/util/common/CommonUtils.js'

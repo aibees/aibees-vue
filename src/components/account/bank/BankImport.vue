@@ -3,19 +3,13 @@
   <div id="loading_bar">
       Progressing....
   </div>
-  <div id="toTopButton" @click="toTop()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-          stroke="#4a5568"
-          stroke-width="1" stroke-linecap="square" stroke-linejoin="arcs">
-      <path d="M18 15l-6-6-6 6"/>
-    </svg>
-  </div>
   <div class="bankImport">
     <div class="import-buttons">
       <div class="buttons-left">
-          <select id="uploadType3Select" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
-              <option value="81">하나은행</option>
-              <option value="88">신한은행</option>
+          <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
+              <option v-for="(bank, idx) in bankSelectList" :key="idx" :value="bank.value">
+                {{ bank.name }}
+              </option>
           </select>
           <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
           <a class="buttons" @click="submitFile()"><font-awesome-icons :icon="['fa-solid', 'fa-save']" /></a>
@@ -28,7 +22,7 @@
             <option v-for="opt in fileHashComboList" :key="opt.fileId" :value="opt.fileId">{{ opt.fileName }}</option>
           </select>
           <button @click="selectData()">조회</button>
-          <button @click="selectData()">임시저장</button>
+          <button @click="tmpSave()">임시저장</button>
           <button @click="transferData()">제출</button>
       </div>
     </div>
@@ -36,12 +30,12 @@
       <table class="import-table">
         <thead>
           <tr>
-            <th class="table-th" style="width: 180px;">은행명</th>
+            <th class="table-th" style="width: 200px;">계좌명</th>
             <th class="table-th" style="width: 150px;">일자</th>
-            <th class="table-th" style="width: 100px;">구분</th>
+            <th class="table-th" style="width: 280px;">계정과목매핑</th>
             <th class="table-th" style="width: 100px;">입출여부</th>
             <th class="table-th" style="width: 100px;">금액</th>
-            <th class="table-th" style="width: 380px;">적요</th>
+            <th class="table-th" style="width: 400px;">적요</th>
           </tr>
         </thead>
         <tbody>
@@ -49,8 +43,8 @@
               <td>{{ state.bankNm }}</td>
               <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
               <td>
-                  <select :id="`itemBox_${idx}`" class="use-type select-transparent" @change="changeColor($event, idx)" :style="{ 'background-color': '#' + state.usageColor}">
-                      <option v-for="usage in useTypeMap" :key="usage.value" :value="usage.value" :color="usage.color" :selected="usage.value == `${state.usageCd}`" :style="{ 'background-color': usage.color}">{{ usage.name }}</option>
+                  <select :id="`itemBox_${idx}`" class="use-type select-transparent" :style="{ 'background-color': '#' + state.usageColor}">
+                      <option v-for="data in useAcctMaster" :key="data.acctCd" :value="data.acctCd" :selected="data.acctCd == `${state.acctCd}`">{{ data.acctNm }} / {{ data.acctCd }}</option>
                   </select>
               </td>
               <td>{{ state.entryNm }}</td>
@@ -65,88 +59,81 @@
 
 <script setup>
     // import declaration
-    import { ref, onBeforeMount, onMounted } from 'vue'
-    import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
-    import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
+    import { ref, onMounted } from 'vue'
+    import { axiosPost } from '@/scripts/util/axios.js'
+    import { getResourceList } from '@/scripts/util/common/SettingResource.js';
     import AccountHeader from '../common/AccountHeader.vue';
+    import mariaApi from '../../../scripts/util/mariaApi';
+import axios from 'axios';
 
     /******************************
      ******* Const  Variable ******
      ******************************/
     const title = ref('은행거래 결제확정처리');
     const dataList = ref([]);
-    const useTypeMap = ref({});
+    const useAcctMaster = ref({});
     const fileHashComboList = ref([]);
     const bankSelectList = ref([]);
 
     let curFileHash = '';
-    let dateSortFlag = 'desc';
-    let remarkSortFlag = 'desc';
 
 
     /******************************
      ******* Vue  Lift Cycle ******
      ******************************/
-    onMounted(() => {
-      getFilenameList();
-      getBankSelectList();
-      getUsageOption();
+    // 개발 완료
+    onMounted(async () => {
+      await getBankSelectList();
+      await getFileNameList();
+      await getAcctCdOptList();
     })
 
     /******************************
      ***** Element Init Func. *****
      ******************************/
-    const getFilenameList = () => {
-      const url = aibeesGlobal.API_SERVER_URL + '/account/common/import/list?type=BANK';
-      const callback = (res) => {
-        fileHashComboList.value = res.data.data;
+    // 임시저장되어있는 업로드 파일명 조회
+    // 개발 완료
+    const getFileNameList = async () => {
+      const { data } = await mariaApi.get('/account/bank/files');
+      fileHashComboList.value = data;
+    }
+
+    // 은행목록 조회
+    // 개발 완료
+    const getBankSelectList = async () => {
+      const param = { useYn: 'Y' }
+
+      const { data } = await mariaApi.get('/account/bank/infos', { params: param });
+      data.forEach(data => {
+        bankSelectList.value.push(
+          {
+            'value': data.bankId,
+            'name': data.bankNm
+          }
+        )
+      })
+    }
+
+    // 계정과목코드 조회
+    // 개발 완료
+    const getAcctCdOptList = async () => {
+      const acctParam = {
+        enabledFlag : 'Y',
+        finalFlag: 'Y'
       }
-      axiosGet(url, callback);
-    }
-
-    const getBankSelectList = () => {
-      const callback = (res) => {
-        bankSelectList.value = res.data;
-      }
-      return getBankOption('BANK_SELECT', callback);
-    }
-
-    const getBankOption = (tag, callback) => {
-      const url = aibeesGlobal.API_SERVER_URL + '/account/bank/option?tag=' + tag;
-      axiosGet(url, callback);
-    }
-
-    const getUsageOption = () => {
-      const usageData = {};
-
-      getResourceList('ACCOUNT', 'COMBO', 'USAGE')
-      .forEach(data => {
-        let usageColor = '#FFFFFF';
-        if(data.attribute03 != null && data.attribute03 != '' && typeof data.attribute03 != "undefined") {
-          usageColor = '#' + data.attribute03;
-        }
-
-        usageData[data.detailCode] = {
-          'name'  : data.name,
-          'value' : data.detailCode,
-          'color' : usageColor
-        }
-      });
-      useTypeMap.value = usageData;
+      const { data } = await mariaApi.get('/account/acct', { params: acctParam });
+      useAcctMaster.value = data;
     }
 
     /******************************
      ******* Event  Function ******
      ******************************/
+    // 개발 완료
     const uploadFile = () => {
       $("#fileUploadInput").click();
     }
 
-    const changeColor = (event, idx) => {
-        const color_data = useTypeMap.value[event.target.value].color;
-        document.getElementById('itemBox_' + idx).style.backgroundColor = color_data;
-    }
-
+    // 개발 완료
     const putFileName = () => {
         const fileName = document.getElementById('fileUploadInput').files[0].name;
         document.getElementById('importfileText').value = fileName;
@@ -156,8 +143,9 @@
      ******* Main  Function *******
      ******************************/
     // 파일 제출
-    const submitFile = () => {
-        const data = new FormData();
+    // 개발 완료
+    const submitFile = async () => {
+        const formData = new FormData();
         var fileInput = document.getElementById('fileUploadInput');
         
         if(fileInput.files[0] == undefined) {
@@ -165,43 +153,84 @@
           return false;
         }
 
-        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/file";
-        data.append('type', document.getElementById('uploadTypeSelect').value);
-        data.append('file', fileInput.files[0]);
+        // const uploadParam = {
+        //   'bankId': document.getElementById('uploadTypeSelect').value,
+        //   'file': fileInput.files[0]
+        // }
 
-        const callback = (res) => {
-          if(res.data.RESULT == 'SUCCESS') {
-            selectImportedFileData(res.data.fileId);
-          } else {
-            document.getElementById('loading_bar').style.display='none';
-            alert(res.data.message);
-          }
-          getFilenameList();
-        }
+        const uploadParam = new FormData();
+        uploadParam.append('bankId', document.getElementById('uploadTypeSelect').value);
+        uploadParam.append('file', fileInput.files[0]);
 
-        document.getElementById('loading_bar').style.display='block';
-        axiosPostForFile(url, data, callback);
+        // const { data } = await mariaApi.post('/account/bank/files', uploadParam, {'Content-Type': 'multipart/form-data'});
+
+        const { data } = await axios.post(
+          aibeesGlobal.API_SERVER_URL + '/account/bank/files',
+          uploadParam,
+          { headers: { 
+            'Content-Type': 'multipart/form-data',
+            'serviceKey': aibeesGlobal.SERVICE_KEY
+          
+          } }
+        )
+
+        await getFileNameList();
+        // 다시 한 번 리스트 조회
+        await selectImportedFileData(data.fileId);
     }
 
     // import 된 tmp 데이터 조회, 출력
-    const selectImportedFileData = (fileId) => {
-      curFileHash = fileId;
-      const url = aibeesGlobal.API_SERVER_URL + "/account/bank/temp/list?hashId=" + fileId;
+    // 개발 완료
+    const selectImportedFileData = async (fileId) => {
+      dataList.value = [];
 
-      const callback = (res) => {
-        document.getElementById('loading_bar').style.display='none';
-        dataList.value = res.data.data;
-        console.log(dataList.value);
-        getFilenameList();
-      }
+      const { data } = await mariaApi.get('/account/bank/files/' + fileId);
+      document.getElementById('loading_bar').style.display='none';
+      dataList.value = data;
 
-      axiosGet(url, callback);
+      dataList.value.forEach(d=> {
+        d['entryNm'] = d.entryCd == 0 ? '수입' : '지출';
+      })
     }
 
     // 기존에 조회했던 파일데이터 불러오기
+    // 개발 완료
     const selectData = () => {
       const fileHashId = document.getElementById('uploadedFileSelect').value;
+      curFileHash = fileHashId;
       selectImportedFileData(fileHashId);
+    }
+
+    const tmpSave = async  () => {
+      const dataSize = dataList.value.length;
+      if(dataSize == 0) {
+        alert("데이터 로딩부터 합시다.");
+        return false;
+      }
+
+      const newBankId = document.getElementById('uploadTypeSelect').value;
+
+      for(let i = 0; i < dataSize; i++) {
+        let data = dataList.value[i];
+        data['acctCd'] = document.getElementById('itemBox_'+i).value;
+        console.log(i + " / acctCd " + data['acctCd']);
+        data['remark'] = document.getElementById('state-remark_'+i).value;
+      }
+
+      const tmpSaveParam = {
+        'bankId': newBankId,
+        'data': dataList.value,
+        'fileHash': document.getElementById('uploadedFileSelect').value
+      }
+
+      // const tmpSaveParam = new FormData();
+      // tmpSaveParam.append('bankId', newBankId);
+      // tmpSaveParam.append('fileHash', curFileHash);
+      // tmpSaveParam.append('data', dataList.value);
+      console.log(tmpSaveParam);
+
+      const { data } = await mariaApi.put('/account/bank/files', tmpSaveParam);
+      await selectImportedFileData(data.fileHash);
     }
 
     // tmp 데이터 마스터 테이블로 이관
@@ -239,22 +268,13 @@
             console.log(res);
             alert("문제 발생");
           }
-          getFilenameList();
+          getFileNameList();
         }
         console.log(reqData);
         document.getElementById('loading_bar').style.display='block';
         axiosPost(url, reqData, callback);
       }
     }
-
-    const toTop = () => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-
-
 </script>
 
 <style lang="scss" scoped>
@@ -275,7 +295,7 @@
 
 .bankImport {
   font-family: 'Nanum Barun Gothic';
-  width: 1000px;
+  width: 1400px;
   height: 90vh;
   border-left: 1px solid grey;
   border-right: 1px solid grey;
@@ -365,8 +385,8 @@
             font-size: 13px;
 
             .use-type {
-              border-radius: 15px;
-              width: 120px;
+              border-radius: 8px;
+              width: 240px;
               height: 35px;
             }
 

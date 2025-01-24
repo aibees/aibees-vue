@@ -17,6 +17,7 @@ import BankStatistics from './bank/BankStatistics.vue'
 
 import JournalView from './journal/JournalView.vue'
 import JournalMain from './journal/JournalMain.vue'
+import JournalCashFlow from './journal/JournalCashFlow.vue'
 
 import SystemView from './system/SystemView.vue'
 import SystemMain from './system/SystemMain.vue'
@@ -43,6 +44,7 @@ export default {
 
     , JournalView
     , JournalMain
+    , JournalCashFlow
 
     , SystemView
     , SystemMain

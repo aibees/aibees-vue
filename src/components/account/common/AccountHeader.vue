@@ -19,7 +19,6 @@
     let title = ref("");
 
     onMounted(() => {
-        console.log(toRefs(props).prop_title.value);
         title.value = toRefs(props).prop_title.value;
     });
 </script>

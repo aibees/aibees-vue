@@ -1,56 +1,52 @@
-import axios from 'axios';
-
 
 const axiosGet = (url, callback) => {
-    axios.get()
-
-    axios.get(url)
-    .then((res) => {
-        callback(res);
-    })
-    .catch(err => {
-        console.log(err);
-        alert(err);
-    })
+    // axios.get(url)
+    // .then((res) => {
+    //     callback(res);
+    // })
+    // .catch(err => {
+    //     console.log(err);
+    //     alert(err);
+    // })
 }
 
 const axiosPost = (url, data, callback) => {
-    axios.post(url, data, {
+    // axios.post(url, data, {
 
-    })
-    .then((res) => {
-        callback(res);
-    })
-    .catch(err => {
-        console.log(err);
-        alert(err);
-    })
+    // })
+    // .then((res) => {
+    //     callback(res);
+    // })
+    // .catch(err => {
+    //     console.log(err);
+    //     alert(err);
+    // })
 }
 
 const axiosPostForFile = (url, data, callback) => {
-    axios.post(url, data, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
-    .then((res) => {
-        callback(res);
-    })
-    .catch(err => {
-        console.log(err);
-        alert(err);
-    })
+    // axios.post(url, data, {
+    //     headers: {
+    //         'Content-Type': 'multipart/form-data'
+    //     }
+    // })
+    // .then((res) => {
+    //     callback(res);
+    // })
+    // .catch(err => {
+    //     console.log(err);
+    //     alert(err);
+    // })
 }
 
 const axiosPut = (url, data, callback) => {
-    axios.put(url, data, {})
-    .then((res) => {
-        callback(res);
-    })
-    .catch(err => {
-        console.log(err);
-        alert(err);
-    })
+    // axios.put(url, data, {})
+    // .then((res) => {
+    //     callback(res);
+    // })
+    // .catch(err => {
+    //     console.log(err);
+    //     alert(err);
+    // })
 }
 
 export { axiosPostForFile, axiosGet, axiosPost } 

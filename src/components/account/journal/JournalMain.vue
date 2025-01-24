@@ -15,20 +15,31 @@
                 <div class="paragraph-block journal-info-one">
                     <div class="info-block journal-no">
                         <span>전표번호</span>
-                        <div class="input-box"><input id="header_no" class="text-readonly" type="text" readonly /></div>
+                        <div class="input-box">
+                            <input 
+                                id="header_no" 
+                                class="text-readonly" 
+                                :value="journalHeaderData.jeHeaderNo" 
+                                type="text"
+                                readonly />
+                        </div>
                     </div>
                     <div class="info-block jounrnal-date">
                         <span>전표일자</span>
-                        <div class="input-box"><input id="header-date" class="text-required" type="date"
-                                :pattern="datePattern" /></div>
-
+                        <div class="input-box">
+                            <input 
+                                id="header-date" 
+                                class="text-required" 
+                                type="date"
+                                v-model="journalHeaderData.jeDate" />
+                        </div>
                     </div>
                 </div>
                 <div class="paragraph-block journal-info-two">
                     <div class="info-block journal-source">
                         <span>출처</span>
                         <div class="input-box">
-                            <select id="header-source" class="text-required" @change="setCategoryList()">
+                            <select id="header-source" class="text-required" @change="setCategoryList()" v-model="journalHeaderData.sourceCd">
                                 <option v-for="source in sourceOptionList" :key="source.sourceCd" :value="source.sourceCd">
                                     {{ source.sourceNm }} / {{ source.sourceCd }}
                                 </option>
@@ -39,7 +50,7 @@
                     <div class="info-block jounrnal-category">
                         <span>범주</span>
                         <div class="input-box">
-                            <select id="header-category" class="text-required">
+                            <select id="header-category" class="text-required" v-model="journalHeaderData.categoryCd">
                                 <option v-for="cate in categoryOptionList" :key="cate.categoryCd" :value="cate.categoryCd">
                                     {{ cate.categoryNm }} / {{ cate.categoryCd }}
                                 </option>
@@ -51,7 +62,11 @@
                     <div class="info-block journal-remark">
                         <span>적요</span>
                         <div class="area-box">
-                            <textarea id="header-remark" class="text-required"></textarea>
+                            <textarea 
+                                id="header-remark" 
+                                class="text-required"
+                                v-model="journalHeaderData.remark">
+                            </textarea>
                         </div>
                     </div>
                 </div>
@@ -59,7 +74,7 @@
                     <div class="info-block journal-bankAcct">
                         <span>은행통장</span>
                         <div class="input-box">
-                            <select id="header-bankAcct" class="text-required">
+                            <select id="header-bankAcct" class="text-required" v-model="journalHeaderData.bankId">
                                 <option v-for="bank in bankAccountList" :key="bank.value" :value="bank.value">
                                     {{ bank.name }}
                                 </option>
@@ -68,7 +83,7 @@
                     </div>
                     <div class="info-block journal-internal">
                         <span>내부상계</span>
-                        <select id="header-internal">
+                        <select id="header-internal" v-model="journalHeaderData.internalYn">
                             <option value="Y">Y</option>
                             <option selected value="N">N</option>
                         </select>
@@ -77,14 +92,31 @@
             </div>
         </div>
         <div class="journal-validation">
-            [차변]  {{ DebitSum }} / [대변] {{ CreditSum }}
+            <div>
+                [전표상태] {{ journalHeaderData.status }}
+            </div>
+            <div>
+                [차변]  {{ DebitSum }} / [대변] {{ CreditSum }}
+            </div>
+            
         </div>
         <div class="journal-grid">
             <div class="additional-option">
                 <div class="option-left">
-                    <button @click="addLine">라인추가</button>
-                    <button @click="removeLine">라인삭제</button>
-                    <button>라인복사</button>
+                    <button
+                        @click="addLine"
+                        :disabled="journalHeaderData.status !== 'INIT'">
+                        라인추가
+                    </button>
+                    <button
+                        @click="removeLine"
+                        :disabled="journalHeaderData.status !== 'INIT'">
+                        라인삭제
+                    </button>
+                    <button
+                        :disabled="journalHeaderData.status !== 'INIT'">
+                        라인복사
+                    </button>
                 </div>
                 <div class="option-right">
                     <button @click="openPresetModal">사전정의유형</button>
@@ -116,13 +148,13 @@
                         </td>
                         <td>
                             <!-- <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" autocomplete="off" -->
-                            <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" :value="`${line.drAmount}`" autocomplete="off"
+                            <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" :value="`${line.amountDr}`" autocomplete="off"
                                     @change="resetAppo('dr', 'cr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
                             </div>
                         </td>
                         <td>
                             <!-- <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" autocomplete="off" -->
-                            <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" :value="`${line.crAmount}`" autocomplete="off"
+                            <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" :value="`${line.amountCr}`" autocomplete="off"
                                     @change="resetAppo('cr', 'dr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
                             </div>
                         </td>
@@ -143,26 +175,38 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
+import { ref, onMounted, reactive } from 'vue'
+import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
 import AutoSearch from '../../common/comp/AcctAutoSearch.vue'
 import JournalPresetModal from './modal/JournalPresetModal.vue'
 import JournalSearchHeaderNoModal from './modal/JournalHeaderNoSearchModal.vue'
 import AccountHeader from '../common/AccountHeader.vue';
-import { addComma } from '@/scripts/util/common/CommonUtils.js'
+import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js'
 /*********************
  ** GLOBAL VARIABLE **
  *********************/
 const title = ref("가계부 전표 입력(메인)");
-const journalHeaderData = ref({});
+let journalHeaderData = reactive({
+    'jeHeaderId': -1,
+    'jeHeaderNo': '',
+    'jeDate': '',
+    'remark': '',
+    'sourceCd': '',
+    'categoryCd': '',
+    'bankId': '0000',
+    'internalYn': 'N',
+    'status': 'INIT'
+
+})
 const journalDetailData = ref([]);
 const datePattern = ref("(?:19|20)(?:(?:[13579][26]|[02468][048])-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-9])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:30))|(?:(?:0[13578]|1[02])-31))|(?:[0-9]{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-8])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:29|30))|(?:(?:0[13578]|1[02])-31)))");
 const bankAccountList = ref([]);
 const sourceOptionList = ref([]);
 const categoryOptionList = ref([]);
 
-const CreditSum = ref(0);
-const DebitSum = ref(0);
+// 차대변 검증용 변수
+const CreditSum = ref('0');
+const DebitSum = ref('0');
 
 /*********************
  ** MODAL  VARIABLE **
@@ -179,20 +223,28 @@ const searchModalProps = ref({
  **   LIFE  CYCLE   **
  *********************/
 onMounted(() => {
-    const toDate = new Date();
-    let dateValue = toDate.getFullYear();
-    dateValue = dateValue + '-' + (toDate.getMonth() + 1);
-    dateValue = dateValue + '-' + (toDate.getDate().toString().length == 1 ? ('0' + toDate.getDate()) : toDate.getDate());
-    document.getElementById('header-date').value = dateValue;
-
     setBankList();
     setSourceList();
+    journalHeaderData.jeDate = getToday();
 })
 
 /*********************
  ** SETUP  FUNCTION **
  *********************/
 
+ // 오늘 날짜 구해오기
+const getToday = () => {
+    const toDate = new Date();
+    let dateValue = toDate.getFullYear();
+    dateValue = dateValue + '-' + (toDate.getMonth() + 1);
+    dateValue = dateValue + '-' + (toDate.getDate().toString().length == 1 ? ('0' + toDate.getDate()) : toDate.getDate());
+    
+    return dateValue;
+}
+
+/**
+ * 은행 Select Option 조회
+ */
 const setBankList = () => {
         const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
 
@@ -214,10 +266,12 @@ const setBankList = () => {
         axiosGet(url, callback);
     }
 
+    /**
+     * Source (출처) Select Options 조회
+     */
 const setSourceList = () => {
     const url = aibeesGlobal.API_SERVER_URL + '/system/sources';
     const callback = (res) => {
-        console.log(res)
         if (res.data.success) {
             sourceOptionList.value = res.data.data;
             sourceOptionList.value.unshift({
@@ -232,93 +286,127 @@ const setSourceList = () => {
     axiosGet(url, callback);
 }
 
+/**
+ * 출처 별 Category(범주) Select Options 조회
+ */
 const setCategoryList = () => {
-    let sourceCd = document.getElementById('header-source').value;
+    let sourceCd = journalHeaderData.sourceCd;
 
     if (typeof sourceCd === 'undefined' || sourceCd === null || sourceCd === '') {
         return false;
     }
-    console.log(sourceCd);
     const url = aibeesGlobal.API_SERVER_URL + '/system/categories?sourceCd=' + sourceCd.replaceAll(' ', '');
     const callback = (res) => {
         if (res.data.success) {
-            console.log(res.data)
             categoryOptionList.value = res.data.data;
         } else {
             alert(res.data.message);
         }
     }
-
     axiosGet(url, callback);
 }
 
 /*********************
  ** BUTTON FUNCTION **
  *********************/
+// 변수 초기화
 const reset = () => {
     journalDetailData.value = [];
-    document.getElementById('header-remark').value = '';
-    document.getElementById('header_no').value = '';
-    document.getElementById('header-internal').value = 'N';
+    journalHeaderData = reactive({
+        'jeHeaderId': -1,
+        'jeHeaderNo': '',
+        'jeDate': getToday(),
+        'remark': '',
+        'sourceCd': '',
+        'categoryCd': '',
+        'bankId': '0000',
+        'internalYn': 'N',
+        'status': 'INIT'
+    })
     CreditSum.value = 0;
     DebitSum.value = 0;
 }
 
-const search = () => {
-
-}
-
+/**
+ * 전표번호(Je Header No)로 조회
+ * @param {*} headerNo 
+ */
 const searchByHeaderNo = (headerNo) => {
+
     const url = aibeesGlobal.API_SERVER_URL + '/account/journal/' + headerNo;
     const callback = (res) => {
         const resultData = res.data.data;
         console.log(resultData);
-        document.getElementById('header_no').value = resultData.jeHeaderNo;
-        document.getElementById('header-date').value = resultData.jeDate;
-
+        // header Data
+        journalHeaderData.jeHeaderId = resultData.jeHeaderId;
+        journalHeaderData.jeHeaderNo = resultData.jeHeaderNo;
+        journalHeaderData.jeDate = resultData.jeDate;
+        journalHeaderData.remark = resultData.remark;
+        journalHeaderData.bankId = resultData.bankId;
+        journalHeaderData.internalYn = resultData.internalYn;
+        journalHeaderData.sourceCd = resultData.sourceCd;
+        journalHeaderData.status = resultData.status;
+        setCategoryList();
+        journalHeaderData.categoryCd = resultData.categoryCd;
+        
+        // line Data
         journalDetailData.value = resultData.jeLineList;
+        
     }
     axiosGet(url, callback);
 }
 
+/**
+ * 전표 저장
+ */
 const saveJournal = () => {
-    const jeLineList = [];
 
-    for (let i = 0; i < journalDetailData.value.length; i++) {
-        const tmp = {
-            'lineNo': i,
-            'acctCd': document.getElementById('acctCd_'+i).value,
-            'acctNm': document.getElementById('acctNm_'+i).value,
-            'amountDr': document.getElementById('drAmount_'+i).value.replaceAll(',', ''),
-            'amountCr': document.getElementById('crAmount_'+i).value.replaceAll(',', ''),
-            'remark': document.getElementById('remark_'+i).value
-        }
-        jeLineList.push(tmp);
+    // validation 검증
+    if (!journalValidate()) {
+        return false;
     }
-    const sourceCd = document.getElementById('header-source').value.replaceAll(' ', '');
-    const categoryCd = document.getElementById('header-category').value.replaceAll(' ', '');
+
+    // Line Data 조정
+    journalDetailData.value.forEach(data => {
+        data.amountDr = removeComma(data.amountDr);
+        data.amountCr = removeComma(data.amountCr);
+    });
 
     const saveData = {
-        'jeDate': document.getElementById('header-date').value,
+        'jeDate': journalHeaderData.jeDate,
         'trxType': 'INSERT',
-        'bankId': document.getElementById('header-bankAcct').value,
-        'sourceCd': sourceCd,
-        'categoryCd': categoryCd,
-        'remark': document.getElementById('header-remark').value,
+        'bankId': journalHeaderData.bankId,
+        'sourceCd': journalHeaderData.sourceCd,
+        'categoryCd': journalHeaderData.categoryCd,
+        'remark': journalHeaderData.remark,
         'jeLineList': journalDetailData.value,
-        'internalYn': document.getElementById('header-internal').value
+        'internalYn': journalHeaderData.internalYn
     }
 
     const url = aibeesGlobal.API_SERVER_URL + '/account/journal';
     const callback = (res) => {
-        if (res.data.message = 'SUCCESS') {
+        if (res.data.success) {
             alert("저장완료");
-            searchByHeaderNo(res.data.data);
+            searchByHeaderNo(res.data.data.jeHeaderNo);
         } else {
             alert(res.data.message);
         }
     }
     axiosPost(url, saveData, callback);
+}
+
+const journalValidate = () => {
+    if (CreditSum.value !== DebitSum.value) {
+        alert("차/대변 금액이 불일치합니다.");
+        return false;
+    }
+
+    if (journalHeaderData.remark === '') {
+        alert("적요는 필수입니다.");
+        return false;
+    }
+
+    return true;
 }
 
 const selectTr = (idx) => {
@@ -371,8 +459,8 @@ const addLine = () => {
     const newData = {
         'acctCd': '',
         'acctNm': '',
-        'drAmount': '',
-        'crAmount': '',
+        'amountDr': '',
+        'amountCr': '',
         'remark': '',
         'additionalOpt': {
             'usage': ''
@@ -399,30 +487,28 @@ const removeLine = () => {
  */
 const resetAppo = (source, target, idx) => {
     const currNum = document.getElementById(source + 'Amount_' + idx).value;
-    const amount = Number(currNum.replaceAll(',', ''));
+    const amount = removeComma(currNum);
     
     if (source === 'dr') {
         const dataInLine = journalDetailData.value[idx];
-        dataInLine.drAmount = addComma(amount);
-        dataInLine.crAmount = '0';
+        dataInLine.amountDr = addComma(amount);
+        dataInLine.amountCr = '0';
     }
     if (source === 'cr') {
         const dataInLine = journalDetailData.value[idx];
-        dataInLine.crAmount = addComma(amount);
-        dataInLine.drAmount = '0';
+        dataInLine.amountCr = addComma(amount);
+        dataInLine.amountDr = '0';
     }
 
-    document.getElementById(source + 'Amount_' + idx).value = addComma(amount);
-    document.getElementById(target + 'Amount_' + idx).value = 0;
+    let debit = 0;
+    let credit = 0;
 
-    DebitSum.value = 0;
-    document.getElementsByName('drAmount').forEach(obj => {
-        DebitSum.value = DebitSum.value + Number(obj.value.replaceAll(',', ''));
-    });
-    CreditSum.value = 0;
-    document.getElementsByName('crAmount').forEach(obj => {
-        CreditSum.value = CreditSum.value + Number(obj.value.replaceAll(',', ''));
-    });
+    journalDetailData.value.forEach(data => {
+        debit = debit + removeComma(data.amountDr);
+        credit = credit + removeComma(data.amountCr);
+        DebitSum.value = addComma(debit);
+        CreditSum.value = addComma(credit);
+    })
 }
 
 const inputRemark = (event, idx) => {
@@ -548,12 +634,15 @@ button {
     }
 
     .journal-validation {
+        display: flex;
+        justify-content: space-between;
         border-radius: 5px;
         margin: 10px 0px;
         background-color: rgb(230, 230, 230);
-        height: 40px;
+        height: 27px;
         text-align: right;
-        padding-top: 5px;
+        padding-top: 8px;
+        padding-left: 20px;
         padding-right: 20px;
     }
 

@@ -38,8 +38,11 @@ const getjournalMenu = () => {
         {
             'name': '홈',
             'value': 'journal_main'
-        }
-        ,
+        },
+        {
+            'name': '현금흐름표',
+            'value': 'journal_cashflow'
+        },
         // {
         //     'name': '전체조회',
         //     'value': 'journal_list'
@@ -69,7 +72,7 @@ const callMenu = (item) => {
     if (item.value == 'back') {
         router.push('/account');
     } else {
-        router.push({ name: 'journal-' + to })
+        router.push({ name: 'Journal-' + to })
     }
 }
 
