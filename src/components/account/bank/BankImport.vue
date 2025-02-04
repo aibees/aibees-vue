@@ -60,8 +60,6 @@
 <script setup>
     // import declaration
     import { ref, onMounted } from 'vue'
-    import { axiosPost } from '@/scripts/util/axios.js'
-    import { getResourceList } from '@/scripts/util/common/SettingResource.js';
     import AccountHeader from '../common/AccountHeader.vue';
     import mariaApi from '../../../scripts/util/mariaApi';
 import axios from 'axios';
@@ -74,9 +72,6 @@ import axios from 'axios';
     const useAcctMaster = ref({});
     const fileHashComboList = ref([]);
     const bankSelectList = ref([]);
-
-    let curFileHash = '';
-
 
     /******************************
      ******* Vue  Lift Cycle ******
@@ -153,11 +148,6 @@ import axios from 'axios';
           return false;
         }
 
-        // const uploadParam = {
-        //   'bankId': document.getElementById('uploadTypeSelect').value,
-        //   'file': fileInput.files[0]
-        // }
-
         const uploadParam = new FormData();
         uploadParam.append('bankId', document.getElementById('uploadTypeSelect').value);
         uploadParam.append('file', fileInput.files[0]);
@@ -174,15 +164,17 @@ import axios from 'axios';
           } }
         )
 
+        console.log(data);
         await getFileNameList();
         // 다시 한 번 리스트 조회
-        await selectImportedFileData(data.fileId);
+        await selectImportedFileData(data.fileHash);
     }
 
     // import 된 tmp 데이터 조회, 출력
     // 개발 완료
     const selectImportedFileData = async (fileId) => {
       dataList.value = [];
+      document.getElementById('loading_bar').style.display='block';
 
       const { data } = await mariaApi.get('/account/bank/files/' + fileId);
       document.getElementById('loading_bar').style.display='none';
@@ -197,7 +189,6 @@ import axios from 'axios';
     // 개발 완료
     const selectData = () => {
       const fileHashId = document.getElementById('uploadedFileSelect').value;
-      curFileHash = fileHashId;
       selectImportedFileData(fileHashId);
     }
 
@@ -213,7 +204,6 @@ import axios from 'axios';
       for(let i = 0; i < dataSize; i++) {
         let data = dataList.value[i];
         data['acctCd'] = document.getElementById('itemBox_'+i).value;
-        console.log(i + " / acctCd " + data['acctCd']);
         data['remark'] = document.getElementById('state-remark_'+i).value;
       }
 
@@ -223,18 +213,12 @@ import axios from 'axios';
         'fileHash': document.getElementById('uploadedFileSelect').value
       }
 
-      // const tmpSaveParam = new FormData();
-      // tmpSaveParam.append('bankId', newBankId);
-      // tmpSaveParam.append('fileHash', curFileHash);
-      // tmpSaveParam.append('data', dataList.value);
-      console.log(tmpSaveParam);
-
       const { data } = await mariaApi.put('/account/bank/files', tmpSaveParam);
       await selectImportedFileData(data.fileHash);
     }
 
     // tmp 데이터 마스터 테이블로 이관
-    const transferData = () => {
+    const transferData = async () => {
       const dataSize = dataList.value.length;
       if(dataSize == 0) {
         alert("데이터 로딩부터 합시다.");
@@ -243,37 +227,27 @@ import axios from 'axios';
 
       const isReal = confirm("최종이고, 데이터 변경은 DB에서만 가능하다는 것 인지 바람");
       
-      if(isReal == true) {
-        for(let i = 0; i < dataSize; i++) {
-          let data = dataList.value[i];
-          data['usageCd'] = document.getElementById('itemBox_'+i).value;
-          data['remark'] = document.getElementById('state-remark_'+i).value;
-          data['status'] = 'INSERT';
-        }
-
-        // send to Server
-        const url = aibeesGlobal.API_SERVER_URL + '/account/bank';
-        const reqData = {
-          'type' : document.getElementById('uploadTypeSelect').value,
-          'data' : dataList.value,
-          'fileHash' : curFileHash
-        }
-        const callback = (res) => {
-          document.getElementById('loading_bar').style.display='none';
-          if(res.data.RESULT == 'SUCCESS') {
-            alert("저장 완료");
-            dataList.value = [];
-            // link to bank statement list
-          } else {
-            console.log(res);
-            alert("문제 발생");
-          }
-          getFileNameList();
-        }
-        console.log(reqData);
-        document.getElementById('loading_bar').style.display='block';
-        axiosPost(url, reqData, callback);
+      if (!isReal) {
+        return false;
       }
+
+      for(let i = 0; i < dataSize; i++) {
+        let data = dataList.value[i];
+        data['usageCd'] = document.getElementById('itemBox_'+i).value;
+        data['remark'] = document.getElementById('state-remark_'+i).value;
+      }
+
+      const reqData = {
+        'fileHash': document.getElementById('uploadedFileSelect').value,
+        'data' : dataList.value
+      }
+
+      const { data } = await mariaApi.post('/account/bank/files/je', reqData);
+
+      console.log(data);
+      dataList.value = [];
+      await getFileNameList();
+
     }
 </script>
 

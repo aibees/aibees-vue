@@ -17,7 +17,8 @@
                         <th style="width:120px">유형</th>
                         <th style="width:180px">사용한도</th>
                         <th style="width:150px">사용시작일자</th>
-                        <th style="width:150px">사용여부</th>
+                        <th style="width:100px">사용여부</th>
+                        <th style="width:100px">노출여부</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,6 +43,11 @@
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.useYn}`">{{ yn.name }}</option>
                             </select>
                         </td>
+                        <td>
+                            <select :id="`displayYn_${idx}`">
+                                <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.displayYn}`">{{ yn.name }}</option>
+                            </select>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -52,8 +58,7 @@
 <script setup>
     // import declaration
     import { ref, onBeforeMount, onMounted } from 'vue'
-    import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
-    import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
+    import mariaApi from '../../../scripts/util/mariaApi';
     import AccountHeader from '../common/AccountHeader.vue';
 
     /******************************
@@ -80,7 +85,7 @@
                 dataList.value[idx].trxType ='DELETE';
             }
         } else {
-            dataList.value[idx].trxType =''
+            dataList.value[idx].trxType = '';
         }
     }
 
@@ -99,21 +104,15 @@
         ]
     }
 
-    const getBankInfoList = () => {
-        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
+    const getBankInfoList = async () => {
 
-        const callback = (res) => {
-            if(res.data.message == 'SUCCESS') {
-                dataList.value = res.data.data;
-                dataList.value.forEach(data => {
-                    data['trxType'] = '';
-                    data['startDate'] = toDateForm(data['startDate']);
-                })
-            } else {
-                alert(res.data.message);
-            }
-        }
-        axiosGet(url, callback);
+        const { data } = await mariaApi.get('/account/bank/infos');
+
+        dataList.value = data;
+        dataList.value.forEach(data => {
+            data['trxType'] = '';
+            data['startDate'] = toDateForm(data['startDate']);
+        });
     }
 
     const selectData = () => {
@@ -131,21 +130,20 @@
             'bankType': '',
             'limitAmt': '0',
             'startDate': '',
-            'useYn': 'Y'
+            'useYn': 'Y',
+            'displayYn': 'Y'
         }
 
         dataList.value.push(newData);
     }
 
-    const saveData = () => {
-
-        console.log(dataList.value);
+    const saveData = async () => {
 
         const dataSize = dataList.value.length;
 
         for(let i = 0; i < dataSize; i++) {
             const data = dataList.value[i];
-            data['status'] = document.getElementById('status_'+i).checked;
+            data['trxType'] = document.getElementById('status_'+i).checked;
             data['bankId'] = document.getElementById('bankId_'+i).value;
             data['bankNm'] = document.getElementById('bankName_'+i).value;
             data['bankCd'] = document.getElementById('bankCd_'+i).value;
@@ -153,28 +151,20 @@
             data['limitAmt'] = document.getElementById('limitAmt_'+i).value;
             data['startDate'] = document.getElementById('startDate_'+i).value;
             data['useYn'] = document.getElementById('useYn_'+i).value;
+            data['displayYn'] = document.getElementById('displayYn_' + i).value;
         }
-        console.log(dataList.value);
 
         const isReal = confirm("저장하실건가");
 
         if(!isReal) {
             return false;
         }
-
-        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
-        const data = {
+        const saveParam = {
             'bankInfoReqs': dataList.value
         }
-        const callback = (res) => {
-            if(res.data.RESULT == 'SUCCESS') {
-                alert("저장완료");
-                getBankInfoList();
-            } else {
-                alert(res.data.message);
-            }
-        }
-        axiosPost(url, data, callback);
+        const { data } = await mariaApi.post('/account/bank/infos', saveParam);
+        console.log(data);
+        selectData();
     }
 
     const toDateForm = (ymd) => {
