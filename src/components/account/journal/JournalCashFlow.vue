@@ -3,7 +3,7 @@
     
     <div class="journal-cashflow">
         <div class="container button-container">
-            <div><button @click="openSearchModal">조회</button></div>
+            <div><button @click="getData">조회</button></div>
         </div>
         <div class="container search-container">
             <div class="info-block">
@@ -22,173 +22,47 @@
             <div class="container cashflow-container">
                 <div class="flow flow-revenue">
                     <p>수익</p>
-                    <div class="sum-revenue accum">합계 : 14,394,384 원</div>
+                    <div class="sum-revenue accum">합계 : {{ revenueAmt }} 원</div>
                     <br/>
                     <div class="sumByAcct">
-                        <div class="acct-group">
+                        <div class="acct-group" v-for="(group, idx) in revenueData" :key="idx">
                             <div class="acct">
-                                <span>급여 / 4010000</span>
+                                <span>{{ group.parentAcctNm }} / {{ group.parentAcctCd }}</span>
                                 <span> </span>
                             </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="summary">
-                                소계: 4,200,298 원
-                            </div>
-                        </div>
-                        
-                        <div class="acct-group">
-                            <div class="acct">
-                                <span>사내복지 / 4010000</span>
-                                <span> </span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;업무지원비 / 4010001</span>
-                                <span>795,940 원</span>
-                            </div>
-                            <div class="summary">
-                                소계: 4,200,298 원
+                            <div class="acct" v-for="(item, idx) in group.subAcct" :id="item.acctCd" @click="viewDetail(item.acctCd)">
+                                <span>&emsp;ㄴ{{ item.acctNm }} / {{ item.acctCd }}</span>
+                                <span>{{ item.amount }} 원</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="flow flow-expense">
                     <p>비용</p>
-                    <div class="sum-expense accum">합계 : 14,394,384 원</div>
+                    <div class="sum-expense accum">합계 : {{ expenseAmt }} 원</div>
                     <br/>
                     <div class="sumByAcct">
-                        <div class="acct-group">
+                        <div class="acct-group" v-for="(group, idx) in expenseData" :key="idx">
                             <div class="acct">
-                                <span>변동지출 / 4010000</span>
+                                <span>{{ group.parentAcctNm }} / {{ group.parentAcctCd }}</span>
                                 <span> </span>
                             </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="summary">
-                                소계: 4,200,298 원
-                            </div>
-                        </div>
-                        
-                        <div class="acct-group">
-                            <div class="acct">
-                                <span>변동지출 / 4010000</span>
-                                <span> </span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="summary">
-                                소계: 4,200,298 원
-                            </div>
-                        </div>
-
-                        <div class="acct-group">
-                            <div class="acct">
-                                <span>변동지출 / 4010000</span>
-                                <span> </span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="acct">
-                                <span>&emsp;정기급여 / 4010001</span>
-                                <span>4,200,298 원</span>
-                            </div>
-                            <div class="summary">
-                                소계: 4,200,298 원
+                            <div class="acct" v-for="(item, idx) in group.subAcct" :id="item.acctCd" @click="viewDetail(item.acctCd)">
+                                <span>&emsp;ㄴ{{ item.acctNm }} / {{ item.acctCd }}</span>
+                                <span>{{ item.amount }} 원</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="container detail-container">
-                detail
+                <div class="detail-body" v-for="(detail, idx) in detailData" :key="idx">
+                    <span class="remark">{{ detail.remark }}</span>
+                    <div class="detail-view">
+                        <div class="time">{{ detail.transactionDate }}</div>
+                        <span class="amount">{{ detail.amount }} 원</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -196,22 +70,33 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
+import mariaApi from '../../../scripts/util/mariaApi';
 import AccountHeader from '../common/AccountHeader.vue';
-import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js'
+import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js';
 /*********************
  ** GLOBAL VARIABLE **
  *********************/
- const title = ref("가계부 현금흐름표");
- const searchParams = reactive({
+const title = ref("가계부 현금흐름표");
+const searchParams = reactive({
     ym: ''
- })
+});
 
- /*********************
+let curSelectedTr = '';
+
+const revenueData = ref({});
+const revenueAmt = ref("");
+
+const expenseData = ref({});
+const expenseAmt = ref("");
+
+const detailData = ref([]);
+
+/*********************
  **   LIFE  CYCLE   **
  *********************/
-onMounted(() => {
+onMounted(async () => {
     searchParams.ym = getToday();
+    await getData();
 });
 
 /*********************
@@ -221,13 +106,124 @@ onMounted(() => {
 const getToday = () => {
     const toDate = new Date();
     let dateValue = toDate.getFullYear();
-    dateValue = dateValue + '-' + (toDate.getMonth() + 1);
-    
-    return dateValue;
+    let month = toDate.getMonth() + 1;
+    if (month.toString().length < 2) {
+        month = '0' + month;
+    }
+    return dateValue + '-' + month;
+}
+
+const getData = async () => {
+    const ym = searchParams.ym;
+    const revenue = await getRevenueData(ym);
+    console.log(revenue);
+    revenueData.value = revenue;
+    const expense = await getExpenseData(ym);
+    expenseData.value = expense;
+    console.log(expense);
+}
+
+const getRevenueData = async (ym) => {
+    const result = [];
+    const parents = new Map();
+    const { data } = await mariaApi.get(`/account/cashflow/${ym}/revenue`);
+
+    data.forEach(d => {
+        d['amount'] = addComma(d.crAmount + (-1 * d.drAmount));
+        const parentKey = d.parentAcctNm + '/' + d.parentAcctCd;
+        let subArr;
+        if (parents.has(parentKey)) {
+            subArr = parents.get(parentKey);
+            subArr.push(d);
+        } else {
+            subArr = [d];
+        }
+        parents.set(parentKey, subArr);
+    });
+
+    let allAmount = 0;
+    parents.forEach(p => {
+        const summing = p.reduce((acc, cur) => { return acc + removeComma(cur.amount) }, 0)
+
+        allAmount += summing;
+        const groupedSet = {
+            'parentAcctCd': p[0].parentAcctCd,
+            'parentAcctNm': p[0].parentAcctNm,
+            'subAcct': p,
+            'groupAmt': addComma(summing)
+        }
+        result.push(groupedSet);
+    });
+    revenueAmt.value = addComma(allAmount);
+
+    return result;
+}
+
+const getExpenseData = async (ym) => {
+    const result = [];
+    const parents = new Map();
+    const { data } = await mariaApi.get(`/account/cashflow/${ym}/expense`);
+
+    data.forEach(d => {
+        d['amount'] = addComma(d.drAmount + (-1 * d.crAmount));
+        const parentKey = d.parentAcctNm + '/' + d.parentAcctCd;
+        let subArr;
+        if (parents.has(parentKey)) {
+            subArr = parents.get(parentKey);
+            subArr.push(d);
+        } else {
+            subArr = [d];
+        }
+        parents.set(parentKey, subArr);
+    });
+
+    let allAmount = 0;
+    parents.forEach(p => {
+        const summing = p.reduce((acc, cur) => { return acc + removeComma(cur.amount) }, 0)
+
+        allAmount += summing;
+        const groupedSet = {
+            'parentAcctCd': p[0].parentAcctCd,
+            'parentAcctNm': p[0].parentAcctNm,
+            'subAcct': p,
+            'groupAmt': addComma(summing)
+        }
+        result.push(groupedSet);
+    })
+    expenseAmt.value = addComma(allAmount);
+
+    return result;
+}
+
+const viewDetail = async (acctCd) => {
+    if (curSelectedTr != '') {
+        document.getElementById(curSelectedTr).classList.remove('acct-active');
+    }
+
+    curSelectedTr = acctCd;
+    const tr = document.getElementById(acctCd);
+
+    if (tr.classList.contains('acct-active')) {
+        tr.classList.remove('acct-active');
+    } else {
+        tr.classList.add('acct-active');
+    }
+
+    const ym = searchParams.ym;
+    const { data } = await mariaApi.get(`/account/cashflow/detail/${ym}/${acctCd}`);
+    detailData.value = data;
+    detailData.value.forEach(data => {
+        data['amount'] = addComma(data.crAmount + data.drAmount);
+    });
 }
 </script>
 
 <style lang="scss" scoped>
+.acct-active {
+    font-weight: bolder;
+    filter: brightness(50%);
+}
+
 button {
     padding: 3px 15px;
     margin: 7px 5px 0px;
@@ -355,7 +351,26 @@ button {
             }
         }
         .detail-container {
-            width: 27%;
+            background-color: white;
+            border: 2px solid rgb(230, 230, 230);
+            width: 28%;
+
+            .detail-body {
+                margin-bottom: 20px;
+                border-bottom: 1px solid black;
+                .detail-view {
+                    display: flex;
+                    justify-content: space-between;
+                }
+
+                .time {
+                    font-size: small;
+                }
+
+                .remark {
+                    text-align: left;
+                }
+            }
         }
     }
 }

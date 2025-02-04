@@ -19,6 +19,7 @@
     "chartjs-plugin-labels": "^1.1.0",
     "mitt": "^3.0.1",
     "node-macaddress": "^0.2.4",
+    "nodemon": "^3.1.9",
     "os": "^0.1.2",
     "pinia": "^2.2.6",
     "pinia-persistedstate": "^0.1.2",
