@@ -30,7 +30,8 @@ mariaApi.interceptors.response.use(
     },
     (error) => {
         console.log(error)
-        alert(error.response.data.error.message);
+        if (error.response.data.error != null)
+            alert(error.response.data.error.message);
         return Promise.reject(error.response.data);
     }
 )

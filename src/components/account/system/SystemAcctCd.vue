@@ -11,7 +11,7 @@
                 </div>
                 <div class="container-body">
                     <ul>
-                        <li class="list-item" v-for="(acct, idx) in firstDataList" :key="idx" :id="acct.acctCd" @click="selectFirst(acct.acctCd)">
+                        <li class="list-item" v-for="(acct, idx) in dataList.first" :key="idx" :id="acct.acctCd" @click="selectFirst(acct.acctCd)">
                             {{ acct.acctNm }} / {{ acct.acctCd }}
                         </li>
                     </ul>
@@ -21,10 +21,11 @@
                 <div class="sysAcctCd-buttons">
                     <button class="buttons" @click="insertSecondRow()">추가</button>
                     <button class="buttons" @click="saveSecondData()">저장</button>
+                    <button class="buttons" @click="saveSecondData()">삭제</button>
                 </div>
                 <div class="container-body">
                     <ul>
-                        <li class="list-item" v-for="(acct, idx) in secondDataList" :key="idx" :id="acct.acctCd" @click="selectSecond(acct.acctCd)">
+                        <li class="list-item" v-for="(acct, idx) in dataList.second" :key="idx" :id="acct.acctCd" @click="selectSecond(acct.acctCd)">
                             <span>
                                 <input 
                                     class="inputs" 
@@ -49,10 +50,11 @@
                 <div class="sysAcctCd-buttons">
                     <button class="buttons" @click="insertLastRow()">추가</button>
                     <button class="buttons" @click="saveLastData()">저장</button>
+                    <button class="buttons" @click="saveSecondData()">삭제</button>
                 </div>
                 <div class="container-body">
                     <ul>
-                        <li class="list-item" v-for="(acct, idx) in lastDataList" :key="idx" :id="acct.acctCd">
+                        <li class="list-item" v-for="(acct, idx) in dataList.last" :key="idx" :id="acct.acctCd">
                             <span>
                                 <input 
                                     class="inputs" 
@@ -73,8 +75,7 @@
 
 <script setup>
 // import declaration
-import { ref, onBeforeMount, onMounted } from 'vue'
-
+import { ref, onMounted, reactive } from 'vue'
 import AccountHeader from '../common/AccountHeader.vue';
 import mariaApi from '../../../scripts/util/mariaApi';
 
@@ -83,15 +84,17 @@ import mariaApi from '../../../scripts/util/mariaApi';
  ******************************/
 const title = ref('시스템설정-계정과목관리');
 
-let curSelectedTr = '';
+let curFirstSelect = '';
 let curSecondSelect = '';
 let curLastSelect = '';
 let curTrxStatus = '';
 let curTrxPos = '';
 
-const firstDataList = ref([]);
-const secondDataList = ref([]);
-const lastDataList = ref([]);
+const dataList = reactive({
+    first: [],
+    second: [],
+    last: []
+});
 
 /******************************
  *******   life  cycle   ******
@@ -103,37 +106,43 @@ onMounted(async () => {
 /******************************
  ******* custom function ******
  ******************************/
+/**
+ * 첫번째 depth 계정코드 조회
+ */
 const getFirstData = async () => {
     const { data } = await mariaApi.get('/account/acct/first');
-    console.log(data);
-    firstDataList.value = data;
-}
+    dataList.first = data;
+} 
 
-const selectFirst = (acctCd) => {
-    if (curTrxPos != '' || curTrxStatus != '') {
-        const isContinue = confirm("아직 트랜잭션 저장중.. 초기화?");
-        if (isContinue) {
-            curTrxPos = '';
-            curTrxStatus = '';
-        } else {
+/**
+ * 첫번째 depth 계정코드 선택
+ * @param {*} firstAcctCd 
+ */
+const selectFirst = (firstAcctCd) => {
+    if (curTrxStatus != '') {
+        const isContinue = confirm('변경사항 취소하는건가?');
+        if(!isContinue) {
             return false;
         }
     }
 
+    // last depth 초기화
     if (curLastSelect != '') {
         document.getElementById(curLastSelect).classList.remove('acct-active');
         curLastSelect = '';
     }
+    // second depth 초기화
     if (curSecondSelect != '') {
         document.getElementById(curSecondSelect).classList.remove('acct-active');
         curSecondSelect = '';
     }
-    if (curSelectedTr != '') {
-        document.getElementById(curSelectedTr).classList.remove('acct-active');
+    // first depth 초기화
+    if (curFirstSelect != '') {
+        document.getElementById(curFirstSelect).classList.remove('acct-active');
     }
 
-    curSelectedTr = acctCd;
-    const tr = document.getElementById(acctCd);
+    curFirstSelect = firstAcctCd;
+    const tr = document.getElementById(firstAcctCd);
 
     if (tr.classList.contains('acct-active')) {
         tr.classList.remove('acct-active');
@@ -141,50 +150,60 @@ const selectFirst = (acctCd) => {
         tr.classList.add('acct-active');
     }
 
-    lastDataList.value = [];
-    getSecondData(acctCd);
+    dataList.last = [];
+    dataList.second = [];
+    getSecondData(firstAcctCd);
 }
 
-const getSecondData = async (acctCd) => {
+/**
+ * 첫번째 계정을 parameter로 하여 두번째 depth 계정코드 조회
+ * param : first AcctCd
+ * @param {*} acctCd 
+ */
+const getSecondData = async (firstAcctCd) => {
     const param = {
-        'acctCd': acctCd
+        'acctCd': firstAcctCd
     }
     const { data } = await mariaApi.get('/account/acct/second', { params: param });
-    secondDataList.value = data;
-    secondDataList.value.forEach(data => {
+    dataList.second = data;
+    dataList.second.forEach(data => {
         data['trxType'] = '';
         data['acctLevel'] = 'SECOND';
     });
 }
 
+/**
+ * Second Depth 계정코드명을 수정하면(나중에는 mgmt도) 상태값 변경
+ * @param {*} idx 
+ */
 const secondChanged = (idx) => {
-    if (secondDataList.value[idx].trxType == '') {
-        secondDataList.value[idx].trxType = 'UPDATE';
+    if (dataList.second[idx].trxType == '') {
+        dataList.second[idx].trxType = 'UPDATE';
     }
+    curTrxStatus = 'UPDATE';
+    curTrxPos = 'SECOND';
 }
 
-const selectSecond = async (acctCd) => {
-    if (curTrxPos != '' || curTrxStatus != '') {
-        const isContinue = confirm("아직 트랜잭션 저장중.. 초기화?");
-        if (isContinue) {
-            curTrxPos = '';
-            curTrxStatus = '';
-            secondDataList.value.pop();
-        } else {
-            return false;
-        }
-    }
+/**
+ * 두번째 계정 선택한 것에 대한 동작
+ * secondeAcctCd : 두번째 depth acctcd
+ * @param {*} secondAcctCd 
+ */
+const selectSecond = async (secondAcctCd) => {
 
+    // 이미 last depth가 선택되어 있는상태면 초기화
     if (curLastSelect != '') {
         document.getElementById(curLastSelect).classList.remove('acct-active');
         curLastSelect = '';
     }
+    
+    // 이미 second depth가 선택되어 있는상태면 초기화
     if (curSecondSelect != '') {
         document.getElementById(curSecondSelect).classList.remove('acct-active');
     }
 
-    curSecondSelect = acctCd;
-    const tr = document.getElementById(acctCd);
+    curSecondSelect = secondAcctCd;
+    const tr = document.getElementById(secondAcctCd);
 
     if (tr.classList.contains('acct-active')) {
         tr.classList.remove('acct-active');
@@ -192,77 +211,96 @@ const selectSecond = async (acctCd) => {
         tr.classList.add('acct-active');
     }
 
-    getLastData(acctCd);
+    getLastData(secondAcctCd);
 }
 
-const getLastData = async (acctCd) => {
+/**
+ * 두번째 depth 계정코드를 선택하면 그 하위 Last 계정코드 조회
+ * @param {*} secondAcctCd 
+ */
+const getLastData = async (secondAcctCd) => {
     const param = {
-        'acctCd': acctCd
+        'acctCd': secondAcctCd
     }
     const { data } = await mariaApi.get('/account/acct/last', { params: param });
-    lastDataList.value = data;
-    lastDataList.value.forEach(data => {
+    dataList.last = data;
+    dataList.last.forEach(data => {
         data['trxType'] = '';
+        data['acctLevel'] = 'LAST';
     });
 }
 
+/**
+ * Last Depth 계정코드명을 수정하면(나중에는 mgmt도) 상태값 변경
+ * @param {*} idx 
+ */
 const lastChanged = (idx) => {
-    if (lastDataList.value[idx].trxType == '') {
-        lastDataList.value[idx].trxType = 'UPDATE';
+    if (dataList.last[idx].trxType == '') {
+        dataList.last[idx].trxType = 'UPDATE';
     }
+    curTrxStatus = 'UPDATE';
+    curTrxPos = 'LAST';
 }
 
 /******************************
  ******* button function ******
  ******************************/
 const insertSecondRow = () => {
-    if (curSelectedTr == '') {
-        alert("부모계정 선택부터");
+    if (curFirstSelect == '') {
+        alert("첫번째부터");
         return false;
     }
 
     if (curTrxStatus != '') {
-        alert("업뎃 끝나고 하시길");
-        return false;
+        const isContinue = confirm('변경사항 취소하는건가?');
+        if(!isContinue) {
+            getSecondData(curFirstSelect);
+            initTrx();
+            return false;
+        }
     }
 
-    const parentAcctCd = Number(curSelectedTr.slice(0, 3));
-    const maxAcctCd = secondDataList.value.length == 0
+    const parentAcctCd = Number(curFirstSelect.slice(0, 3));
+    const maxAcctCd = dataList.second.length == 0
         ? parentAcctCd
-        : Number(secondDataList.value[secondDataList.value.length-1].acctCd.slice(0, 3));
+        : Number(dataList.second[dataList.second.length-1].acctCd.slice(0, 3));
 
     const newAcctCd = Math.max(
         parentAcctCd, maxAcctCd
     ) + 1;
 
     const data = {
-        'acctCd': newAcctCd + '0000',
+        'acctCd': newAcctCd + '000',
         'acctNm': '',
         'trxType': 'INSERT',
         'finalFlag': 'N',
         'acctLevel': 'SECOND',
-        'parentAcctCd': curSelectedTr
+        'parentAcctCd': curFirstSelect
     }
+    dataList.second.push(data);
     curTrxStatus = 'INSERT';
     curTrxPos = 'SECOND';
-    secondDataList.value.push(data);
 }
 
 const insertLastRow = () => {
     if (curSecondSelect == '') {
-        alert("부모계정 선택부터");
+        alert("두번째부터");
         return false;
     }
 
     if (curTrxStatus != '') {
-        alert("업뎃 끝나고 하시길");
-        return false;
+        const isContinue = confirm('변경사항 취소하는건가?');
+        if(!isContinue) {
+            getLastData(curSecondSelect);
+            initTrx();
+            return false;
+        }
     }
 
     const parentAcctCd = Number(curSecondSelect);
-    const maxAcctCd = lastDataList.value.length == 0
+    const maxAcctCd = dataList.last.length == 0
         ? parentAcctCd
-        : Number(lastDataList.value[lastDataList.value.length-1].acctCd);
+        : Number(dataList.last[dataList.last.length-1].acctCd);
 
     let newAcctCd = Math.max(
         parentAcctCd, maxAcctCd
@@ -274,13 +312,14 @@ const insertLastRow = () => {
 
     const data = {
         'acctCd': newAcctCd,
+        'acctLevel': "LAST",
         'acctNm': '',
         'trxType': 'INSERT',
         'parentAcctCd': curSecondSelect
     }
+    dataList.last.push(data);
     curTrxStatus = 'INSERT';
     curTrxPos = 'LAST';
-    lastDataList.value.push(data);
 }
 
 const saveSecondData = async () => {
@@ -291,15 +330,12 @@ const saveSecondData = async () => {
 
     const bodyParam = {
         'acctLevel': 'SECOND',
-        'data': secondDataList.value
+        'data': dataList.second
     }
 
     const { data } = await mariaApi.post('/account/acct/setting', bodyParam);
-    console.log(data);
-
-    curTrxPos = '';
-    curTrxStatus = '';
-    selectSecond(curSelectedTr);
+    getSecondData(curFirstSelect);
+    initTrx();
 }
 
 const saveLastData = async () => {
@@ -308,16 +344,18 @@ const saveLastData = async () => {
         return false;
     }
 
-const bodyParam = {
-    'acctLevel': 'LAST',
-    'data': lastDataList.value
+    const bodyParam = {
+        'acctLevel': 'LAST',
+        'data': dataList.last
+    }
+
+    const { data } = await mariaApi.post('/account/acct/setting', bodyParam);
+    initTrx();
 }
 
-const { data } = await mariaApi.post('/account/acct/setting', bodyParam);
-console.log(data);
-
-curTrxPos = '';
-curTrxStatus = '';
+const initTrx = () => {
+    curTrxPos = '';
+    curTrxStatus = '';
 }
 </script>
 
@@ -382,7 +420,7 @@ curTrxStatus = '';
                         padding: 10px 5px;
 
                         .inputs {
-                            width: 70px;
+                            width: 100px;
                             border: none;
                             background-color: transparent;
                         }
@@ -393,6 +431,14 @@ curTrxStatus = '';
 
         .first {
 
+        }
+
+        .second {
+            width: 300px;
+        }
+
+        .last {
+            width: 300px;
         }
     }
 }

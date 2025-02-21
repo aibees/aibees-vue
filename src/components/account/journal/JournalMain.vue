@@ -40,7 +40,7 @@
                         <span>출처</span>
                         <div class="input-box">
                             <select id="header-source" class="text-required" @change="setCategoryList()" v-model="journalHeaderData.sourceCd">
-                                <option v-for="source in sourceOptionList" :key="source.sourceCd" :value="source.sourceCd">
+                                <option v-for="source in options.source" :key="source.sourceCd" :value="source.sourceCd">
                                     {{ source.sourceNm }} / {{ source.sourceCd }}
                                 </option>
                             </select>
@@ -51,7 +51,7 @@
                         <span>범주</span>
                         <div class="input-box">
                             <select id="header-category" class="text-required" v-model="journalHeaderData.categoryCd">
-                                <option v-for="cate in categoryOptionList" :key="cate.categoryCd" :value="cate.categoryCd">
+                                <option v-for="cate in options.category" :key="cate.categoryCd" :value="cate.categoryCd">
                                     {{ cate.categoryNm }} / {{ cate.categoryCd }}
                                 </option>
                             </select>
@@ -75,18 +75,11 @@
                         <span>은행통장</span>
                         <div class="input-box">
                             <select id="header-bankAcct" class="text-required" v-model="journalHeaderData.bankId">
-                                <option v-for="bank in bankAccountList" :key="bank.value" :value="bank.value">
-                                    {{ bank.name }}
+                                <option v-for="bank in options.bank" :key="bank.bankId" :value="bank.bankId">
+                                    {{ bank.bankNm }} / {{ bank.bankId }}
                                 </option>
                             </select>
                         </div>
-                    </div>
-                    <div class="info-block journal-internal">
-                        <span>내부상계</span>
-                        <select id="header-internal" v-model="journalHeaderData.internalYn">
-                            <option value="Y">Y</option>
-                            <option selected value="N">N</option>
-                        </select>
                     </div>
                 </div>
             </div>
@@ -181,7 +174,9 @@ import AutoSearch from '../../common/comp/AcctAutoSearch.vue'
 import JournalPresetModal from './modal/JournalPresetModal.vue'
 import JournalSearchHeaderNoModal from './modal/JournalHeaderNoSearchModal.vue'
 import AccountHeader from '../common/AccountHeader.vue';
+import mariaApi from '../../../scripts/util/mariaApi'
 import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js'
+
 /*********************
  ** GLOBAL VARIABLE **
  *********************/
@@ -193,16 +188,18 @@ let journalHeaderData = reactive({
     'remark': '',
     'sourceCd': '',
     'categoryCd': '',
-    'bankId': '0000',
+    'bankId': '',
     'internalYn': 'N',
     'status': 'INIT'
-
 })
+
+const options = reactive({
+    bank: [],
+    source: [],
+    category: []
+})
+
 const journalDetailData = ref([]);
-const datePattern = ref("(?:19|20)(?:(?:[13579][26]|[02468][048])-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-9])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:30))|(?:(?:0[13578]|1[02])-31))|(?:[0-9]{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-8])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:29|30))|(?:(?:0[13578]|1[02])-31)))");
-const bankAccountList = ref([]);
-const sourceOptionList = ref([]);
-const categoryOptionList = ref([]);
 
 // 차대변 검증용 변수
 const CreditSum = ref('0');
@@ -236,7 +233,7 @@ onMounted(() => {
 const getToday = () => {
     const toDate = new Date();
     let dateValue = toDate.getFullYear();
-    dateValue = dateValue + '-' + (toDate.getMonth() + 1);
+    dateValue = dateValue + '-' + ((toDate.getMonth()+1).toString().length == 1 ? ('0' + (toDate.getMonth()+1)) : (toDate.getMonth()+1));
     dateValue = dateValue + '-' + (toDate.getDate().toString().length == 1 ? ('0' + toDate.getDate()) : toDate.getDate());
     
     return dateValue;
@@ -245,65 +242,35 @@ const getToday = () => {
 /**
  * 은행 Select Option 조회
  */
-const setBankList = () => {
-        const url = aibeesGlobal.API_SERVER_URL + "/account/bank/infos";
-
-        const callback = (res) => {
-            if(res.data.success) {
-                res.data.data.forEach(data => {
-                    const tmp = {
-                        'value': data.bankId,
-                        'name': '('+data.bankAcct.substr(-4, data.bankAcct.length)+') ' + data.bankNm
-                    }
-                    bankAccountList.value.push(tmp);
-
-                })
-                bankAccountList.value.unshift({ 'value': '0000', 'name': '(0000) 해당없음' })
-            } else {
-                alert(res.data.error);
-            }
-        }
-        axiosGet(url, callback);
-    }
+const setBankList = async () => {
+    const { data } = await mariaApi.get('/account/bank/infos');
+    options.bank = data;
+    options.bank.unshift({ 'bankId': '', 'bankNm': '선택해주세요' });
+}
 
     /**
      * Source (출처) Select Options 조회
      */
-const setSourceList = () => {
-    const url = aibeesGlobal.API_SERVER_URL + '/system/sources';
-    const callback = (res) => {
-        if (res.data.success) {
-            sourceOptionList.value = res.data.data;
-            sourceOptionList.value.unshift({
-                'sourceCd': '',
-                'sourceNm': '선택하세요'
-            })
-        } else {
-            alert(res.data.message);
-        }
-    }
-
-    axiosGet(url, callback);
+const setSourceList = async () => {
+    const { data } = await mariaApi.get('/system/sources');
+    options.source = data;
+    options.source.unshift({ 'sourceCd': '', 'sourceNm': '선택해주세요' });
 }
 
 /**
  * 출처 별 Category(범주) Select Options 조회
  */
-const setCategoryList = () => {
+const setCategoryList = async () => {
     let sourceCd = journalHeaderData.sourceCd;
 
     if (typeof sourceCd === 'undefined' || sourceCd === null || sourceCd === '') {
+        options.category = [];
         return false;
     }
-    const url = aibeesGlobal.API_SERVER_URL + '/system/categories?sourceCd=' + sourceCd.replaceAll(' ', '');
-    const callback = (res) => {
-        if (res.data.success) {
-            categoryOptionList.value = res.data.data;
-        } else {
-            alert(res.data.message);
-        }
-    }
-    axiosGet(url, callback);
+    
+    const { data } = await mariaApi.get('/system/categories/' + sourceCd.replaceAll(' ', ''));
+    options.category = data;
+    options.category.unshift({ 'categoryCd': '', 'categoryNm': '선택해주세요' });
 }
 
 /*********************
@@ -331,7 +298,9 @@ const reset = () => {
  * 전표번호(Je Header No)로 조회
  * @param {*} headerNo 
  */
-const searchByHeaderNo = (headerNo) => {
+const searchByHeaderNo = async (headerNo) => {
+
+    const { data } = mariaApi.get(`/account/journal/${headerNo}`);
 
     const url = aibeesGlobal.API_SERVER_URL + '/account/journal/' + headerNo;
     const callback = (res) => {

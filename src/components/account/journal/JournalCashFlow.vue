@@ -15,6 +15,14 @@
                         type="month"
                         v-model="searchParams.ym" />
                 </div>
+                <span>계좌</span>
+                <div class="input-box">
+                    <select id="search-bankId" class="select-transparent" style="height: 100%; font-weight: 750;" v-model="searchParams.bankId">
+                        <option v-for="(bank, idx) in bankSelectList" :key="idx" :value="bank.value">
+                            {{ bank.name }} ({{ bank.value }})
+                        </option>
+                    </select>
+                </div>
             </div>
         </div>
         <!-- 메인 그리드 시작 -->
@@ -30,7 +38,7 @@
                                 <span>{{ group.parentAcctNm }} / {{ group.parentAcctCd }}</span>
                                 <span> </span>
                             </div>
-                            <div class="acct" v-for="(item, idx) in group.subAcct" :id="item.acctCd" @click="viewDetail(item.acctCd)">
+                            <div class="acct" v-for="(item, idx) in group.subAcct" :key="idx" :id="item.acctCd" @click="viewDetail(item.acctCd)">
                                 <span>&emsp;ㄴ{{ item.acctNm }} / {{ item.acctCd }}</span>
                                 <span>{{ item.amount }} 원</span>
                             </div>
@@ -47,7 +55,7 @@
                                 <span>{{ group.parentAcctNm }} / {{ group.parentAcctCd }}</span>
                                 <span> </span>
                             </div>
-                            <div class="acct" v-for="(item, idx) in group.subAcct" :id="item.acctCd" @click="viewDetail(item.acctCd)">
+                            <div class="acct" v-for="(item, idx) in group.subAcct" :key="idx" :id="item.acctCd" @click="viewDetail(item.acctCd)">
                                 <span>&emsp;ㄴ{{ item.acctNm }} / {{ item.acctCd }}</span>
                                 <span>{{ item.amount }} 원</span>
                             </div>
@@ -78,8 +86,11 @@ import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js';
  *********************/
 const title = ref("가계부 현금흐름표");
 const searchParams = reactive({
-    ym: ''
+    ym: '',
+    bankId: '000000'
 });
+
+const bankSelectList = ref([]);
 
 let curSelectedTr = '';
 
@@ -96,6 +107,7 @@ const detailData = ref([]);
  *********************/
 onMounted(async () => {
     searchParams.ym = getToday();
+    await getBankSelectList();
     await getData();
 });
 
@@ -113,20 +125,39 @@ const getToday = () => {
     return dateValue + '-' + month;
 }
 
-const getData = async () => {
-    const ym = searchParams.ym;
-    const revenue = await getRevenueData(ym);
-    console.log(revenue);
-    revenueData.value = revenue;
-    const expense = await getExpenseData(ym);
-    expenseData.value = expense;
-    console.log(expense);
+// 은행목록 조회
+// 개발 완료
+const getBankSelectList = async () => {
+    const param = { useYn: 'Y' }
+
+    bankSelectList.value.push({ 'value': '000000', 'name': '전체' });
+
+    const { data } = await mariaApi.get('/account/bank/infos', { params: param });
+    data.forEach(data => {
+    bankSelectList.value.push(
+        {
+        'value': data.bankId,
+        'name': data.bankNm
+        }
+    )
+    });
 }
 
-const getRevenueData = async (ym) => {
+const getData = async () => {
+    const revenue = await getRevenueData();
+    revenueData.value = revenue;
+    const expense = await getExpenseData();
+    expenseData.value = expense;
+}
+
+const getRevenueData = async () => {
     const result = [];
     const parents = new Map();
-    const { data } = await mariaApi.get(`/account/cashflow/${ym}/revenue`);
+    const param = {
+        'ym': searchParams.ym,
+        'bankId': searchParams.bankId 
+    }
+    const { data } = await mariaApi.get(`/account/cashflow/revenue`, { params: param });
 
     data.forEach(d => {
         d['amount'] = addComma(d.crAmount + (-1 * d.drAmount));
@@ -159,10 +190,14 @@ const getRevenueData = async (ym) => {
     return result;
 }
 
-const getExpenseData = async (ym) => {
+const getExpenseData = async () => {
     const result = [];
     const parents = new Map();
-    const { data } = await mariaApi.get(`/account/cashflow/${ym}/expense`);
+    const param = {
+        'ym': searchParams.ym,
+        'bankId': searchParams.bankId 
+    }
+    const { data } = await mariaApi.get(`/account/cashflow/expense`, { params: param });
 
     data.forEach(d => {
         d['amount'] = addComma(d.drAmount + (-1 * d.crAmount));
@@ -233,11 +268,12 @@ button {
 }
 
 .input-box {
-    width: 130px;
-    height: 20px;
+    width: auto;
+    height: 24px;
     border: 1px solid grey;
     border-radius: 2px;
     margin-left: 7px;
+    margin-right: 10px;
 
     input {
         border: none;
@@ -246,6 +282,20 @@ button {
         height: 100%;
         padding-inline: 0;
         padding-block: 0;
+    }
+
+    .select-transparent {
+        text-align: center;
+        background-color: white;
+        padding: 5px 15px;
+        appearance: none;
+        text-indent: 1px;
+        text-overflow: '';
+        border: none;
+
+        option {
+            text-align: center;
+        }
     }
 }
 .journal-cashflow {

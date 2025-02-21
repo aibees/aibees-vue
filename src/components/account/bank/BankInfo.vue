@@ -10,42 +10,53 @@
             <table class="bankinfo-table">
                 <thead>
                     <tr>
+                        <th style="width:60px">상태</th>
                         <th style="width:40px">삭제</th>
                         <th style="width:100px">계좌ID</th>
                         <th>계좌명</th>
                         <th style="width:150px">은행</th>
                         <th style="width:120px">유형</th>
-                        <th style="width:180px">사용한도</th>
+                        <th style="width:110px">사용한도</th>
                         <th style="width:150px">사용시작일자</th>
                         <th style="width:100px">사용여부</th>
                         <th style="width:100px">노출여부</th>
+                        <th style="width:100px">엑셀업로드</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(data, idx) in dataList" :key="data.bankId">
+                        <!-- trxType -->
+                        <td><input :id="`trxType_${idx}`" :value="`${data.trxType}`" readonly /></td>
+                        <!-- 삭제여부 -->
                         <td><input type="checkbox" :id="`status_${idx}`" style="width:90%; height: auto" @change="checkBoxEvt(idx)" /></td>
-                        <td><input class="bankIdInput" :id="`bankId_${idx}`" :value="`${data.bankId}`" :readonly="data.bankId != ''" maxlength="6" /></td>
-                        <td><input :id="`bankName_${idx}`" :value="`${data.bankNm}`" /></td>
+                        <!-- bankId -->
+                        <td><input class="bankIdInput" :id="`bankId_${idx}`" :value="`${data.bankId}`" :readonly="data.bankId != ''" maxlength="6" @change="changed(idx)" /></td>
+                        <td><input :id="`bankName_${idx}`" :value="`${data.bankNm}`" @change="changed(idx)" /></td>
                         <td>
-                            <select :id="`bankCd_${idx}`">
+                            <select :id="`bankCd_${idx}`" @change="changed(idx)">
                                 <option v-for="bank in bankOptionList" :key="bank.value" :value="bank.value" :selected="bank.value == `${data.bankCd}`">{{ bank.name }}</option>
                             </select>
                         </td>
                         <td>
-                            <select :id="`bankType_${idx}`">
+                            <select :id="`bankType_${idx}`" @change="changed(idx)">
                                 <option v-for="types in bankTypeOptList" :key="types.value" :value="types.value" :selected="types.value == `${data.bankType}`">{{ types.name }}</option>
                             </select>
                         </td>
-                        <td><input :id="`limitAmt_${idx}`" :value="`${data.limitAmt}`" style="width: 80%; text-align: right" /> 원</td>
-                        <td><input type="date" :id="`startDate_${idx}`" :value="`${data.startDate}`"/></td>
+                        <td><input :id="`limitAmt_${idx}`" :value="`${data.limitAmt}`" style="width: 80%; text-align: right" @change="changed(idx)" /> 원</td>
+                        <td><input type="date" :id="`startDate_${idx}`" :value="`${data.startDate}`" @change="changed(idx)" /></td>
                         <td>
-                            <select :id="`useYn_${idx}`">
+                            <select :id="`useYn_${idx}`" @change="changed(idx)">
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.useYn}`">{{ yn.name }}</option>
                             </select>
                         </td>
                         <td>
-                            <select :id="`displayYn_${idx}`">
+                            <select :id="`displayYn_${idx}`" @change="changed(idx)">
                                 <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.displayYn}`">{{ yn.name }}</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select :id="`excelYn_${idx}`" @change="changed(idx)">
+                                <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.excelYn}`">{{ yn.name }}</option>
                             </select>
                         </td>
                     </tr>
@@ -57,7 +68,7 @@
 
 <script setup>
     // import declaration
-    import { ref, onBeforeMount, onMounted } from 'vue'
+    import { ref, reactive, onMounted } from 'vue'
     import mariaApi from '../../../scripts/util/mariaApi';
     import AccountHeader from '../common/AccountHeader.vue';
 
@@ -76,6 +87,7 @@
     });
 
     const checkBoxEvt = (idx) => {
+        const curTrx = dataList.value[idx].trxType;
         const checked = document.getElementById('status_' + idx).checked;
         
         if (checked) {
@@ -85,7 +97,7 @@
                 dataList.value[idx].trxType ='DELETE';
             }
         } else {
-            dataList.value[idx].trxType = '';
+            dataList.value[idx].trxType = curTrx;
         }
     }
 
@@ -111,7 +123,7 @@
         dataList.value = data;
         dataList.value.forEach(data => {
             data['trxType'] = '';
-            data['startDate'] = toDateForm(data['startDate']);
+            // data['startDate'] = toDateForm(data['startDate']);
         });
     }
 
@@ -131,7 +143,8 @@
             'limitAmt': '0',
             'startDate': '',
             'useYn': 'Y',
-            'displayYn': 'Y'
+            'displayYn': 'Y',
+            'excelYn:': ''
         }
 
         dataList.value.push(newData);
@@ -143,7 +156,7 @@
 
         for(let i = 0; i < dataSize; i++) {
             const data = dataList.value[i];
-            data['trxType'] = document.getElementById('status_'+i).checked;
+            // data['trxType'] = document.getElementById('status_'+i).checked;
             data['bankId'] = document.getElementById('bankId_'+i).value;
             data['bankNm'] = document.getElementById('bankName_'+i).value;
             data['bankCd'] = document.getElementById('bankCd_'+i).value;
@@ -152,6 +165,7 @@
             data['startDate'] = document.getElementById('startDate_'+i).value;
             data['useYn'] = document.getElementById('useYn_'+i).value;
             data['displayYn'] = document.getElementById('displayYn_' + i).value;
+            data['excelYn'] = document.getElementById('excelYn_' + i).value;
         }
 
         const isReal = confirm("저장하실건가");
@@ -173,6 +187,10 @@
         const dd = ymd.substr(6, 2);
         const result = yy + '-' + mm + '-' + dd;
         return result;
+    }
+
+    const changed = (idx) => {
+        dataList.value[idx].trxType = 'UPDATE';
     }
 </script>
 

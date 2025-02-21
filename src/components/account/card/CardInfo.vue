@@ -13,8 +13,8 @@
                         <th style="width:40px">삭제</th>
                         <th style="width:60px">카드ID</th>
                         <th style="width:100px">회사이름</th>
-                        <th style="width:210px">카드명</th>
-                        <th style="width:120px">연결은행</th>
+                        <th style="width:180px">카드명</th>
+                        <th style="width:150px">연결은행</th>
                         <th style="width:90px">마감일</th>
                         <th style="width:90px">결제일</th>
                         <th style="width:130px">만료년월</th>
@@ -25,38 +25,84 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(data, idx) in dataList" :key="data.cardNo">
-                        <td><input type="checkbox" :id="`status_${idx}`" style="width:90%; height: auto" @change="checkBoxEvt(idx)" /></td>
-                        <td><input class="cardNoInput" :id="`cardNo_${idx}`" :value="`${data.cardNo}`" :readonly="data.cardNo != ''" maxlength="4" /></td>
+                    <tr v-for="(data, idx) in pageData.cardList" :key="idx">
                         <td>
-                            <select :id="`cardComp_${idx}`">
-                                <option v-for="comp in cardCompOptionList" :key="comp.value" :value="comp.value" :selected="comp.value == `${data.cardComp}`">{{ comp.name }}</option>
-                            </select>
-                        </td>
-                        <td><input :id="`cardName_${idx}`" :value="`${data.cardName}`" /></td>
-                        <td>
-                            <select :id="`bankCd_${idx}`">
-                                <option v-for="bank in bankOptionList" :key="bank.value" :value="bank.value" :selected="bank.value == `${data.bankCd}`">{{ bank.name }}</option>
-                            </select>
-                        </td>
-                        <td><input class="deadlineDateInput" :id="`deadlineDate_${idx}`" :value="`${data.deadlineDate}`" style="width: 80%;" maxlength="2" />일</td>
-                        <td><input class="paymentDateInput" :id="`paymentDate_${idx}`" :value="`${data.paymentDate}`" style="width: 80%;" maxlength="2" />일</td>
-                        <td><input :id="`expiredYm_${idx}`" type="month" :value="`${data.expiredYm}`" /></td>
-                        <td><input :id="`limitAmt_${idx}`" :value="`${data.limitAmt}`" style="width: 80%; text-align: right" /> 원</td>
-                        <td>
-                            <select :id="`creditYn_${idx}`">
-                                <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.creditYn}`">{{ yn.name }}</option>
-                            </select>
+                            <input 
+                                :id="`status_${idx}`" 
+                                type="checkbox" 
+                                style="width:90%; 
+                                height: auto" 
+                                @change="checkBoxEvt(idx)" />
                         </td>
                         <td>
-                            <select :id="`useYn_${idx}`">
-                                <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.useYn}`">{{ yn.name }}</option>
-                            </select>
+                            <input 
+                                :id="`cardNo_${idx}`" 
+                                v-model="data.cardNo" 
+                                class="cardNoInput"
+                                :readonly="data.trxType != 'INSERT'" 
+                                maxlength="4" />
                         </td>
                         <td>
-                            <select :id="`exposeMain_${idx}`">
-                                <option v-for="yn in ynOptionList" :key="yn.value" :value="yn.value" :selected="yn.value == `${data.exposeMain}`">{{ yn.name }}</option>
-                            </select>
+                            <MSelect 
+                                :id="`cardComp_${idx}`"  
+                                v-model="data.cardComp"
+                                :option="option.comp" />
+                        </td>
+                        <td>
+                            <input 
+                                :id="`cardName_${idx}`" 
+                                v-model="data.cardName" />
+                        </td>
+                        <td>
+                            <MSelect 
+                                :id="`cardName_${idx}`" 
+                                v-model="data.bankId" 
+                                :option="option.bank" />
+                        </td>
+                        <td>
+                            <input 
+                                :id="`deadlineDate_${idx}`" 
+                                v-model="data.deadlineDate" 
+                                class="dateInput deadlineDateInput" 
+                                maxlength="2" />일
+                        </td>
+                        <td>
+                            <input 
+                                :id="`paymentDate_${idx}`" 
+                                v-model="data.paymentDate" 
+                                class="dateInput paymentDateInput"
+                                maxlength="2" />일
+                        </td>
+                        <td>
+                            <input 
+                                :id="`expiredYm_${idx}`"
+                                v-model="data.expiredYm"
+                                type="month" />
+                        </td>
+                        <td>
+                            <input 
+                                :id="`limitAmt_${idx}`" 
+                                v-model="data.limitAmt"
+                                class="amtInput"
+                                style="" />원
+                        </td>
+                        <td>
+                            <MSelect 
+                                :id="`creditYn_${idx}`"
+                                v-model="data.creditYn"
+                                :option="option.yn" />
+                        </td>
+                        <td>
+                            <MSelect 
+                                :id="`useYn_${idx}`"
+                                v-model="data.useYn"
+                                :option="option.yn" />
+                        </td>
+                        <td>
+                            <MSelect 
+                                :id="`exposeMain_${idx}`"
+                                v-model="data.exposeMain"
+                                :option="option.yn" />
                         </td>
                     </tr>
                 </tbody>
@@ -67,71 +113,85 @@
 
 <script setup>
     // import declaration
-    import { ref, onBeforeMount, onMounted } from 'vue'
-    import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
-    import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
+    import { ref, onMounted, reactive } from 'vue'
     import AccountHeader from '../common/AccountHeader.vue';
+    import mariaApi from '../../../scripts/util/mariaApi';
+    import MSelect from '../../common/comp/MSelect.vue';
 
     /******************************
      ******* Const  Variable ******
      ******************************/
     const title = ref('카드정보관리');
-    const dataList = ref([]);
-    const bankOptionList = ref([]);
-    const cardCompOptionList = ref([]);
-    const ynOptionList = ref([{'value': 'Y', 'name': 'Y'}, {'value': 'N', 'name': 'N'}]);
-
-    onMounted(() => {
-        getBankCdOptionList();
-        getCardInfoList();
+    const pageData = reactive({
+        cardList: []
     });
 
+    const option = reactive({
+        bank: [],
+        comp: [],
+        yn: [{'value': 'Y', 'name': 'Y'}, {'value': 'N', 'name': 'N'}]
+    })
+
+    onMounted(async () => {
+        await getCardCompOptionList();
+        await getBankIdOptionList();
+        await getCardInfoList();
+    });
+
+    /**
+     * 삭제 체크박스 클릭 이벤트
+     * @param {*} idx 
+     */
     const checkBoxEvt = (idx) => {
         const checked = document.getElementById('status_' + idx).checked;
         
         if (checked) {
-            if (dataList.value[idx].trxType == 'INSERT') {
-                dataList.value.splice(idx, 1);
+            if (pageData.cardList[idx].trxType == 'INSERT') {
+                pageData.cardList.splice(idx, 1);
             } else {
-                dataList.value[idx].trxType ='DELETE';
+                pageData.cardList[idx].trxType ='DELETE';
             }
         } else {
-            dataList.value[idx].trxType =''
+            pageData.cardList[idx].trxType =''
         }
     }
 
-    const getBankCdOptionList = () => {
-        bankOptionList.value = [
-            { 'value': '88', 'name': '신한은행' },
-            { 'value': '87', 'name': '제일은행' },
-            { 'value': '82', 'name': '카카오뱅크' },
-            { 'value': '81', 'name': '하나은행' }
-        ]
+    /**
+     * 연결은행 옵션 조회
+     */
+    const getBankIdOptionList = async () => {
+        const { data } = await mariaApi.get('/account/bank/infos');
+        data.forEach(d => {
+            option.bank.push({ value: d.bankId, name: d.bankNm });
+        });
+    }
 
-        cardCompOptionList.value =[
+    /**
+     * 카드 회사이름 옵션 조회
+     */
+    const getCardCompOptionList = async () => {
+        option.comp = [
             { 'value': '', 'name': '' },
-            { 'value': 'C01', 'name': '현대카드' },
-            { 'value': 'C02', 'name': '하나카드' },
-            { 'value': 'C03', 'name': '삼성카드' }
+            { 'value': 'HANACARD', 'name': '하나카드' },
+            { 'value': 'HYUNDAICARD', 'name': '현대카드' },
+            { 'value': 'SAMSUNGCARD', 'name': '삼성카드' }
         ]
     }
 
-    const getCardInfoList = () => {
-        const url = aibeesGlobal.API_SERVER_URL + "/account/card/infos";
-        
-        const callback = (res) => {
-            if(res.data.message == 'SUCCESS') {
-                dataList.value = res.data.data;
-                dataList.value.forEach(data => {
-                    data['trxType'] = '';
-                })
-            } else {
-                alert(res.data.message);
-            }
-        }
-        axiosGet(url, callback);
+    /**
+     * 카드 보유내역 조회
+     */
+    const getCardInfoList = async () => {
+        const { data } = await mariaApi.get('/account/card/infos');
+        pageData.cardList = data;
+        pageData.cardList.forEach(d => {
+            d['trxType'] = '';
+        });
     }
 
+    /**
+     * 조회버튼 클릭 이벤트
+     */
     const selectData = () => {
         getCardInfoList();
     }
@@ -143,7 +203,7 @@
             'cardNo': '',
             'payway': '',
             'cardName': '',
-            'bankCd': '',
+            'bankId': '',
             'deadlineDate': '',
             'paymentDate': '',
             'expiredYm': '2999-12',
@@ -154,49 +214,40 @@
             'exposeMain': ''
         }
 
-        dataList.value.push(newData);
+        pageData.cardList.push(newData);
     }
 
-    const saveData = () => {
-        const dataSize = dataList.value.length;
-
-        for(let i = 0; i < dataSize; i++) {
-            const data = dataList.value[i];
-            data['cardNo'] = document.getElementById('cardNo_'+i).value;
-            data['cardComp'] = document.getElementById('cardComp_'+i).value;
-            data['cardName'] = document.getElementById('cardName_'+i).value;
-            data['status'] = document.getElementById('status_'+i).checked;
-            data['bankCd'] = document.getElementById('bankCd_'+i).value;
-            data['expiredYm'] = document.getElementById('expiredYm_'+i).value;
-            data['limitAmt'] = document.getElementById('limitAmt_'+i).value;
-            data['creditYn'] = document.getElementById('creditYn_'+i).value;
-            data['useYn'] = document.getElementById('useYn_'+i).value;
-            data['exposeMain'] = document.getElementById('exposeMain_'+i).value;
-            data['deadlineDate'] = document.getElementById('deadlineDate_'+i).value;
-            data['paymentDate'] = document.getElementById('paymentDate_'+i).value;
-        }
-        console.log(dataList.value);
-
-
+    const saveData = async () => {
+        let validFlag = true;
         const isReal = confirm("저장하실건가");
 
         if(!isReal) {
             return false;
         }
 
-        const url = aibeesGlobal.API_SERVER_URL + "/account/card/infos";
-        const data = {
-            'cardInfoReqs': dataList.value
+        pageData.cardList.forEach(card => {
+            validFlag = dataValidate(card);
+        })
+
+        if (!validFlag) {
+            return false;
         }
-        const callback = (res) => {
-            if(res.data.message == 'SUCCESS') {
-                alert("저장완료");
-                getCardInfoList();
-            } else {
-                alert(res.data.message);
-            }
+
+        await mariaApi.post('/account/card/infos', {'cardInfoReqs': pageData.cardList});
+        await getCardInfoList();
+    }
+
+    const dataValidate = async (data) => {
+        if (data.bankId === '') {
+            alert("카드ID는 필수");
+            return false;
         }
-        axiosPost(url, data, callback);
+
+        if (data.cardComp === '') {
+            alert("회사명은 필수");
+            return false;
+        }
+        return true;
     }
 </script>
 
@@ -260,6 +311,15 @@
                     height: 100%;
                     border: none;
                     text-align: center;
+                }
+
+                .dateInput {
+                    width: 80%;
+                }
+
+                .amtInput {
+                    width: 80%; 
+                    text-align: right;
                 }
             }
         }

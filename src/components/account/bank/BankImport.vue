@@ -8,7 +8,7 @@
       <div class="buttons-left">
           <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);">
               <option v-for="(bank, idx) in bankSelectList" :key="idx" :value="bank.value">
-                {{ bank.name }}
+                {{ bank.name }} ({{ bank.value }})
               </option>
           </select>
           <a class="buttons" @click="uploadFile()"><font-awesome-icons :icon="['fa-solid', 'fa-upload']" /></a>
@@ -69,7 +69,7 @@ import axios from 'axios';
      ******************************/
     const title = ref('은행거래 결제확정처리');
     const dataList = ref([]);
-    const useAcctMaster = ref({});
+    const useAcctMaster = ref([]);
     const fileHashComboList = ref([]);
     const bankSelectList = ref([]);
 
@@ -118,6 +118,7 @@ import axios from 'axios';
       }
       const { data } = await mariaApi.get('/account/acct', { params: acctParam });
       useAcctMaster.value = data;
+      useAcctMaster.value.push({'acctCd': '-1', 'acctNm': '별도정산'});
     }
 
     /******************************

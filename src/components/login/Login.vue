@@ -21,7 +21,6 @@
     // import declaration
     import { ref, onMounted } from 'vue';
     import { userSession } from '../../scripts/util/user-session';
-    //import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
     import mariaApi from '../../scripts/util/mariaApi';
     import { useRouter } from 'vue-router';
 
@@ -51,8 +50,6 @@
     /******************************
      ******* Main  Function *******
      ******************************/
-    const url = aibeesGlobal.API_SERVER_URL + "/user/ledger/login"
-
     const login = async () => {
         const loginKey = '63aa510c3ff68c332e48e6006342b9f706744223ad84a4bb20ee38168fd7ee8d';
         let loginId = document.getElementById('loginId').value;

@@ -22,7 +22,6 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { ref, onMounted } from 'vue'
-import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
 
 const router = useRouter();
 
@@ -43,7 +42,13 @@ const getsystemMenu = () => {
         {
             'name': '계정과목 설정',
             'value': 'system_acctCd'
-        },
+        }
+        ,
+        {
+            'name': '출처범주 설정',
+            'value': 'system_source'
+        }
+        ,
         {
             'name': '프리셋 설정',
             'value': 'system_preset'

@@ -22,6 +22,7 @@ import JournalCashFlow from './journal/JournalCashFlow.vue'
 import SystemView from './system/SystemView.vue'
 import SystemMain from './system/SystemMain.vue'
 import SystemAcctCd from './system/SystemAcctCd.vue'
+import SystemSource from './system/SystemSource.vue'
 import SystemPreset from './system/SystemPreset.vue'
 
 export default {
@@ -49,5 +50,6 @@ export default {
     , SystemView
     , SystemMain
     , SystemAcctCd
+    , SystemSource
     , SystemPreset
 }

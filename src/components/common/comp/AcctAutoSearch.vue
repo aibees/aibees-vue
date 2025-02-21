@@ -21,7 +21,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { axiosGet } from '@/scripts/util/axios.js'
+import mariaApi from '../../../scripts/util/mariaApi';
 
 const suggested = ref([]);
 const inputFocus = ref(false);
@@ -31,7 +31,7 @@ const props = defineProps({
     inputId: String
 })
 
-const searchSuggest = (ev) => {
+const searchSuggest = async (ev) => {
     let searchTxt = ev.target.value;
 
     if (searchTxt.length < 1) {
@@ -41,16 +41,9 @@ const searchSuggest = (ev) => {
 
     suggested.value = [];
 
-    const url = aibeesGlobal.API_SERVER_URL + '/account/acct/popup?searchTxt=' + searchTxt;
-    const callback = (res) => {
-        if(res.data.success) {
-            suggested.value = res.data.data;
-        } else {
-            alert(res.data.error);
-        }
-    }
-
-    axiosGet(url, callback);
+    const { data } = await mariaApi.get(`/account/acct?searchTxt=${searchTxt}`);
+    console.log(data);
+    suggested.value = data;
 }
 
 const inputFocusCheck = (boo) => {

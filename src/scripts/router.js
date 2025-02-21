@@ -144,12 +144,17 @@ const routes=[
                         component: Account.SystemMain
                     },
                     {
-                        path: '',
+                        path: 'acctcd',
                         name: 'System-acctCd',
                         component: Account.SystemAcctCd
                     },
                     {
-                        path: '',
+                        path: 'source',
+                        name: 'System-source',
+                        component: Account.SystemSource
+                    },
+                    {
+                        path: 'preset',
                         name: 'System-preset',
                         component: Account.SystemPreset
                     }

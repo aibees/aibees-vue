@@ -39,20 +39,8 @@
         'value': 'bank_main'
       },
       {
-        'name': '조회',
-        'value': 'bank_list'
-      },
-      {
         'name': '엑셀업로드',
         'value': 'bank_excel'
-      },
-      {
-        'name': '월별 회계결산',
-        'value': 'bank_closing'
-      },
-      {
-        'name': '통장통계',
-        'value': 'bank_statistics'
       },
       {
         'name': '통장정보',
