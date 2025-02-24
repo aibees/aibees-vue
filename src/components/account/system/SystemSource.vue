@@ -321,12 +321,6 @@ const initTrx = () => {
 
 <style lang="scss" scoped>
 
-.acct-active {
-    font-weight: bolder;
-    background-color: rgb(232, 245, 220);
-    border: 1px solid black;
-}
-
 .sysSource {
     .sysSource-head {
         background-color: beige;
@@ -392,6 +386,12 @@ const initTrx = () => {
             }
         }
     }
+}
+
+.acct-active {
+    font-weight: bolder;
+    background-color: rgb(232, 245, 220);
+    border: 1px solid black;
 }
 
 </style>

@@ -4,40 +4,26 @@
             <label class="title-label">카드 건 별 제출</label>
             <button class="option-button" @click="submitCardText()">제출</button>
         </div>
-        <textarea id="card-daily-text" class="card-daily-text" @change="dailyTextChk();"></textarea>
+        <textarea id="card-daily-text" class="card-daily-text" v-model="payText" @change="dailyTextChk();"></textarea>
     </div>
 </template>
 
 <script setup>
-    import { inject } from 'vue';
-    import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
+    import { inject, ref } from 'vue';
+    import mariaApi from '../../../../scripts/util/mariaApi';
+
+    const payText = ref("");
+
     const emitter = inject('emitter');
 
-    const submitCardText = () => {
-        const txt = document.getElementById('card-daily-text').value;
-        const data ={
-            'text': txt,
-            'type': "CARD"
-        };
+    const submitCardText = async () => {
+        const { data } = await mariaApi.post('/account/card/txt', { payText: payText.value });
         console.log(data);
-        const url = aibeesGlobal.API_SERVER_URL + '/account/card/paytext';
-        const callback = (res) => {
-            const result = res.data;
-            if(result == 'FAIL') {
-                alert(result.message);
-            } else {
-                document.getElementById('card-daily-text').value = '';
-                // emit event bus
-                emitter.emit('searchMainData');
-            }
-        }
-
-        axiosPost(url, data, callback);
     }
 
     const dailyTextChk = () => {
-        const txt = document.getElementById('card-daily-text').value;
-        document.getElementById('card-daily-text').value = txt.replaceAll('[Web발신]\n', '');
+        payText.value = payText.value.replaceAll('[Web발신]\n', '');
+        document.getElementById('card-daily-text').value = payText.value;
     }
 </script>
 

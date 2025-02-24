@@ -170,7 +170,7 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
-import AutoSearch from '../../common/comp/AcctAutoSearch.vue'
+import AutoSearch from '../../common/comp/MAutoSearch.vue'
 import JournalPresetModal from './modal/JournalPresetModal.vue'
 import JournalSearchHeaderNoModal from './modal/JournalHeaderNoSearchModal.vue'
 import AccountHeader from '../common/AccountHeader.vue';
@@ -197,7 +197,7 @@ const options = reactive({
     bank: [],
     source: [],
     category: []
-})
+});
 
 const journalDetailData = ref([]);
 

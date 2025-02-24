@@ -53,6 +53,11 @@ const routes=[
                         component: Account.JournalMain
                     },
                     {
+                        path: '',
+                        name: 'Journal-search',
+                        component: Account.JournalSearch
+                    },
+                    {
                         path: 'cashflow',
                         name: 'Journal-cashflow',
                         component: Account.JournalCashFlow

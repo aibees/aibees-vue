@@ -40,25 +40,13 @@ const getjournalMenu = () => {
             'value': 'journal_main'
         },
         {
+            'name': '전표조회',
+            'value': 'journal_search'
+        },
+        {
             'name': '현금흐름표',
             'value': 'journal_cashflow'
         },
-        // {
-        //     'name': '전체조회',
-        //     'value': 'journal_list'
-        // },
-        // {
-        //     'name': '결제확정처리',
-        //     'value': 'journal_excel'
-        // },
-        // {
-        //     'name': '통계청',
-        //     'value': 'journal_statistics'
-        // },
-        // {
-        //     'name': '카드관리',
-        //     'value': 'journal_info'
-        // },
         {
             'name': '돌아가기',
             'value': 'back'
