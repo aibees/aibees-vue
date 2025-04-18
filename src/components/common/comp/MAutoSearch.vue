@@ -5,6 +5,7 @@
             :id="`acctSearch_${props.inputId}`"
             @input="searchSuggest($event)"
             @focus="inputFocusCheck(true)"
+            v-model="acctCd"
             autocomplete="off"
         />
         <ul v-show="suggested.length > 0 && inputFocus">
@@ -20,11 +21,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import mariaApi from '../../../scripts/util/mariaApi';
 
 const suggested = ref([]);
 const inputFocus = ref(false);
+const acctCd = defineModel();
 const emit = defineEmits(["searchConfirm"]);
 
 const props = defineProps({
@@ -41,7 +43,7 @@ const searchSuggest = async (ev) => {
 
     suggested.value = [];
 
-    const { data } = await mariaApi.get(`/account/acct?searchTxt=${searchTxt}`);
+    const { data } = await mariaApi.get(`/api/account/acct?searchTxt=${searchTxt}`);
     console.log(data);
     suggested.value = data;
 }
@@ -50,11 +52,28 @@ const inputFocusCheck = (boo) => {
     inputFocus.value = boo;
 }
 
+const searchSelectedAcctCd = async (acctCd) => {
+    const { data } = await mariaApi.get(`/api/account/acct?acctCd=${acctCd}`);
+    console.log(data);
+    selected(data, props.inputId);
+
+}
+
 const selected = (item, id) => {
     emit('searchConfirm', item, id);
+    console.log("selected : ");
+    console.log(item);
     document.getElementById('acctSearch_' + id).value = item.acctCd;
     inputFocus.value = false;
 }
+
+// watch(
+//     acctCd,
+//     (newVal) => {
+//         console.log(newVal)
+//         searchSelectedAcctCd(newVal);
+//     }
+// )
 
 </script>
 

@@ -14,7 +14,7 @@
       <span id="upload-anounce"></span>
       <div class="import-buttons">
         <div class="buttons-left">
-            <select id="uploadTypeSelect" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);" @change="changeCardType()">
+            <select id="uploadTypeSelect" v-model="params.cardCd" class="select-transparent" style="height: 100%; font-weight: 750; background-color: rgb(211, 211, 168);" @change="changeCardType()">
                 <option value="HANACARD">하나카드</option>
                 <option value="SAMSUNGCARD">삼성카드</option>
                 <option value="SHINHANCARD">신한카드</option>
@@ -26,13 +26,28 @@
             <div style="display: none"><input type="file" id="fileUploadInput" @change="putFileName();" /></div>
         </div>
         <div class="buttons-right">
-            <select id="uploadedFileSelect">
+            <select id="uploadedFileSelect" style="width: 250px;">
               <option value=""></option>
               <option v-for="opt in fileHashComboList" :key="opt.fileId" :value="opt.fileId">{{ opt.fileName }}</option>
             </select>
             <button @click="selectData()">조회</button>
             <button @click="selectData()">임시저장</button>
             <button @click="transferData()">제출</button>
+        </div>
+      </div>
+      <div class="import-card-history">
+        <div class="import-card">
+          <button @click="getCardResult">정산내역 가져오기</button>
+        </div>
+        <div class="import-card">
+          <input id="card-his-ym" v-model="params.cardYm" type="month" style="height: 26px;" />
+        </div>
+        <div class="import-card">
+          <select id="selectCardHistory" style="height: 30px;">
+            <option v-for="opt in options.confirmTarget" :key="opt.jeHeaderNo" :value="`${opt.jeHeaderNo}_${opt.journalLineId}`">
+              {{ opt.transactionDate }}&nbsp;/&nbsp;{{ opt.remark }}&nbsp;/&nbsp;{{ opt.amount }}원
+            </option>
+          </select>
         </div>
       </div>
       <div class="import-rows">
@@ -69,10 +84,11 @@
 <script setup>
 
     // import declaration
-    import { ref, onBeforeMount, onMounted } from 'vue'
+    import { ref, onBeforeMount, onMounted, reactive } from 'vue'
     import { axiosGet, axiosPost, axiosPostForFile } from '@/scripts/util/axios.js'
-    import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
     import AccountHeader from '../common/AccountHeader.vue';
+  import mariaApi from '../../../scripts/util/mariaApi';
+import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js';
     
   /******************************
    ******* Const  Variable ******
@@ -81,6 +97,15 @@
     const dataList = ref([]);
     const useTypeMap = ref({});
     const fileHashComboList = ref([]);
+
+    const params = reactive({
+      cardCd: '',
+      cardYm: ''
+    });
+
+    const options = reactive({
+      confirmTarget: []
+    })
 
     let curFileHash = '';
     let dateSortFlag = 'desc';
@@ -91,12 +116,22 @@
      ******************************/
     onMounted(() => {
       getFilenameList();
-      getUsageOption();
+      params.cardYm = getToday();
     })
 
     /******************************
      ***** Element Init Func. *****
      ******************************/
+    const getToday = () => {
+      const toDate = new Date();
+      let dateValue = toDate.getFullYear();
+      let month = toDate.getMonth() + 1;
+      if (month.toString().length < 2) {
+          month = '0' + month;
+      }
+      return dateValue + '-' + month;
+    }
+
     const getFilenameList = () => {
       const url = aibeesGlobal.API_SERVER_URL + '/account/import/list?type=CARD';
       const callback = (res) => {
@@ -104,24 +139,6 @@
       }
 
       axiosGet(url, callback);
-    }
-
-    const getUsageOption = () => {
-      const usageData = {};
-      getResourceList('ACCOUNT', 'COMBO', 'USAGE')
-      .forEach(data => {
-        let usageColor = '#FFFFFF';
-        if(data.attribute03 != null && data.attribute03 != '' && typeof data.attribute03 != "undefined") {
-          usageColor = '#' + data.attribute03;
-        }
-
-        usageData[data.code] = {
-          'name'  : data.name,
-          'value' : data.code,
-          'color' : usageColor
-        }
-      });
-      useTypeMap.value = usageData;
     }
 
     const dataSort = (type) => {
@@ -282,6 +299,37 @@
       }
     }
 
+    const getCardResult = async () => {
+      const param = {
+        cardCd : params.cardCd,
+        ym: params.cardYm.replace('-', '')
+      }
+
+      if (!validate(param)) {
+        return false;
+      }
+
+      const data = await mariaApi.get('/api/account/card/card-confirm-target', {params: param});
+      options.confirmTarget = data.data;
+      options.confirmTarget.forEach(d => {
+        d.amount = addComma(d.amount);
+        d.transactionDate = d.transactionDate.slice(0, 10);
+      })
+    }
+
+    const validate = (param) => {
+      if (param.cardCd == '') {
+        alert('카드타입 선택 필요');
+        return false;
+      }
+
+      if (param.ym == '') {
+        alert('년월 입력 필요');
+        return false;
+      }
+      return true;
+    }
+
     const toTop = () => {
       window.scrollTo({
         top: 0,
@@ -370,6 +418,20 @@
         }
     }
   }
+
+  .import-card-history {
+    height: 40px;
+    background-color: beige;
+    border-top: 1px solid grey;
+    padding-left: 20px;
+    display: flex;
+
+    .import-card {
+      padding-top: 6px;
+      padding-right: 20px;
+    }
+  }
+
   .import-rows {
     .import-table {
       border-spacing: 0px;

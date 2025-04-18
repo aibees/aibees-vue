@@ -7,7 +7,7 @@ function addComma(x) {
 }
 
 function removeComma(x) {
-  return Number(x.replaceAll(',', ''))
+  return Number(x.replaceAll(',', ''));
 }
 
 export { addComma, removeComma }

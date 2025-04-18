@@ -18,11 +18,13 @@
 </template>
 
 <script setup>
+    import "vue3-toastify/dist/index.css";
     // import declaration
     import { ref, onMounted } from 'vue';
     import { userSession } from '../../scripts/util/user-session';
     import mariaApi from '../../scripts/util/mariaApi';
     import { useRouter } from 'vue-router';
+    import MariaToast from '../../scripts/util/common/MariaToast';
 
     /******************************
      ******* Const  Variable ******
@@ -56,16 +58,17 @@
         let loginPw = document.getElementById('loginPw').value;
 
         if(loginId == '' || loginPw == '') {
-            alert("정상적으로 입력되지 않았습니다.");
+            MariaToast.error('정상적으로 입력되지 않았습니다.');
             return false;
         } else {
             const loginParam = {
                 email : loginId,
-                password : loginPw,
-                loginKey : loginKey
+                password : loginPw
+                // loginKey : loginKey
             }
 
-            const {data} = await mariaApi.post("/user/ledger/login", loginParam);
+            const {data} = await mariaApi.post("/login", loginParam);
+            console.log(data);
             session.loginUpdate(data);
             router.push("/account");
         }

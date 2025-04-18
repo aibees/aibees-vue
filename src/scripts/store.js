@@ -22,8 +22,6 @@ export default createStore({
   mutations: {
     setUser(state, _user) {
         state.user = _user;
-        console.log("mutated : ");
-        console.log(state.user);
     }
   },
   plugins: [

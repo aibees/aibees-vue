@@ -106,7 +106,8 @@
             { 'value': '88', 'name': '신한은행' },
             { 'value': '87', 'name': '제일은행' },
             { 'value': '82', 'name': '카카오뱅크' },
-            { 'value': '81', 'name': '하나은행' }
+            { 'value': '81', 'name': '하나은행' },
+            { 'value': 'S3', 'name': '삼성증권' }
         ];
 
         bankTypeOptList.value = [
@@ -118,7 +119,7 @@
 
     const getBankInfoList = async () => {
 
-        const { data } = await mariaApi.get('/account/bank/infos');
+        const { data } = await mariaApi.get('/api/account/bank/infos');
 
         dataList.value = data;
         dataList.value.forEach(data => {
@@ -176,7 +177,7 @@
         const saveParam = {
             'bankInfoReqs': dataList.value
         }
-        const { data } = await mariaApi.post('/account/bank/infos', saveParam);
+        const { data } = await mariaApi.post('/api/account/bank/infos', saveParam);
         console.log(data);
         selectData();
     }
@@ -190,7 +191,9 @@
     }
 
     const changed = (idx) => {
-        dataList.value[idx].trxType = 'UPDATE';
+        if (document.getElementById('trxType_' + idx).value != 'INSERT') {
+            dataList.value[idx].trxType = 'UPDATE';
+        }
     }
 </script>
 

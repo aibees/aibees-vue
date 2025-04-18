@@ -103,7 +103,13 @@ const openSelector = () => {
 }
 
 const search = async () => {
-    const { data } = await mariaApi.get(`/account/acct?searchTxt=${modalData.schText}`);
+    const schParam = {
+        enabledFlag: 'Y',
+        finalFlag: 'Y',
+        searchTxt: modalData.schText
+    }
+    const { data } = await mariaApi.get(`/api/account/acct`, { params: schParam });
+    console.log(data);
     sampleData.value = data;
 }
 

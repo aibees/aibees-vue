@@ -160,7 +160,7 @@
      * 연결은행 옵션 조회
      */
     const getBankIdOptionList = async () => {
-        const { data } = await mariaApi.get('/account/bank/infos');
+        const { data } = await mariaApi.get('/api/account/bank/infos');
         data.forEach(d => {
             option.bank.push({ value: d.bankId, name: d.bankNm });
         });
@@ -182,7 +182,7 @@
      * 카드 보유내역 조회
      */
     const getCardInfoList = async () => {
-        const { data } = await mariaApi.get('/account/card/infos');
+        const { data } = await mariaApi.get('/api/account/card/infos');
         pageData.cardList = data;
         pageData.cardList.forEach(d => {
             d['trxType'] = '';
@@ -233,7 +233,7 @@
             return false;
         }
 
-        await mariaApi.post('/account/card/infos', {'cardInfoReqs': pageData.cardList});
+        await mariaApi.post('/api/account/card/infos', {'cardInfoReqs': pageData.cardList});
         await getCardInfoList();
     }
 

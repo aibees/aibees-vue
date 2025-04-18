@@ -39,11 +39,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(state, idx) in dataList" v-bind:key="idx" v-bind:id="idx">
+          <tr v-for="(state, idx) in dataList" v-bind:key="idx" :id="`tr_${idx}`">
               <td>{{ state.bankNm }}</td>
               <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
               <td>
-                  <select :id="`itemBox_${idx}`" class="use-type select-transparent" :style="{ 'background-color': '#' + state.usageColor}">
+                  <select :id="`itemBox_${idx}`" name="selectBox" class="use-type select-transparent" :style="{ 'background-color': '#' + state.usageColor}" @change="selectedAcct(idx)">
                       <option v-for="data in useAcctMaster" :key="data.acctCd" :value="data.acctCd" :selected="data.acctCd == `${state.acctCd}`">{{ data.acctNm }} / {{ data.acctCd }}</option>
                   </select>
               </td>
@@ -62,7 +62,8 @@
     import { ref, onMounted } from 'vue'
     import AccountHeader from '../common/AccountHeader.vue';
     import mariaApi from '../../../scripts/util/mariaApi';
-import axios from 'axios';
+    import axios from 'axios';
+    import { userSession } from '../../../scripts/util/user-session';
 
     /******************************
      ******* Const  Variable ******
@@ -73,6 +74,7 @@ import axios from 'axios';
     const fileHashComboList = ref([]);
     const bankSelectList = ref([]);
 
+    let copiedOptions = "";
     /******************************
      ******* Vue  Lift Cycle ******
      ******************************/
@@ -83,13 +85,51 @@ import axios from 'axios';
       await getAcctCdOptList();
     })
 
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key === 'c') {
+        const activeSelect = document.activeElement; // 포커스된 select 요소
+        if (activeSelect.id.startsWith('itemBox_')) {
+            copiedOptions = Array.from(activeSelect.selectedOptions).map(option => option.value)[0];
+            console.log('복사된 옵션:', copiedOptions);
+        }
+      }
+
+      if (event.ctrlKey && event.key === 'v') {
+          const activeSelect = document.activeElement; // 포커스된 select 요소
+          if (activeSelect.id.startsWith('itemBox_')) {
+              activeSelect.value = copiedOptions;
+              selectedAcct(activeSelect.id.split('_')[1]);
+          }
+      }
+    })
+
+    document.getElementsByName('selectBox').forEach(e => {
+      e.addEventListener('keydown', (event) => {
+        if (event.ctrlKey) {
+          console.log(event.ctrlKey);
+
+          if (event.key == 'c') {
+            const v = e.value;
+            alert(v);
+            navigator.clipboard.writeText(v);
+          }
+
+          if (event.key == 'v') {
+            navigator.clipboard.readText().then(text => {
+              e.value = text;
+            });
+          }
+        }
+      })
+    })
+
     /******************************
      ***** Element Init Func. *****
      ******************************/
     // 임시저장되어있는 업로드 파일명 조회
     // 개발 완료
     const getFileNameList = async () => {
-      const { data } = await mariaApi.get('/account/bank/files');
+      const { data } = await mariaApi.get('/api/account/bank/files');
       fileHashComboList.value = data;
     }
 
@@ -98,7 +138,7 @@ import axios from 'axios';
     const getBankSelectList = async () => {
       const param = { useYn: 'Y' }
 
-      const { data } = await mariaApi.get('/account/bank/infos', { params: param });
+      const { data } = await mariaApi.get('/api/account/bank/infos', { params: param });
       data.forEach(data => {
         bankSelectList.value.push(
           {
@@ -116,7 +156,7 @@ import axios from 'axios';
         enabledFlag : 'Y',
         finalFlag: 'Y'
       }
-      const { data } = await mariaApi.get('/account/acct', { params: acctParam });
+      const { data } = await mariaApi.get('/api/account/acct', { params: acctParam });
       useAcctMaster.value = data;
       useAcctMaster.value.push({'acctCd': '-1', 'acctNm': '별도정산'});
     }
@@ -156,19 +196,19 @@ import axios from 'axios';
         // const { data } = await mariaApi.post('/account/bank/files', uploadParam, {'Content-Type': 'multipart/form-data'});
 
         const { data } = await axios.post(
-          aibeesGlobal.API_SERVER_URL + '/account/bank/files',
+          aibeesGlobal.API_SERVER_URL + '/api/account/bank/files',
           uploadParam,
           { headers: { 
             'Content-Type': 'multipart/form-data',
-            'serviceKey': aibeesGlobal.SERVICE_KEY
-          
+            'Authorization': userSession().getUserInfo.accessToken,
+            'AuthorId': userSession().getUserInfo.uuid
           } }
         )
 
         console.log(data);
         await getFileNameList();
         // 다시 한 번 리스트 조회
-        await selectImportedFileData(data.fileHash);
+        await selectImportedFileData(data.data.fileHash);
     }
 
     // import 된 tmp 데이터 조회, 출력
@@ -177,7 +217,7 @@ import axios from 'axios';
       dataList.value = [];
       document.getElementById('loading_bar').style.display='block';
 
-      const { data } = await mariaApi.get('/account/bank/files/' + fileId);
+      const { data } = await mariaApi.get('/api/account/bank/files/' + fileId);
       document.getElementById('loading_bar').style.display='none';
       dataList.value = data;
 
@@ -214,7 +254,7 @@ import axios from 'axios';
         'fileHash': document.getElementById('uploadedFileSelect').value
       }
 
-      const { data } = await mariaApi.put('/account/bank/files', tmpSaveParam);
+      const { data } = await mariaApi.put('/api/account/bank/files', tmpSaveParam);
       await selectImportedFileData(data.fileHash);
     }
 
@@ -243,12 +283,21 @@ import axios from 'axios';
         'data' : dataList.value
       }
 
-      const { data } = await mariaApi.post('/account/bank/files/je', reqData);
+      const { data } = await mariaApi.post('/api/account/bank/files/je', reqData);
 
       console.log(data);
       dataList.value = [];
       await getFileNameList();
+    }
 
+    const selectedAcct = (idx) => {
+      const acctCd = document.getElementById('itemBox_' + idx).value;
+      const tr = document.getElementById('tr_' + idx);
+      if (acctCd != null && acctCd != '' && acctCd != '101001') {
+        tr.style.backgroundColor = '#dfefff';
+      } else {
+        tr.style.backgroundColor = '#fff';
+      }
     }
 </script>
 

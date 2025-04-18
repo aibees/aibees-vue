@@ -2,6 +2,8 @@
  * 공통 - 서버와의 통신 utility
  */
 import axios from 'axios';
+import MariaToast from '../util/common/MariaToast'
+import { userSession } from '../util/user-session'
 
 const mariaApi = axios.create({
     timeout: 50000,
@@ -11,7 +13,8 @@ const mariaApi = axios.create({
 // interceptors
 mariaApi.interceptors.request.use(
     (config) => {
-        config.headers['servicekey'] = aibeesGlobal.SERVICE_KEY;
+        config.headers['Authorization'] = userSession().getUserInfo.accessToken;
+        config.headers['AuthorId'] = userSession().getUserInfo.uuid;
         config.headers['Content-Type'] = 'application/json';
         return config;
     },
@@ -24,7 +27,7 @@ mariaApi.interceptors.request.use(
 mariaApi.interceptors.response.use(
     (resp) => {
         if (resp.config.method != 'get' && resp.data.success) {
-            alert('처리 완료');
+            MariaToast.success(resp.data.success);
         }
         return resp.data;
     },

@@ -19,7 +19,7 @@
                             <input 
                                 id="header_no" 
                                 class="text-readonly" 
-                                :value="journalHeaderData.jeHeaderNo" 
+                                v-model="journalHeaderData.jeHeaderNo" 
                                 type="text"
                                 readonly />
                         </div>
@@ -32,6 +32,17 @@
                                 class="text-required" 
                                 type="date"
                                 v-model="journalHeaderData.jeDate" />
+                        </div>
+                    </div>
+                    <div class="info-block jounrnal-date">
+                        <span>거래시간</span>
+                        <div class="input-box">
+                            <input 
+                                id="header-time" 
+                                class="text-required" 
+                                type="time"
+                                step="1"
+                                v-model="journalHeaderData.jeTimes" />
                         </div>
                     </div>
                 </div>
@@ -57,6 +68,16 @@
                             </select>
                         </div>
                     </div>
+                    <div class="info-block journal-bankAcct">
+                        <span>은행통장</span>
+                        <div class="input-box">
+                            <select id="header-bankAcct" class="text-required" v-model="journalHeaderData.bankId">
+                                <option v-for="bank in options.bank" :key="bank.bankId" :value="bank.bankId">
+                                    {{ bank.bankNm }} / {{ bank.bankId }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="paragraph-block journal-info-three">
                     <div class="info-block journal-remark">
@@ -67,18 +88,6 @@
                                 class="text-required"
                                 v-model="journalHeaderData.remark">
                             </textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="paragraph-block journal-info-four">
-                    <div class="info-block journal-bankAcct">
-                        <span>은행통장</span>
-                        <div class="input-box">
-                            <select id="header-bankAcct" class="text-required" v-model="journalHeaderData.bankId">
-                                <option v-for="bank in options.bank" :key="bank.bankId" :value="bank.bankId">
-                                    {{ bank.bankNm }} / {{ bank.bankId }}
-                                </option>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -129,30 +138,30 @@
                 </thead>
                 <tbody>
                     <tr v-for="(line, idx) in journalDetailData" name="grid-line" :key="idx" :id="`line_` + idx" @click="selectTr(idx)">
-                        <td>{{ idx }}</td>
+                        <td>{{ idx + 1 }}</td>
                         <td>
-                            <div class="grid-input"><input :id="`acctNm_${idx}`" :value="`${line.acctNm}`" readonly /></div>
+                            <div class="grid-input"><input :id="`acctNm_${idx}`" v-model="line.acctNm" readonly /></div>
                         </td>
                         <td>
                             <div class="grid-input">
-                                <input type="hidden" :id="`acctCd_${idx}`" :value="`${line.acctCd}`" />
-                                <AutoSearch :input-id="`${idx}`" @searchConfirm="selectAcctCallback" />
+                                <input type="hidden" :id="`acctCd_${idx}`" v-model="line.acctCd" />
+                                <AutoSearch :input-id="`${idx}`" v-model="line.acctCd" @searchConfirm="selectAcctCallback" />
                             </div>
                         </td>
                         <td>
                             <!-- <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" autocomplete="off" -->
-                            <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" :value="`${line.amountDr}`" autocomplete="off"
-                                    @change="resetAppo('dr', 'cr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
+                            <div class="grid-input"><input name="drAmount" :id="`drAmount_${idx}`" v-model="line.amountDr" autocomplete="off"
+                                    @change="resetAppo('dr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
                             </div>
                         </td>
                         <td>
                             <!-- <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" autocomplete="off" -->
-                            <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" :value="`${line.amountCr}`" autocomplete="off"
-                                    @change="resetAppo('cr', 'dr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
+                            <div class="grid-input"><input name="crAmount" :id="`crAmount_${idx}`" v-model="line.amountCr" autocomplete="off"
+                                    @change="resetAppo('cr', `${idx}`)" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" />
                             </div>
                         </td>
                         <td>
-                            <div class="grid-input"><input :id="`remark_${idx}`" :value="`${line.remark}`" @input="inputRemark($event, idx)"
+                            <div class="grid-input"><input :id="`remark_${idx}`" v-model="line.remark" @input="inputRemark($event, idx)"
                                     style="text-align:left" /></div>
                         </td>
                     </tr>
@@ -169,7 +178,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
+import { axiosGet } from '@/scripts/util/axios.js'
 import AutoSearch from '../../common/comp/MAutoSearch.vue'
 import JournalPresetModal from './modal/JournalPresetModal.vue'
 import JournalSearchHeaderNoModal from './modal/JournalHeaderNoSearchModal.vue'
@@ -182,9 +191,10 @@ import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js'
  *********************/
 const title = ref("가계부 전표 입력(메인)");
 let journalHeaderData = reactive({
-    'jeHeaderId': -1,
+    'jeHeaderId': '',
     'jeHeaderNo': '',
     'jeDate': '',
+    'jeTimes': '',
     'remark': '',
     'sourceCd': '',
     'categoryCd': '',
@@ -243,7 +253,7 @@ const getToday = () => {
  * 은행 Select Option 조회
  */
 const setBankList = async () => {
-    const { data } = await mariaApi.get('/account/bank/infos');
+    const { data } = await mariaApi.get('/api/account/bank/infos');
     options.bank = data;
     options.bank.unshift({ 'bankId': '', 'bankNm': '선택해주세요' });
 }
@@ -252,7 +262,7 @@ const setBankList = async () => {
      * Source (출처) Select Options 조회
      */
 const setSourceList = async () => {
-    const { data } = await mariaApi.get('/system/sources');
+    const { data } = await mariaApi.get('/api/system/sources');
     options.source = data;
     options.source.unshift({ 'sourceCd': '', 'sourceNm': '선택해주세요' });
 }
@@ -268,7 +278,7 @@ const setCategoryList = async () => {
         return false;
     }
     
-    const { data } = await mariaApi.get('/system/categories/' + sourceCd.replaceAll(' ', ''));
+    const { data } = await mariaApi.get('/api/system/categories/' + sourceCd.replaceAll(' ', ''));
     options.category = data;
     options.category.unshift({ 'categoryCd': '', 'categoryNm': '선택해주세요' });
 }
@@ -283,6 +293,7 @@ const reset = () => {
         'jeHeaderId': -1,
         'jeHeaderNo': '',
         'jeDate': getToday(),
+        'jeTimes': '',
         'remark': '',
         'sourceCd': '',
         'categoryCd': '',
@@ -300,35 +311,25 @@ const reset = () => {
  */
 const searchByHeaderNo = async (headerNo) => {
 
-    const { data } = mariaApi.get(`/account/journal/${headerNo}`);
+    const { data } = await mariaApi.get(`/api/account/journal/${headerNo}`);
+    
+    journalHeaderData.jeHeaderNo = data.jeHeaderNo;
+    journalHeaderData.bankId = data.bankId;
+    journalHeaderData.sourceCd = data.sourceCd;
+    setCategoryList();
+    journalHeaderData.categoryCd = data.categoryCd;
+    journalHeaderData.remark = data.remark;
+    journalHeaderData.status = data.status;
+    journalHeaderData.jeTimes = data.transactionDate.split('T')[1];
+    journalDetailData.value = data.jeLineList;
 
-    const url = aibeesGlobal.API_SERVER_URL + '/account/journal/' + headerNo;
-    const callback = (res) => {
-        const resultData = res.data.data;
-        console.log(resultData);
-        // header Data
-        journalHeaderData.jeHeaderId = resultData.jeHeaderId;
-        journalHeaderData.jeHeaderNo = resultData.jeHeaderNo;
-        journalHeaderData.jeDate = resultData.jeDate;
-        journalHeaderData.remark = resultData.remark;
-        journalHeaderData.bankId = resultData.bankId;
-        journalHeaderData.internalYn = resultData.internalYn;
-        journalHeaderData.sourceCd = resultData.sourceCd;
-        journalHeaderData.status = resultData.status;
-        setCategoryList();
-        journalHeaderData.categoryCd = resultData.categoryCd;
-        
-        // line Data
-        journalDetailData.value = resultData.jeLineList;
-        
-    }
-    axiosGet(url, callback);
+    console.log(journalDetailData.value);
 }
 
 /**
  * 전표 저장
  */
-const saveJournal = () => {
+const saveJournal = async () => {
 
     // validation 검증
     if (!journalValidate()) {
@@ -343,25 +344,19 @@ const saveJournal = () => {
 
     const saveData = {
         'jeDate': journalHeaderData.jeDate,
+        'jeTimes': journalHeaderData.jeTimes,
         'trxType': 'INSERT',
         'bankId': journalHeaderData.bankId,
         'sourceCd': journalHeaderData.sourceCd,
         'categoryCd': journalHeaderData.categoryCd,
         'remark': journalHeaderData.remark,
+        'amount': removeComma(CreditSum.value),
         'jeLineList': journalDetailData.value,
         'internalYn': journalHeaderData.internalYn
     }
 
-    const url = aibeesGlobal.API_SERVER_URL + '/account/journal';
-    const callback = (res) => {
-        if (res.data.success) {
-            alert("저장완료");
-            searchByHeaderNo(res.data.data.jeHeaderNo);
-        } else {
-            alert(res.data.message);
-        }
-    }
-    axiosPost(url, saveData, callback);
+    const { data } = await mariaApi.post('/api/account/journal', saveData);
+    searchByHeaderNo(data.jeHeaderNo);
 }
 
 const journalValidate = () => {
@@ -400,18 +395,12 @@ const presetCheckCallback = (presetCd) => {
  * @param {*} idx 
  */
 const selectAcctCallback = (acct, idx) => {
+    console.log("acct : " + acct + " // idx : " + idx);
     const dataInLine = journalDetailData.value[idx];
     dataInLine.acctCd = acct.acctCd;
     dataInLine.acctNm = acct.acctNm;
-
-    if (acct.additionalFalg === 'Y') {
-        createAdditionalLine(acct);
-    }
 }
 
-const createAdditionalLine = (acct) => {
-    
-}
 
 /*********************
  ** BUTTON FUNCTION **
@@ -454,19 +443,21 @@ const removeLine = () => {
  * @param {*} target 
  * @param {*} idx 
  */
-const resetAppo = (source, target, idx) => {
-    const currNum = document.getElementById(source + 'Amount_' + idx).value;
-    const amount = removeComma(currNum);
-    
+const resetAppo = (source, idx) => {
+    let lineData = journalDetailData.value[idx];
+
     if (source === 'dr') {
-        const dataInLine = journalDetailData.value[idx];
-        dataInLine.amountDr = addComma(amount);
-        dataInLine.amountCr = '0';
+        const amt = removeComma(lineData.amountDr);
+        lineData.amountDr = addComma(amt);
+        lineData.lineType = 'DR';
+        lineData.amountCr = '0';
     }
+
     if (source === 'cr') {
-        const dataInLine = journalDetailData.value[idx];
-        dataInLine.amountCr = addComma(amount);
-        dataInLine.amountDr = '0';
+        const amt = removeComma(lineData.amountCr);
+        lineData.amountCr = addComma(amt);
+        lineData.lineType = 'CR';
+        lineData.amountDr = '0';
     }
 
     let debit = 0;
@@ -475,9 +466,10 @@ const resetAppo = (source, target, idx) => {
     journalDetailData.value.forEach(data => {
         debit = debit + removeComma(data.amountDr);
         credit = credit + removeComma(data.amountCr);
-        DebitSum.value = addComma(debit);
-        CreditSum.value = addComma(credit);
-    })
+    });
+
+    DebitSum.value = addComma(debit);
+    CreditSum.value = addComma(credit);
 }
 
 const inputRemark = (event, idx) => {
@@ -548,8 +540,8 @@ button {
         .journal-main-info {
             display: flex;
             justify-content: left;
-            padding-top: 7px;
-            height: 70px;
+            padding: 7px;
+            height: fit-content;//100px;
 
             .paragraph-block {
                 margin-right: 10px;

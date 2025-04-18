@@ -110,7 +110,7 @@ onMounted(async () => {
  * 첫번째 depth 계정코드 조회
  */
 const getFirstData = async () => {
-    const { data } = await mariaApi.get('/account/acct/first');
+    const { data } = await mariaApi.get('/api/account/acct/first');
     dataList.first = data;
 } 
 
@@ -164,7 +164,7 @@ const getSecondData = async (firstAcctCd) => {
     const param = {
         'acctCd': firstAcctCd
     }
-    const { data } = await mariaApi.get('/account/acct/second', { params: param });
+    const { data } = await mariaApi.get('/api/account/acct/second', { params: param });
     dataList.second = data;
     dataList.second.forEach(data => {
         data['trxType'] = '';
@@ -222,7 +222,7 @@ const getLastData = async (secondAcctCd) => {
     const param = {
         'acctCd': secondAcctCd
     }
-    const { data } = await mariaApi.get('/account/acct/last', { params: param });
+    const { data } = await mariaApi.get('/api/account/acct/last', { params: param });
     dataList.last = data;
     dataList.last.forEach(data => {
         data['trxType'] = '';
@@ -333,7 +333,7 @@ const saveSecondData = async () => {
         'data': dataList.second
     }
 
-    const { data } = await mariaApi.post('/account/acct/setting', bodyParam);
+    const { data } = await mariaApi.post('/api/account/acct/setting', bodyParam);
     getSecondData(curFirstSelect);
     initTrx();
 }
@@ -349,7 +349,7 @@ const saveLastData = async () => {
         'data': dataList.last
     }
 
-    const { data } = await mariaApi.post('/account/acct/setting', bodyParam);
+    const { data } = await mariaApi.post('/api/account/acct/setting', bodyParam);
     initTrx();
 }
 

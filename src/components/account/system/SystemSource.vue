@@ -109,7 +109,7 @@ onMounted(async () => {
  * source 출처 조회
  */
 const getSourceData = async () => {
-    const { data } = await mariaApi.get('/system/sources');
+    const { data } = await mariaApi.get('/api/system/sources');
     dataList.source = data;
     dataList.source.forEach(d => {
         d['trxType'] = '';
@@ -190,7 +190,7 @@ const deleteSource = async () => {
         alert("비정상");
         return false;
     }
-    const { data } = await mariaApi.delete(`/system/sources/${cur.sourceSelect}`);
+    const { data } = await mariaApi.delete(`/api/system/sources/${cur.sourceSelect}`);
     getSourceData();
     initTrx();
 }
@@ -207,7 +207,7 @@ const saveSource = async () => {
     const bodyParam = {
         'data': dataList.source
     }
-    const { data } = await mariaApi.post('/system/sources', bodyParam);
+    const { data } = await mariaApi.post('/api/system/sources', bodyParam);
     getSourceData();
     initTrx();
 }
@@ -217,7 +217,7 @@ const saveSource = async () => {
  * @param {*} source 
  */
 const getCategoryData = async (sourceCd) => {
-    const { data } = await mariaApi.get(`/system/categories/${sourceCd}`);
+    const { data } = await mariaApi.get(`/api/system/categories/${sourceCd}`);
     dataList.category = data;
     dataList.category.forEach(d => {
         d['trxType'] = '';
@@ -291,7 +291,7 @@ const deleteCategory = async () => {
         alert("비정상");
         return false;
     }
-    const { data } = await mariaApi.delete(`/system/categories/${cur.sourceSelect}/${cur.categorySelect}`);
+    const { data } = await mariaApi.delete(`/api/system/categories/${cur.sourceSelect}/${cur.categorySelect}`);
     getCategoryData(cur.sourceSelect);
     initTrx();
 }
@@ -308,7 +308,7 @@ const deleteCategory = async () => {
     const bodyParam = {
         'data': dataList.category
     }
-    const { data } = await mariaApi.post('/system/categories', bodyParam);
+    const { data } = await mariaApi.post('/api/system/categories', bodyParam);
     getCategoryData(cur.sourceSelect);
     initTrx();
 }

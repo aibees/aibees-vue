@@ -34,9 +34,10 @@
                     <br/>
                     <div class="sumByAcct">
                         <div class="acct-group" v-for="(group, idx) in revenueData" :key="idx">
+                            <hr style="border: 2px solid grey" />
                             <div class="acct">
                                 <span>{{ group.parentAcctNm }} / {{ group.parentAcctCd }}</span>
-                                <span> </span>
+                                <span> 총 {{ group.groupAmt }}원</span>
                             </div>
                             <div class="acct" v-for="(item, idx) in group.subAcct" :key="idx" :id="item.acctCd" @click="viewDetail(item.acctCd)">
                                 <span>&emsp;ㄴ{{ item.acctNm }} / {{ item.acctCd }}</span>
@@ -51,10 +52,12 @@
                     <br/>
                     <div class="sumByAcct">
                         <div class="acct-group" v-for="(group, idx) in expenseData" :key="idx">
+                            <hr style="border: 2px solid grey" />
                             <div class="acct">
                                 <span>{{ group.parentAcctNm }} / {{ group.parentAcctCd }}</span>
-                                <span> </span>
+                                <span> 총 {{ group.groupAmt }}원</span>
                             </div>
+                            <hr />
                             <div class="acct" v-for="(item, idx) in group.subAcct" :key="idx" :id="item.acctCd" @click="viewDetail(item.acctCd)">
                                 <span>&emsp;ㄴ{{ item.acctNm }} / {{ item.acctCd }}</span>
                                 <span>{{ item.amount }} 원</span>
@@ -132,7 +135,7 @@ const getBankSelectList = async () => {
 
     bankSelectList.value.push({ 'value': '000000', 'name': '전체' });
 
-    const { data } = await mariaApi.get('/account/bank/infos', { params: param });
+    const { data } = await mariaApi.get('/api/account/bank/infos', { params: param });
     data.forEach(data => {
     bankSelectList.value.push(
         {
@@ -157,7 +160,7 @@ const getRevenueData = async () => {
         'ym': searchParams.ym,
         'bankId': searchParams.bankId 
     }
-    const { data } = await mariaApi.get(`/account/cashflow/revenue`, { params: param });
+    const { data } = await mariaApi.get(`/api/account/cashflow/revenue`, { params: param });
 
     data.forEach(d => {
         d['amount'] = addComma(d.crAmount + (-1 * d.drAmount));
@@ -197,7 +200,7 @@ const getExpenseData = async () => {
         'ym': searchParams.ym,
         'bankId': searchParams.bankId 
     }
-    const { data } = await mariaApi.get(`/account/cashflow/expense`, { params: param });
+    const { data } = await mariaApi.get(`/api/account/cashflow/expense`, { params: param });
 
     data.forEach(d => {
         d['amount'] = addComma(d.drAmount + (-1 * d.crAmount));
@@ -231,6 +234,7 @@ const getExpenseData = async () => {
 }
 
 const viewDetail = async (acctCd) => {
+    console.log("curSelectedTr : " + curSelectedTr);
     if (curSelectedTr != '') {
         document.getElementById(curSelectedTr).classList.remove('acct-active');
     }
@@ -245,7 +249,7 @@ const viewDetail = async (acctCd) => {
     }
 
     const ym = searchParams.ym;
-    const { data } = await mariaApi.get(`/account/cashflow/detail/${ym}/${acctCd}`);
+    const { data } = await mariaApi.get(`/api/account/cashflow/detail/${ym}/${acctCd}`);
     detailData.value = data;
     detailData.value.forEach(data => {
         data['amount'] = addComma(data.crAmount + data.drAmount);

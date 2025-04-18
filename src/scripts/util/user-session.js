@@ -4,6 +4,7 @@ import { ref, computed, reactive } from 'vue'
 export const userSession = defineStore('user', () => {
     const user = reactive({
         loginInfo: {
+            uuid: "",
             accessToken: "",
             name: "",
             admin: false
@@ -16,23 +17,21 @@ export const userSession = defineStore('user', () => {
         const storageUser = JSON.parse(sessionStorage.getItem('user'));
 
         user.loginInfo.accessToken = storageUser.accessToken;
+        user.loginInfo.uuid = storageUser.uuid;
+        user.loginInfo.name = storageUser.name;
         user.accessTime = storageUser.accessTime;
     } 
 
     const getUserInfo = computed(() => user.loginInfo);
 
     const isUserSession = () => {
-        const storage = JSON.parse(sessionStorage.getItem("user"));
-
-        console.log("isUserSesion")
-        console.log(user);
-
         return (typeof user.loginInfo.accessToken == 'undefined' || user.loginInfo.accessToken !== "")
             && user.accessTime !== null
             && (Number((new Date(user.accessTime)).getTime())) > (Number((new Date()).getTime()) - 21600000)
     };
 
     const loginUpdate = (info) => {
+        user.loginInfo.uuid = info.uuid;
         user.loginInfo.accessToken = info.accessToken;
         user.loginInfo.name = info.name;
         user.loginInfo.admin = info.admin;
@@ -42,14 +41,20 @@ export const userSession = defineStore('user', () => {
         const sessItem = {
             accessToken : info.accessToken,
             name : info.name,
-            accessTime : info.accessTime
+            accessTime : info.accessTime,
+            uuid: info.uuid
         }
 
         sessionStorage.setItem('user', JSON.stringify(sessItem));
     }
 
+    const tokenUpdate = (token) => {
+        sessionStorage.setItem('token', token);
+    }
+
     const logoutUpdate = () => {
         user.loginInfo = {
+            uuid: "",
             accessToken: "",
             name: "",
             admin: false

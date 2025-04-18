@@ -1,5 +1,5 @@
 <script setup>
-
+import "vue3-toastify/dist/index.css";
 defineProps({
   msg: String
 })

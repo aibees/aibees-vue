@@ -17,7 +17,7 @@
     const emitter = inject('emitter');
 
     const submitCardText = async () => {
-        const { data } = await mariaApi.post('/account/card/txt', { payText: payText.value });
+        const { data } = await mariaApi.post('/api/account/card/txt', { payText: payText.value });
         console.log(data);
     }
 
