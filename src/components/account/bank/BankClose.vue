@@ -3,10 +3,27 @@
     <div class="bank-close">
         <div class="bank-close-option">
             <div class="close-option-left">
-                <input type="month" id="close-ym" />
+                <div class="option-item">
+                    <MLabelInput
+                        :id="`journal-no`"
+                        label="마감년월"
+                        type="month"
+                        v-model="searchParam.ym"
+                        style="margin: 5px 0px;" />
+                </div>
+                <div class="option-item">
+                    <MLabelSelect
+                        id="journal-bank"
+                        :option="options.bank"
+                        label="은행"
+                        size="sm"
+                        v-model="searchParam.bankId"
+                        style="margin: 5px 0px;" />
+                </div>
             </div>
             <div class="close-option-right">
-                <button @click="selectData()">조회</button>
+                <button @click="getCloseData">조회</button>
+                <!-- <button @click="selectData()">마감</button> -->
             </div>
         </div>
         <div class="bank-close-container">
@@ -147,11 +164,12 @@
 </template>
 
 <script setup>
-    import { ref, onMounted } from 'vue'
-    import { axiosGet, axiosPost } from '@/scripts/util/axios.js'
-    import { getResourceItem, getResourceList } from '@/scripts/util/common/SettingResource.js';
+    import { ref, onMounted, reactive } from 'vue'
+    import mariaApi from '../../../scripts/util/mariaApi';
     import AccountHeader from '../common/AccountHeader.vue';
     import { addComma } from '@/scripts/util/common/CommonUtils.js'
+    import MLabelInput from '../../common/comp/MLabelInput.vue';
+    import MLabelSelect from '../../common/comp/MLabelSelect.vue';
 
     /*********************
      ** GLOBAL VARIABLE **
@@ -160,219 +178,268 @@
     const closeDataList = ref([]);
     const closeDetailList = ref([]);
 
+    // select 등 option list
+    const options = reactive({
+        bank: []
+    })
+
+    // 검색조건 parameter
+    const searchParam = reactive({
+        ym: '',
+        bankId: ''
+    })
+
     /*********************
      ** LIFECYCLE FUNC. **
      *********************/
     onMounted(() => {
-        const toDate = new Date();
-        const yy = toDate.getFullYear();
-        const mm = toDate.getMonth()+1;
-
-        document.getElementById('close-ym').value = yy+(mm < 10? '0' : '')+'-'+mm;
-        console.log(document.getElementById('close-ym').value);
+        searchParam.ym = getToday();
+        setBankList();
     })
+    /**********************
+     ** OPTION  FUNCTION **
+     **********************/
+    const getToday = () => {
+      const toDate = new Date();
+      let dateValue = toDate.getFullYear();
+      let month = toDate.getMonth() + 1;
+      if (month.toString().length < 2) {
+          month = '0' + month;
+      }
+      return dateValue + '-' + month;
+    }
+
+    /**
+     * 은행코드 조회
+     */
+    const setBankList = async () => {
+        const { data } = await mariaApi.get('/api/account/bank/infos');
+        options.bank.unshift({ 'value': '', 'name': '선택해주세요' });
+        data.forEach(d => {
+            options.bank.push({ "value": d.bankId, "name": `${d.bankNm} (${d.bankId})` });
+        })
+    }
 
     /*********************
      ** MAIN   FUNCTION **
      *********************/
-    const getBankYmData = (ym) => {
-        const url = aibeesGlobal.API_SERVER_URL + "/close/list";
-        const urlParam = "?type=BANK" + "&ym=" + ym;
-        const callback = (res) => {
-            if(res.data.RESULT == 'SUCCESS') {
-                closeDataList.value = res.data.DATA;
+    const validate = () => {
+        if (searchParam.ym === '') {
+            alert("마감년월 선택해야합니다.");
+            return false;
+        }
+        if (searchParam.bankId === '') {
+            alert("은행 선택 핅수");
+            return false;
+        }
+        return true;
+    }
 
-                closeDataList.value.forEach((close) => {
-                    close.limitAmt = addComma(close.limitAmt);
+    const getCloseData = async () => {
+        if (!validate()) {
+            return false;
+        }
+        const { data } = await mariaApi.get('/api/account/bank/closing', {params: searchParam});
+        console.log(data);
+    }
+    // const getBankYmData = (ym) => {
+    //     const url = aibeesGlobal.API_SERVER_URL + "/close/list";
+    //     const urlParam = "?type=BANK" + "&ym=" + ym;
+    //     const callback = (res) => {
+    //         if(res.data.RESULT == 'SUCCESS') {
+    //             closeDataList.value = res.data.DATA;
 
-                    if(typeof close.profitAcc  != 'undefined')
-                        close.profitAcc = addComma(close.profitAcc);
+    //             closeDataList.value.forEach((close) => {
+    //                 close.limitAmt = addComma(close.limitAmt);
 
-                    if(typeof close.lossAcc  != 'undefined')
-                        close.lossAcc = addComma(close.lossAcc);
+    //                 if(typeof close.profitAcc  != 'undefined')
+    //                     close.profitAcc = addComma(close.profitAcc);
 
-                    if(typeof close.resultAcc  != 'undefined')
-                        close.resultAcc = addComma(close.resultAcc);
+    //                 if(typeof close.lossAcc  != 'undefined')
+    //                     close.lossAcc = addComma(close.lossAcc);
 
-                    if(typeof close.lastAmt  != 'undefined')
-                        close.lastAmt = addComma(close.lastAmt);
+    //                 if(typeof close.resultAcc  != 'undefined')
+    //                     close.resultAcc = addComma(close.resultAcc);
 
-                    if(typeof close.curAmt  != 'undefined')
-                        close.curAmt = addComma(close.curAmt);
+    //                 if(typeof close.lastAmt  != 'undefined')
+    //                     close.lastAmt = addComma(close.lastAmt);
 
-                    if(typeof close.profitData != 'undefined') {
-                        close.profitData.forEach((profit) => {
-                            profit.amount = addComma(profit.amount);
-                        });
-                    }
+    //                 if(typeof close.curAmt  != 'undefined')
+    //                     close.curAmt = addComma(close.curAmt);
 
-                    if(typeof close.lossData != 'undefined') {
-                        close.lossData.forEach((loss) => {
-                            loss.amount = addComma(loss.amount);
-                        });
-                    }
+    //                 if(typeof close.profitData != 'undefined') {
+    //                     close.profitData.forEach((profit) => {
+    //                         profit.amount = addComma(profit.amount);
+    //                     });
+    //                 }
 
-                    if(typeof close.lineData != 'undefined' && close.lineData != null) {
-                        let canClose = true;
-                        close.lineData.forEach((line) => {
-                            if(line.confirmCnt != line.count) {
-                                canClose = false;
-                            }
+    //                 if(typeof close.lossData != 'undefined') {
+    //                     close.lossData.forEach((loss) => {
+    //                         loss.amount = addComma(loss.amount);
+    //                     });
+    //                 }
+
+    //                 if(typeof close.lineData != 'undefined' && close.lineData != null) {
+    //                     let canClose = true;
+    //                     close.lineData.forEach((line) => {
+    //                         if(line.confirmCnt != line.count) {
+    //                             canClose = false;
+    //                         }
                             
-                        });
-                        if(canClose) {
-                            close['closeFlag'] = 'Y';
-                            close['closeColor'] = '#000032';
-                        }
-                    }
-                    if(typeof close.completeFlag != 'undefined' && close.completeFlag == 'Y') {
-                        close['closeColor'] = '#002bff';
-                    }
+    //                     });
+    //                     if(canClose) {
+    //                         close['closeFlag'] = 'Y';
+    //                         close['closeColor'] = '#000032';
+    //                     }
+    //                 }
+    //                 if(typeof close.completeFlag != 'undefined' && close.completeFlag == 'Y') {
+    //                     close['closeColor'] = '#002bff';
+    //                 }
 
-                    if(close.completeFlag == 'Y' || close.closeFlag != 'Y') { // 확정이 완료된 건이거나 검토가 완료되지 않은 건은 disabled
-                        close['completeDisabledFlag'] = 'Y';
-                    } else {
-                        close['completeDisabledFlag'] = 'N';
-                    }
-                });
+    //                 if(close.completeFlag == 'Y' || close.closeFlag != 'Y') { // 확정이 완료된 건이거나 검토가 완료되지 않은 건은 disabled
+    //                     close['completeDisabledFlag'] = 'Y';
+    //                 } else {
+    //                     close['completeDisabledFlag'] = 'N';
+    //                 }
+    //             });
                 
-            } else {
-                alert(res.data.RESULT + " / " + res.data.message);
-            }
-        }
-        axiosGet(url + urlParam, callback);
-    }
+    //         } else {
+    //             alert(res.data.RESULT + " / " + res.data.message);
+    //         }
+    //     }
+    //     axiosGet(url + urlParam, callback);
+    // }
 
-    /*********************
-     ** EVENT  FUNCTION **
-     *********************/
-    const selectData = () => {
-        getBankYmData(document.getElementById('close-ym').value);
-    }
+    // /*********************
+    //  ** EVENT  FUNCTION **
+    //  *********************/
+    // const selectData = () => {
+    //     getBankYmData(document.getElementById('close-ym').value);
+    // }
 
-    const saveDetailCheck = (idx) => {
-        const detailSize = closeDetailList.value.length;
+    // const saveDetailCheck = (idx) => {
+    //     const detailSize = closeDetailList.value.length;
 
-        let confirmCnt = 0;
-        for(let i = 0; i < detailSize; i++) {
-            let detailData = closeDetailList.value[i];
-            const confirmYn = document.getElementById('confirm_' + idx + '_' + i).checked;
-            if(confirmYn == true) {
-                confirmCnt++;
-            }
-            detailData['confirmStatus'] = (confirmYn? 'CONFIRM' : '');
-            detailData['wasteCheck'] = document.getElementById('waste_' + idx + '_' + i).checked ? 'Y' : 'N';
-        }
+    //     let confirmCnt = 0;
+    //     for(let i = 0; i < detailSize; i++) {
+    //         let detailData = closeDetailList.value[i];
+    //         const confirmYn = document.getElementById('confirm_' + idx + '_' + i).checked;
+    //         if(confirmYn == true) {
+    //             confirmCnt++;
+    //         }
+    //         detailData['confirmStatus'] = (confirmYn? 'CONFIRM' : '');
+    //         detailData['wasteCheck'] = document.getElementById('waste_' + idx + '_' + i).checked ? 'Y' : 'N';
+    //     }
 
-        if(confirmCnt != detailSize) {
-            alert("모두 확정체크 해주세요");
-            return false;
-        } else {
-            const confirmAlert = confirm("검토 완료하시겠습니까?");
-            if(confirmAlert) {
-                const url = aibeesGlobal.API_SERVER_URL + "/close/detail"
-                const data = {
-                    'type' : 'BANK',
-                    'data' : closeDetailList.value
-                };
-                const callback = (res) => {
-                    if("SUCCESS" == res.data.RESULT) {
-                        // TODO : 검토하기 -> 검토완료, 버튼 비활성화
-                        selectData();
-                        document.getElementById('detail_'+idx).style.display = 'none';
-                    } else {
-                        alert(res.data.message);
-                    }
-                };
+    //     if(confirmCnt != detailSize) {
+    //         alert("모두 확정체크 해주세요");
+    //         return false;
+    //     } else {
+    //         const confirmAlert = confirm("검토 완료하시겠습니까?");
+    //         if(confirmAlert) {
+    //             const url = aibeesGlobal.API_SERVER_URL + "/close/detail"
+    //             const data = {
+    //                 'type' : 'BANK',
+    //                 'data' : closeDetailList.value
+    //             };
+    //             const callback = (res) => {
+    //                 if("SUCCESS" == res.data.RESULT) {
+    //                     // TODO : 검토하기 -> 검토완료, 버튼 비활성화
+    //                     selectData();
+    //                     document.getElementById('detail_'+idx).style.display = 'none';
+    //                 } else {
+    //                     alert(res.data.message);
+    //                 }
+    //             };
 
-                axiosPost(url, data, callback);
-            }
-        }
-    }
+    //             axiosPost(url, data, callback);
+    //         }
+    //     }
+    // }
 
-    const processClose = (data, idx) => {
-        if(data.closeFlag == 'N') {
-            alert("확정 불가. 검토부터 진행필요");
-            return false;
-        }
+    // const processClose = (data, idx) => {
+    //     if(data.closeFlag == 'N') {
+    //         alert("확정 불가. 검토부터 진행필요");
+    //         return false;
+    //     }
 
-        const confirmData = {
-            'type': 'BANK',
-            'data': {
-                'bankId': data.bankId,
-                'ym': data.ym,
-                'lastAmount': data.curAmt, // 이번 달 최종잔액
-                'profitAmount': data.profitAcc,
-                'lossAmount': data.lossAcc,
-                'incomeAmount': data.resultAcc
-            }
-        }
+    //     const confirmData = {
+    //         'type': 'BANK',
+    //         'data': {
+    //             'bankId': data.bankId,
+    //             'ym': data.ym,
+    //             'lastAmount': data.curAmt, // 이번 달 최종잔액
+    //             'profitAmount': data.profitAcc,
+    //             'lossAmount': data.lossAcc,
+    //             'incomeAmount': data.resultAcc
+    //         }
+    //     }
 
-        if(confirm("확정하시겠습니까")) {
-            const url = aibeesGlobal.API_SERVER_URL + "/close/confirm";
-            const callback = (res) => {
-                console.log(res);
-                if(res.status == 200) {
-                    const btnObj = document.getElementById('closeBtn_'+idx);
-                    btnObj.textContent = '확정완료'
-                    btnObj.style.backgroundColor = '#7a7aa6';
+    //     if(confirm("확정하시겠습니까")) {
+    //         const url = aibeesGlobal.API_SERVER_URL + "/close/confirm";
+    //         const callback = (res) => {
+    //             console.log(res);
+    //             if(res.status == 200) {
+    //                 const btnObj = document.getElementById('closeBtn_'+idx);
+    //                 btnObj.textContent = '확정완료'
+    //                 btnObj.style.backgroundColor = '#7a7aa6';
 
-                    selectData();
-                }
-            }
-            axiosPost(url, confirmData, callback);
-        }
-    }
+    //                 selectData();
+    //             }
+    //         }
+    //         axiosPost(url, confirmData, callback);
+    //     }
+    // }
 
-    /**
-     * 항목 별 검토하기 누를 시 디테일 조회 및 하단 검토화면 노출
-     * @param param :해당항목 라인데이터
-     * @param idx :은행 별 idx
-     * @param didx :은행데이터 안에서 라인 별 idx
-     */
-    const checkData = (param, idx, didx) => {
-        const entryCd = param.entryCd;
-        let trPrefix;
-        if(entryCd == '0') {
-            trPrefix = 'profit';
-        } else {
-            trPrefix = 'loss';
-        }
+    // /**
+    //  * 항목 별 검토하기 누를 시 디테일 조회 및 하단 검토화면 노출
+    //  * @param param :해당항목 라인데이터
+    //  * @param idx :은행 별 idx
+    //  * @param didx :은행데이터 안에서 라인 별 idx
+    //  */
+    // const checkData = (param, idx, didx) => {
+    //     const entryCd = param.entryCd;
+    //     let trPrefix;
+    //     if(entryCd == '0') {
+    //         trPrefix = 'profit';
+    //     } else {
+    //         trPrefix = 'loss';
+    //     }
 
-        // 각 은행에 대한 closeDetail이 있기에 다른 은행 선택 시 남아있는 경우가 있어서 모두 display none 처리 후 선택된 detail 창을 노출
-        document.getElementsByName('close-detail').forEach(d => d.style.display = 'none');
-        document.getElementById('detail_'+idx).style.display = 'block';
+    //     // 각 은행에 대한 closeDetail이 있기에 다른 은행 선택 시 남아있는 경우가 있어서 모두 display none 처리 후 선택된 detail 창을 노출
+    //     document.getElementsByName('close-detail').forEach(d => d.style.display = 'none');
+    //     document.getElementById('detail_'+idx).style.display = 'block';
 
-        // 검토완료 버튼 활성화 여부
-        if(param.count == param.confirmCnt) { // 모두 검토 완료되었으면
-            document.getElementById('detailCheckBtn_'+idx).disabled = true;
-            document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#7a7aa6';
-        } else { // 검토 진행 중이라면
-            document.getElementById('detailCheckBtn_'+idx).disabled = false;
-            document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#000032';
-        }
+    //     // 검토완료 버튼 활성화 여부
+    //     if(param.count == param.confirmCnt) { // 모두 검토 완료되었으면
+    //         document.getElementById('detailCheckBtn_'+idx).disabled = true;
+    //         document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#7a7aa6';
+    //     } else { // 검토 진행 중이라면
+    //         document.getElementById('detailCheckBtn_'+idx).disabled = false;
+    //         document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#000032';
+    //     }
 
-        // 검토대상 디테일리스트 조회
-        const url = aibeesGlobal.API_SERVER_URL + "/close/detail/list";
-        const data = {
-            'type': 'BANK',
-            'bankId': param.bankId,
-            'entryCd': param.entryCd,
-            'usageCd': param.usageCd,
-            'ym': param.ym
-        }
-        const callback = (res) => {
-            if("SUCCESS" == res.data.RESULT) { // 정상적으로 조회해왔다면
-                closeDetailList.value = res.data.DATA;
-                console.log("closeDetailList : ");
-                console.log(closeDetailList.value);
+    //     // 검토대상 디테일리스트 조회
+    //     const url = aibeesGlobal.API_SERVER_URL + "/close/detail/list";
+    //     const data = {
+    //         'type': 'BANK',
+    //         'bankId': param.bankId,
+    //         'entryCd': param.entryCd,
+    //         'usageCd': param.usageCd,
+    //         'ym': param.ym
+    //     }
+    //     const callback = (res) => {
+    //         if("SUCCESS" == res.data.RESULT) { // 정상적으로 조회해왔다면
+    //             closeDetailList.value = res.data.DATA;
+    //             console.log("closeDetailList : ");
+    //             console.log(closeDetailList.value);
 
-            } else {
-                alert(res.data.message);
-            }
-        }
-        axiosPost(url, data, callback);
-    }
+    //         } else {
+    //             alert(res.data.message);
+    //         }
+    //     }
+    //     axiosPost(url, data, callback);
+    // }
 </script>
 
 <style lang="scss" scoped>
@@ -456,13 +523,10 @@ button {
         background-color: beige;
 
         .close-option-left {
-            margin-left: 5px;
-            #close-ym {
-                border: none;
-                width: 120px;
-                height: 30px;
-                margin-top: 5px;
-                border-radius: 4px;
+            display: flex;
+            justify-content: left;
+            .option-item {
+                margin-left: 15px;
             }
         }
         .close-option-right {

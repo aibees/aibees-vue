@@ -43,6 +43,10 @@
         'value': 'bank_excel'
       },
       {
+        'name': '통장마감',
+        'value': 'bank_closing'
+      },
+      {
         'name': '통장정보',
         'value': 'bank_info'
       },
