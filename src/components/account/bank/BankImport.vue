@@ -39,7 +39,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(state, idx) in dataList" v-bind:key="idx" :id="`tr_${idx}`">
+          <tr v-for="(state, idx) in dataList" v-bind:key="idx" :id="`tr_${idx}`" :class="{ red: state.usedFlag === 'Y' }">
               <td>{{ state.bankNm }}</td>
               <td><div class="date">{{ state.ymd }}</div><div class="time">{{ state.times }}</div></td>
               <td>
@@ -49,7 +49,7 @@
               </td>
               <td>{{ state.entryNm }}</td>
               <td style="text-align: right;">￦ <strong>{{ state.amount }}</strong>원</td>
-              <td class="text-remark"><input :id="`state-remark_${idx}`" :value="state.remark" style="width: 80%; height: 30px; background-color: white; border: none;"/></td>
+              <td class="text-remark"><input :id="`state-remark_${idx}`" :value="state.remark" style="width: 80%; height: 52px; background-color: white; border: none;"/></td>
           </tr>
         </tbody>
       </table>
@@ -222,6 +222,7 @@
       dataList.value = data;
 
       dataList.value.forEach(d=> {
+        console.log(d);
         d['entryNm'] = d.entryCd == 0 ? '수입' : '지출';
       })
     }
@@ -317,13 +318,16 @@
     bottom: 50px;
 }
 
+.red {
+    font-weight: 650;
+    background-color: rgb(255, 235, 235);
+}
+
 .bankImport {
   font-family: 'Nanum Barun Gothic';
   width: 1400px;
   height: 90vh;
-  border-left: 1px solid grey;
-  border-right: 1px solid grey;
-  margin: 0 auto 60px;
+  margin: auto;
   overflow: auto;
 
   .select-transparent {
@@ -346,10 +350,11 @@
 
   .import-buttons {
     display: flex;
-    width: 100%;
+    width: 90%;
     height: 40px;
     background-color: beige;
     justify-content: space-between;
+    margin: auto;
 
     .buttons-left {
         text-align: left;
@@ -380,6 +385,7 @@
   }
   .import-rows {
     .import-table {
+      margin: auto;
       border-spacing: 0px;
       border-collapse: collapse;
       thead {
@@ -425,6 +431,7 @@
             }
 
             .text-remark {
+              width: 52px;
               display: flex;
               justify-content: right;
             }

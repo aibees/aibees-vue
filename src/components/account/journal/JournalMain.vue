@@ -168,11 +168,11 @@
                 </tbody>
             </table>
         </div>
-        <div class="journal-attribute">
+        <!-- <div class="journal-attribute">
             <div class="attribute-container">
                 hello
             </div>
-        </div>
+        </div> -->
     </div>
 </template>
 
@@ -672,10 +672,6 @@ button {
                     background-color: #fff7d1;
                 }
             }
-
-
-
-
         }
     }
 

@@ -23,142 +23,167 @@
             </div>
             <div class="close-option-right">
                 <button @click="getCloseData">조회</button>
-                <!-- <button @click="selectData()">마감</button> -->
+                <button id="closeBtn" style="display: none" @click="closeProcess">마감</button>
             </div>
         </div>
         <div class="bank-close-container">
-            <ul>
-                <!-- 은행 구분항목 별 수입 및 지출 검토 -->
-                <li v-for="(closeData, idx) in closeDataList" :key="closeData.bankId">
-                    <div :id="`close_${idx}`" class="bank-close-data">
-                        <table class="usage-table">
-                            <thead>
-                                <tr>
-                                    <th colspan="4" class="acc">
-                                        <div class="acc-container"> <!-- 누적금액 표시 -->
-                                            <div style="width: fit-content; padding-top: 10px">
-                                                {{ closeData.bankNm }}
-                                            </div>
-                                            <div style="width: fit-content; padding-top: 10px">
-                                                지출예정금액 : <strong>{{ closeData.limitAmt }} 원</strong>
-                                            </div>
-                                            <div style="width: fit-content; padding-top: 10px">
-                                                지난달 잔금 : <strong>{{ closeData.lastAmt }} 원</strong>
-                                            </div>
-                                            <div style="width: fit-content">
-                                                <button :id="`closeBtn_${idx}`" class="confirm-btn" :disabled="`${closeData.completeDisabledFlag}` == 'Y'" :style="{ 'background-color' : `${closeData.closeColor}`}" @click="processClose(closeData, idx)">
-                                                    {{ closeData.completeBtn }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </th>
-                                </tr>
-                                <tr>
-                                    <th style="width:80px;">분류</th>
-                                    <th style="width:30%;">사용구분</th>
-                                    <th style="width:40%;">금액</th>
-                                    <th style="width:20%;">검토</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(profit, pidx) in closeData.profitData" :id="`profit_${idx}_${pidx}`" :key="`profit_${idx}_${pidx}`" style="background-color: #dffdf8">
-                                    <td><input type="hidden" :id="`entryCd_${idx}_${pidx}`" :value="profit.entryCd" />수입</td>
-                                    <td>{{ profit.usageNm }}</td>
-                                    <td class="amount">+{{ profit.amount }} 원</td>
-                                    <td class="check" @click="checkData(profit, idx, pidx)">{{  profit.confirmMsg  }}</td>
-                                </tr>
-
-                                <tr style="background-color: #ffde70">
-                                    <td colspan="4" class="acc">
-                                        <div class="acc-container">
-                                            <div>
-                                                수입 소계
-                                            </div>
-                                            <div>
-                                                <strong>+{{ closeData.profitAcc }} 원</strong>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-for="(loss, lidx) in closeData.lossData" :id="`loss_${idx}_${lidx}`" :key="`loss_${idx}_${lidx}`" style="background-color: #ffdddd">
-                                    <td><input type="hidden" :id="`entryCd_${idx}_${lidx}`" :value="loss.entryCd" />지출</td>
-                                    <td>{{ loss.usageNm }}</td>
-                                    <td class="amount">-{{ loss.amount }} 원</td>
-                                    <td class="check" @click="checkData(loss, idx, lidx)">{{  loss.confirmMsg  }}</td>
-                                </tr>
-                                
-                                <tr style="background-color: #ffde70">
-                                    <td colspan="4" class="acc">
-                                        <div class="acc-container">
-                                            <div>
-                                                지출 소계
-                                            </div>
-                                            <div>
-                                                <strong>-{{ closeData.lossAcc }} 원</strong>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr style="background-color: #c6ffbe">
-                                    <td colspan="4" class="acc">
-                                        <div class="acc-container">
-                                            <div>
-                                                합계
-                                            </div>
-                                            <div>
-                                                <strong>{{ closeData.resultAcc }} 원</strong>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                
-                                <tr style="background-color: #c6ffbe">
-                                    <td colspan="4" class="acc">
-                                        <div class="acc-container">
-                                            <div>
-                                                최종잔금
-                                            </div>
-                                            <div>
-                                                <strong>{{ closeData.curAmt }} 원</strong>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <div class="before-container">
+                <div class="container-title">
+                    <div class="text">
+                        전월 통장실적
                     </div>
-                    <div class="close-detail" :id="`detail_${idx}`" name="close-detail" style="display:none">
-                        <div class="close-detail-button">
-                            <button :id="`detailCheckBtn_${idx}`" @click="saveDetailCheck(idx)">검토완료</button>
-                        </div>
-                        <table class="usage-table" style="margin-left: 59px; margin-bottom: 20px">
-                            <thead>
-                                <tr style="background-color: lightgrey;">
-                                    <th style="width:140px">구분</th>
-                                    <th style="width:90px">날짜</th>
-                                    <th style="width:80px">시간</th>
-                                    <th style="width:120px">금액</th>
-                                    <th style="width:220px">적요</th>
-                                    <th style="width:70px">확정체크</th>
-                                    <th style="width:70px">낭비여부</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(detail, dIdx) in closeDetailList" :key="dIdx">
-                                    <td><div style="text-wrap:no-wrap;text-overflow:ellipsis;">{{ detail.usageNm }}</div></td>
-                                    <td>{{detail.ymd}}</td>
-                                    <td>{{detail.times}}</td>
-                                    <td>{{detail.amount}}</td>
-                                    <td>{{detail.remark}}</td>
-                                    <td><input :id="`confirm_${idx}_${dIdx}`" type="checkbox" v-model="detail.confirmStatus" /></td>
-                                    <td><input :id="`waste_${idx}_${dIdx}`" type="checkbox" v-model="detail.wasteCheck"/></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                </div>
+                <table class="container-table">
+                    <thead>
+                        <tr>
+                            <th>년월</th>
+                            <th>은행명</th>
+                            <th>수입금액</th>
+                            <th>지출금액</th>
+                            <th>증감금액</th>
+                            <th>마감금액</th>
+                            <th>마감여부</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="lines">{{ resultData.before.ym }}</td>
+                            <td class="lines">{{ resultData.before.bankNm }}</td>
+                            <td class="lines">{{ resultData.before.profitAmount }}</td>
+                            <td class="lines">{{ resultData.before.lossAmount }}</td>
+                            <td class="lines">{{ resultData.before.diffAmount }}</td>
+                            <td class="lines">{{ resultData.before.lastAmount }}</td>
+                            <td class="lines">{{ resultData.before.closedYn }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="container-foot">
+                
+                </div>
+            </div>
+            <div class="revenue-container">
+                <div class="container-title">
+                    <div class="text">
+                        수입 (Revenue) 리스트
                     </div>
-                </li>
-            </ul>
+                </div>
+                <table class="container-table">
+                    <thead>
+                        <tr>
+                            <th style="width:200px;">거래날짜</th>
+                            <th>적요</th>
+                            <th style="width:160px;">은행</th>
+                            <th style="width:140px;">거래금액</th>
+                            <th style="width:140px;">계정과목</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div class="body-scroll">
+                    <table>
+                        <tbody>
+                            <tr v-for="(cr, idx) in resultData.crList" :key="idx">
+                                <td class="lines" style="width: 200px">
+                                    {{ cr.transactionDate }}
+                                </td>
+                                <td class="lines" style="text-align: left;">
+                                    {{ cr.remark }}
+                                </td>
+                                <td class="lines" style="width: 160px;">
+                                    {{ cr.bankNm }}
+                                </td>
+                                <td class="lines" style="width: 140px; text-align: right; padding-right: 13px;">
+                                    {{ cr.amountCr }} 원
+                                </td>
+                                <td class="lines" style="width: 140px; text-align: left; padding-left: 13px;">
+                                    {{ cr.acctNm }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="container-foot">
+                    합계금액 : {{ resultData.summary.crSum }} 원
+                </div>
+            </div>
+            <div class="expense-container">
+                <div class="container-title">
+                    <div class="text">
+                        지출 (Expense) 리스트
+                    </div>
+                </div>
+                <table class="container-table">
+                    <thead>
+                        <tr>
+                            <th style="width:200px;">거래날짜</th>
+                            <th>적요</th>
+                            <th style="width:160px;">은행</th>
+                            <th style="width:140px;">거래금액</th>
+                            <th style="width:140px;">계정과목</th>
+                        </tr>
+                    </thead>
+                    
+                </table>
+                <div class="body-scroll">
+                    <table>
+                        <tbody>
+                            <tr v-for="(dr, idx) in resultData.drList" :key="idx">
+                                <td class="lines" style="width: 200px">
+                                    {{ dr.transactionDate }}
+                                </td>
+                                <td class="lines" style="text-align: left;">
+                                    {{ dr.remark }}
+                                </td>
+                                <td class="lines" style="width: 160px;">
+                                    {{ dr.bankNm }}
+                                </td>
+                                <td class="lines" style="width: 140px; text-align: right; padding-right: 13px;">
+                                    {{ dr.amountDr }} 원
+                                </td>
+                                <td class="lines" style="width: 140px; text-align: left; padding-left: 13px;">
+                                    {{ dr.acctNm }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="container-foot">
+                    합계금액 : {{ resultData.summary.drSum }} 원
+                </div>
+            </div>
+            <div class="after-container">
+                <div class="container-title">
+                    <div class="text">
+                        마감정보 합계
+                    </div>
+                </div>
+                <table class="container-table">
+                    <thead>
+                        <tr>
+                            <th>년월</th>
+                            <th>은행명</th>
+                            <th>수입금액</th>
+                            <th>지출금액</th>
+                            <th>증감금액</th>
+                            <th>마감금액</th>
+                            <th>마감여부</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="lines">{{ searchParam.ym.replace('-', ' / ') }}</td>
+                            <td class="lines">{{ resultData.before.bankNm }}</td>
+                            <td class="lines">{{ resultData.summary.crSum }}</td>
+                            <td class="lines">{{ resultData.summary.drSum }}</td>
+                            <td id="resultDiff" class="lines">{{ resultData.summary.diff }}</td>
+                            <td class="lines" style="font-weight: 650; border: 2px solid black;">{{ resultData.summary.last }}</td>
+                            <td class="lines">{{ resultData.summary.ymClosing }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="container-foot">
+                
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -167,7 +192,7 @@
     import { ref, onMounted, reactive } from 'vue'
     import mariaApi from '../../../scripts/util/mariaApi';
     import AccountHeader from '../common/AccountHeader.vue';
-    import { addComma } from '@/scripts/util/common/CommonUtils.js'
+    import { addComma, removeComma } from '@/scripts/util/common/CommonUtils.js'
     import MLabelInput from '../../common/comp/MLabelInput.vue';
     import MLabelSelect from '../../common/comp/MLabelSelect.vue';
 
@@ -175,8 +200,6 @@
      ** GLOBAL VARIABLE **
      *********************/
     const title = ref("통장 월별결산");
-    const closeDataList = ref([]);
-    const closeDetailList = ref([]);
 
     // select 등 option list
     const options = reactive({
@@ -187,6 +210,21 @@
     const searchParam = reactive({
         ym: '',
         bankId: ''
+    })
+
+    const resultData = reactive({
+        before: {},
+        drList: [],
+        crList: [],
+        summary: {
+            bankId: '',
+            ym: '',
+            drSum: 0,
+            crSum: 0,
+            diff:0,
+            last: 0,
+            ymClosing: 'N'
+        }
     })
 
     /*********************
@@ -200,13 +238,17 @@
      ** OPTION  FUNCTION **
      **********************/
     const getToday = () => {
-      const toDate = new Date();
-      let dateValue = toDate.getFullYear();
-      let month = toDate.getMonth() + 1;
-      if (month.toString().length < 2) {
-          month = '0' + month;
-      }
-      return dateValue + '-' + month;
+        const toDate = new Date();
+        let dateValue = toDate.getFullYear();
+        let month = toDate.getMonth() + 1;
+        if (month.toString().length < 2) {
+            month = '0' + month;
+        }
+        return dateValue + '-' + month;
+    }
+
+    const ymFormatting = (ym) => {
+        return ym.slice(0, 4) + " / " + ym.slice(4, 6);
     }
 
     /**
@@ -240,206 +282,91 @@
             return false;
         }
         const { data } = await mariaApi.get('/api/account/bank/closing', {params: searchParam});
-        console.log(data);
+
+        resultData.before = data.beforeClosing;
+
+        let cS = 0;
+        let dS = 0;
+
+        resultData.before.ym = ymFormatting(data.beforeClosing.ym);
+        resultData.before.profitAmount = addComma(data.beforeClosing.profitAmount);
+        resultData.before.lossAmount = addComma(data.beforeClosing.lossAmount);
+        resultData.before.diffAmount = addComma(data.beforeClosing.diffAmount);
+        resultData.before.lastAmount = addComma(data.beforeClosing.lastAmount);
+
+        data.crList.forEach(c => {
+            cS += c['amountCr'];
+            c['bankNm'] = data.beforeClosing.bankNm;
+            c['transactionDate'] = c['transactionDate'].replace('T', ' ');
+            c['amountCr'] = addComma(c['amountCr']);
+        });
+        data.drList.forEach(d => {
+            dS += d['amountDr'];
+            d['bankNm'] = data.beforeClosing.bankNm;
+            d['transactionDate'] = d['transactionDate'].replace('T', ' ');
+            d['amountDr'] = addComma(d['amountDr']);
+        });
+
+        resultData.summary.ym = data.beforeClosing.ym;
+        resultData.summary.ymClosing = data.ymClosing;
+        resultData.summary.bankId = data.beforeClosing.bankId;
+        resultData.summary.crSum = addComma(cS);
+        resultData.summary.drSum = addComma(dS);
+        resultData.summary.diff = addComma(cS - dS);
+        resultData.summary.last = addComma(removeComma(data.beforeClosing.lastAmount) + cS - dS);
+
+        console.log("cs : " + cS);
+        console.log("dS : " + dS);
+
+        let diffObj = document.getElementById('resultDiff');
+        if (cS > dS) {
+            if (diffObj.classList.contains('red')) {
+                diffObj.classList.remove('red');
+            }
+            diffObj.classList.add('green');
+        } else {
+
+            if (diffObj.classList.contains('green')) {
+                diffObj.classList.remove('green');
+            }
+            diffObj.classList.add('red');
+        }
+
+        console.log("data.beforeClosing.ymClosing : " + data.ymClosing);
+        if (resultData.before.closedYn === 'N' || data.ymClosing === 'N') {
+            document.getElementById('closeBtn').style.display = 'block';
+        } else {
+            document.getElementById('closeBtn').style.display = 'none';
+        }
+
+        resultData.crList = data.crList;
+        resultData.drList = data.drList;
     }
-    // const getBankYmData = (ym) => {
-    //     const url = aibeesGlobal.API_SERVER_URL + "/close/list";
-    //     const urlParam = "?type=BANK" + "&ym=" + ym;
-    //     const callback = (res) => {
-    //         if(res.data.RESULT == 'SUCCESS') {
-    //             closeDataList.value = res.data.DATA;
 
-    //             closeDataList.value.forEach((close) => {
-    //                 close.limitAmt = addComma(close.limitAmt);
+    const closeProcess = async () => {
+        let confirmMsg = '';
+            confirmMsg += ('[마감대상 : ' + searchParam.ym.replace('-', ' / ') + '월] ');
+            confirmMsg += ('마감금액 : ' + resultData.summary.last + '원\n');
+            confirmMsg += '실계좌에서 재확인 후 진행하세요.';
+        const isConfirm = confirm(confirmMsg);
 
-    //                 if(typeof close.profitAcc  != 'undefined')
-    //                     close.profitAcc = addComma(close.profitAcc);
+        if (!isConfirm) {
+            return false;
+        }
 
-    //                 if(typeof close.lossAcc  != 'undefined')
-    //                     close.lossAcc = addComma(close.lossAcc);
+        const dataParam = {
+            'ym': searchParam.ym.replace('-', ''),
+            'bankId': resultData.summary.bankId,
+            'profitAmount': removeComma(resultData.summary.crSum),
+            'lossAmount': removeComma(resultData.summary.drSum),
+            'diffAmount': removeComma(resultData.summary.diff),
+            'lastAmount': removeComma(resultData.summary.last),
+        }
 
-    //                 if(typeof close.resultAcc  != 'undefined')
-    //                     close.resultAcc = addComma(close.resultAcc);
+        await mariaApi.post('/api/account/bank/closing', dataParam);
 
-    //                 if(typeof close.lastAmt  != 'undefined')
-    //                     close.lastAmt = addComma(close.lastAmt);
-
-    //                 if(typeof close.curAmt  != 'undefined')
-    //                     close.curAmt = addComma(close.curAmt);
-
-    //                 if(typeof close.profitData != 'undefined') {
-    //                     close.profitData.forEach((profit) => {
-    //                         profit.amount = addComma(profit.amount);
-    //                     });
-    //                 }
-
-    //                 if(typeof close.lossData != 'undefined') {
-    //                     close.lossData.forEach((loss) => {
-    //                         loss.amount = addComma(loss.amount);
-    //                     });
-    //                 }
-
-    //                 if(typeof close.lineData != 'undefined' && close.lineData != null) {
-    //                     let canClose = true;
-    //                     close.lineData.forEach((line) => {
-    //                         if(line.confirmCnt != line.count) {
-    //                             canClose = false;
-    //                         }
-                            
-    //                     });
-    //                     if(canClose) {
-    //                         close['closeFlag'] = 'Y';
-    //                         close['closeColor'] = '#000032';
-    //                     }
-    //                 }
-    //                 if(typeof close.completeFlag != 'undefined' && close.completeFlag == 'Y') {
-    //                     close['closeColor'] = '#002bff';
-    //                 }
-
-    //                 if(close.completeFlag == 'Y' || close.closeFlag != 'Y') { // 확정이 완료된 건이거나 검토가 완료되지 않은 건은 disabled
-    //                     close['completeDisabledFlag'] = 'Y';
-    //                 } else {
-    //                     close['completeDisabledFlag'] = 'N';
-    //                 }
-    //             });
-                
-    //         } else {
-    //             alert(res.data.RESULT + " / " + res.data.message);
-    //         }
-    //     }
-    //     axiosGet(url + urlParam, callback);
-    // }
-
-    // /*********************
-    //  ** EVENT  FUNCTION **
-    //  *********************/
-    // const selectData = () => {
-    //     getBankYmData(document.getElementById('close-ym').value);
-    // }
-
-    // const saveDetailCheck = (idx) => {
-    //     const detailSize = closeDetailList.value.length;
-
-    //     let confirmCnt = 0;
-    //     for(let i = 0; i < detailSize; i++) {
-    //         let detailData = closeDetailList.value[i];
-    //         const confirmYn = document.getElementById('confirm_' + idx + '_' + i).checked;
-    //         if(confirmYn == true) {
-    //             confirmCnt++;
-    //         }
-    //         detailData['confirmStatus'] = (confirmYn? 'CONFIRM' : '');
-    //         detailData['wasteCheck'] = document.getElementById('waste_' + idx + '_' + i).checked ? 'Y' : 'N';
-    //     }
-
-    //     if(confirmCnt != detailSize) {
-    //         alert("모두 확정체크 해주세요");
-    //         return false;
-    //     } else {
-    //         const confirmAlert = confirm("검토 완료하시겠습니까?");
-    //         if(confirmAlert) {
-    //             const url = aibeesGlobal.API_SERVER_URL + "/close/detail"
-    //             const data = {
-    //                 'type' : 'BANK',
-    //                 'data' : closeDetailList.value
-    //             };
-    //             const callback = (res) => {
-    //                 if("SUCCESS" == res.data.RESULT) {
-    //                     // TODO : 검토하기 -> 검토완료, 버튼 비활성화
-    //                     selectData();
-    //                     document.getElementById('detail_'+idx).style.display = 'none';
-    //                 } else {
-    //                     alert(res.data.message);
-    //                 }
-    //             };
-
-    //             axiosPost(url, data, callback);
-    //         }
-    //     }
-    // }
-
-    // const processClose = (data, idx) => {
-    //     if(data.closeFlag == 'N') {
-    //         alert("확정 불가. 검토부터 진행필요");
-    //         return false;
-    //     }
-
-    //     const confirmData = {
-    //         'type': 'BANK',
-    //         'data': {
-    //             'bankId': data.bankId,
-    //             'ym': data.ym,
-    //             'lastAmount': data.curAmt, // 이번 달 최종잔액
-    //             'profitAmount': data.profitAcc,
-    //             'lossAmount': data.lossAcc,
-    //             'incomeAmount': data.resultAcc
-    //         }
-    //     }
-
-    //     if(confirm("확정하시겠습니까")) {
-    //         const url = aibeesGlobal.API_SERVER_URL + "/close/confirm";
-    //         const callback = (res) => {
-    //             console.log(res);
-    //             if(res.status == 200) {
-    //                 const btnObj = document.getElementById('closeBtn_'+idx);
-    //                 btnObj.textContent = '확정완료'
-    //                 btnObj.style.backgroundColor = '#7a7aa6';
-
-    //                 selectData();
-    //             }
-    //         }
-    //         axiosPost(url, confirmData, callback);
-    //     }
-    // }
-
-    // /**
-    //  * 항목 별 검토하기 누를 시 디테일 조회 및 하단 검토화면 노출
-    //  * @param param :해당항목 라인데이터
-    //  * @param idx :은행 별 idx
-    //  * @param didx :은행데이터 안에서 라인 별 idx
-    //  */
-    // const checkData = (param, idx, didx) => {
-    //     const entryCd = param.entryCd;
-    //     let trPrefix;
-    //     if(entryCd == '0') {
-    //         trPrefix = 'profit';
-    //     } else {
-    //         trPrefix = 'loss';
-    //     }
-
-    //     // 각 은행에 대한 closeDetail이 있기에 다른 은행 선택 시 남아있는 경우가 있어서 모두 display none 처리 후 선택된 detail 창을 노출
-    //     document.getElementsByName('close-detail').forEach(d => d.style.display = 'none');
-    //     document.getElementById('detail_'+idx).style.display = 'block';
-
-    //     // 검토완료 버튼 활성화 여부
-    //     if(param.count == param.confirmCnt) { // 모두 검토 완료되었으면
-    //         document.getElementById('detailCheckBtn_'+idx).disabled = true;
-    //         document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#7a7aa6';
-    //     } else { // 검토 진행 중이라면
-    //         document.getElementById('detailCheckBtn_'+idx).disabled = false;
-    //         document.getElementById('detailCheckBtn_'+idx).style.backgroundColor = '#000032';
-    //     }
-
-    //     // 검토대상 디테일리스트 조회
-    //     const url = aibeesGlobal.API_SERVER_URL + "/close/detail/list";
-    //     const data = {
-    //         'type': 'BANK',
-    //         'bankId': param.bankId,
-    //         'entryCd': param.entryCd,
-    //         'usageCd': param.usageCd,
-    //         'ym': param.ym
-    //     }
-    //     const callback = (res) => {
-    //         if("SUCCESS" == res.data.RESULT) { // 정상적으로 조회해왔다면
-    //             closeDetailList.value = res.data.DATA;
-    //             console.log("closeDetailList : ");
-    //             console.log(closeDetailList.value);
-
-    //         } else {
-    //             alert(res.data.message);
-    //         }
-    //     }
-    //     axiosPost(url, data, callback);
-    // }
+        await getCloseData();
+    }
 </script>
 
 <style lang="scss" scoped>
@@ -458,6 +385,23 @@ button {
 
 .confirm-btn {
     background-color: #7a7aa6;
+}
+
+.body-scroll {
+    height: 220px;
+    overflow-y: auto;
+}
+
+.green {
+    color: rgb(57, 186, 57);
+    font-weight: 650;
+    background-color: rgb(200, 255, 200);
+}
+
+.red {
+    color: red;
+    font-weight: 650;
+    background-color: rgb(255, 235, 235);
 }
 
 .usage-table {
@@ -530,88 +474,56 @@ button {
             }
         }
         .close-option-right {
+            display: flex;
+            justify-content: right;
         }
-     }
+    }
 
     .bank-close-container {
-        ul {
-            list-style: none;
-            padding-block: 0;
-            padding-inline: 0;
-            margin-block: 0;
-            li {
-                .bank-close-data {
-                    text-align: left;
-                    .bank-name-input {
-                        border: none;
-                        font-size: 15px;
-                    }
+        .container-title {
+            width: 100%;
+            height: 27px;
+            padding-top: 7px;
+            background-color: #e8e8ff;
+            font-weight: 650;
+            text-align: left;
 
-                    .usage-table {
-                        user-select: none;
-                        margin: 20px auto;
-                        border: 2px solid black;
-                        border-collapse: collapse;
-                        thead {
-                            
-                            tr th {
-                                text-align: center;
-                                border: 1px dashed grey;
-                            }
+            .text {
+                margin-left: 20px;
+            }
+        }
 
-                            .acc {
-                                border: 1px solid grey;
-                                .acc-container {
-                                    display: flex;
-                                    justify-content: space-between;
-                                    padding: 0px 10px;
-                                }
-                            }
-                        }
-                        tbody {
-                            td {
-                                border: 1px dashed grey;
-                            }
+        .container-foot {
+            width: 100%;
+            margin-top: 7px;
+            margin-bottom: 18px;
+            text-align: right;
+            .text {
+                margin-left: 20px;
+            }
+        }
+        .before-container {
 
-                            .amount {
-                                text-align: right;
-                                padding-right: 10px;
-                            }
+        }
+        .revenue-container {
 
-                            .percentage {
-                                text-align: center;
-                            }
+        }
+        .expense-container {
 
-                            .acc {
-                                border: 1px solid grey;
-                                .acc-container {
-                                    display: flex;
-                                    justify-content: space-between;
-                                    padding: 0px 10px;
-                                }
-                            }
+        }
+        .after-container {
 
-                            .check {
-                                text-align: center;
-                            }
-                        }
-                    }
-                }
+        }
 
-                .close-detail {
-                    width: 100%;
-                    margin: auto;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            thead {
+                background-color: antiquewhite;
+            }
+            tbody {
+                .lines {
                     border-bottom: 1px solid grey;
-                    .close-detail-button {
-                        text-align: right;
-                        button {
-                            margin-right: 52px;
-                        }
-                    }
-
-                    table {
-                        margin: 3px auto;
-                    }
                 }
             }
         }
