@@ -1,21 +1,29 @@
-<script setup>
-</script>
-
 <template>
-  <div>
-    <!-- <HelloWorld msg="Hello Vue 3 + Vite" /> -->
-    <router-view />
-  </div>
+    <div>
+        <div v-if="!isMobile">
+            <AGnb />
+        </div>
+        <router-view />
+        <div v-if="isMobile">
+            <AGnb />
+        </div>
+    </div>
 </template>
 
-<style lang="scss">
-@import '@@/__variables.scss';
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+<script setup>
+    const isMobile = ref(window.innerWidth < 1200)
 
-}
-</style>
+    const handleResize = () => {
+        isMobile.value = window.innerWidth < 1200;
+    }
+
+    onMounted(() => {
+        window.addEventListener('resize', handleResize);
+    });
+
+    onUnmounted(() => {
+        window.removeEventListener('resize', handleResize);
+    });
+</script>
+
+<style lang="scss" src="@@/app.scss" />

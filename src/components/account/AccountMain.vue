@@ -1,5 +1,5 @@
 <template>
-  <div id="account" class="account">
+  <div class="account">
     <div class="back-image">
       <img src="@image/account_backimg.jpg" />
     </div>
