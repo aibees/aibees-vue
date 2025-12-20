@@ -20,11 +20,16 @@ app.use(pinia);
 // ===========================
 
 // ===== FontAwesomeIcon Add =====
+
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload, faBars, faSave, faCircleXmark, faCaretLeft, faCaretRight } from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, 
+         faUpload, faBars, faSave, faCircleXmark, faCaretLeft, 
+         faCaretRight, faGear, faHome, faBook } from "@fortawesome/free-solid-svg-icons";
 
-library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, faUpload, faBars, faSave, faCircleXmark, faCaretLeft, faCaretRight);
+library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, 
+            faUpload, faBars, faSave, faCircleXmark, faCaretLeft, 
+            faCaretRight, faGear, faHome, faBook);
 app.component("font-awesome-icons", FontAwesomeIcon)
 // ===============================
 

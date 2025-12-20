@@ -1,4 +1,4 @@
-import { axiosPost } from '@/scripts/util/axios.js'
+
 
 const url = aibeesGlobal.API_SERVER_URL + "/master/detail"
 

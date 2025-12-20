@@ -1,12 +1,12 @@
-import { createWebHistory, createRouter } from 'vue-router'
-import Login from '@/components/login/Login.vue'
-import Account from '@/components/Account'
-import Aibees from '@/components/aibees'
-import Master from '@/components/master/Master.vue'
-import NotFound from '@/components/except/NotFound.vue'
-import NAVERLogin from '@/components/login/NaverLogin.vue'
+import { createWebHistory, createRouter } from 'vue-router';
+import Login from '@/components/login/Login.vue';
+import Home from '@/components/Home.vue';
+import Account from '@/components/account';
+import System from '@/components/system';
+import NotFound from '@/components/except/NotFound.vue';
+import NAVERLogin from '@/components/login/NaverLogin.vue';
 
-import { userSession } from './util/user-session'
+import { userSession } from './util/user-session';
 
 const routes=[
     {
@@ -15,171 +15,131 @@ const routes=[
         component: NotFound
     },
     {
-        path: "/",
-        name: "AibeesHome",
-        component: Aibees.AibeesHome,
-        meta: { 
-            auth: true,
-            title: 'MARIA'
-        }
+        path: '/',
+        name: 'root',
+        redirect: '/home'
     },
     {
-        path: "/home",
-        name: "AibeesHome",
-        component: Aibees.AibeesHome,
-        meta: { 
-            auth: true,
-            title: 'MARIA'
-        }
+        path: '/home',
+        name: 'Dashboard',
+        component: Home
     },
     {
         path: "/account",
         name: "Account",
-        component: Account.AccountHome,
+        component: Account.AccountView,
+        meta: {
+            title: '가계부'
+        },
         children: [
             {
-                path: "",
-                name: "AccountHome",
-                component: Account.AccountMain
+                path: '',
+                name: 'Account-entry',
+                component: Account.AccountEntry,
+                meta: {
+                    title: '가계부 입력'
+                }
             },
             {
-                path: 'journal',
-                name: "Journal-Home",
-                component: Account.JournalView,
-                children: [
-                    {
-                        path: '',
-                        name: 'Journal-main',
-                        component: Account.JournalMain
-                    },
-                    {
-                        path: '',
-                        name: 'Journal-search',
-                        component: Account.JournalSearch
-                    },
-                    {
-                        path: 'cashflow',
-                        name: 'Journal-cashflow',
-                        component: Account.JournalCashFlow
-                    }
-                ]
+                path: 'bulk',
+                name: 'Account-upload',
+                component: Account.AccountUpload,
+                meta: {
+                    title: '가계부 일괄 업로드'
+                }
+            }
+            ,
+            {
+                path: 'search',
+                name: 'Account-search',
+                component: Account.AccountSearch,
+                meta: {
+                    title: '가계부 조회'
+                }
             },
             {
-                path: 'card',
-                name: "Card-Home",
-                component: Account.CardView,
-                children: [
-                    {
-                        path: '',
-                        name: 'Card-main',
-                        component: Account.CardMain
-                    },
-                    {
-                        path: 'list',
-                        name: "Card-list",
-                        component: Account.CardList
-                    },
-                    {
-                        path: 'excel',
-                        name: "Card-excel",
-                        component: Account.CardUpload
-                    },
-                    {
-                        path: 'statics1',
-                        name: "Card-statistics-doughnut",
-                        component: Account.CardStaticsDoughnutByUsage
-                    },
-                    {
-                        path: 'statics2',
-                        name: "Card-statistics-line-amount",
-                        component: Account.CardStaticsLineWithAmount
-                    },
-                    {
-                        path: 'info',
-                        name: "Card-info",
-                        component: Account.CardInfo
-                    }
-                ]
+                path: 'cashflow',
+                name: 'Account-cashflow',
+                component: Account.AccountCashflow,
+                meta: {
+                    title: '월별 현금흐름표'
+                }
             },
             {
-                path: 'bank',
-                name: 'Bank-Home',
-                component: Account.BankView,
-                children: [
-                    {
-                        path: '',
-                        name: 'Bank-main',
-                        component: Account.BankMain
-                    },
-                    {
-                        path: 'excel',
-                        name: 'Bank-excel',
-                        component: Account.BankUpload
-                    },
-                    {
-                        path: 'closing',
-                        name: 'Bank-closing',
-                        component: Account.BankClose
-                    },
-                    {
-                        path: 'info',
-                        name: 'Bank-info',
-                        component: Account.BankInfo
-                    },
-                    {
-                        path: 'statistics',
-                        name: 'Bank-statistics',
-                        component: Account.BankClose
-                    },
-                    {
-                        path: 'info',
-                        name: "Bank-info",
-                        component: Account.BankInfo
-                    }
-                ]
+                path: 'fixed',
+                name: 'Account-fixed',
+                component: Account.AccountFixed,
+                meta: {
+                    title: '고정비 관리'
+                }
             },
             {
-                path: 'system',
-                name: 'System-Home',
-                component: Account.SystemView,
-                children: [
-                    {
-                        path: '',
-                        name: 'System-main',
-                        component: Account.SystemMain
-                    },
-                    {
-                        path: 'acctcd',
-                        name: 'System-acctCd',
-                        component: Account.SystemAcctCd
-                    },
-                    {
-                        path: 'source',
-                        name: 'System-source',
-                        component: Account.SystemSource
-                    },
-                    {
-                        path: 'preset',
-                        name: 'System-preset',
-                        component: Account.SystemPreset
-                    }
-                ]
+                path: 'info',
+                name: 'Account-info',
+                component: Account.AccountInfo,
+                meta: {
+                    title: '계좌/카드 정보'
+                }
+            },
+            {
+                path: 'prepaid',
+                name: 'Account-prepaid',
+                component: Account.AccountPrepaid,
+                meta: {
+                    title: '선급비용 관리'
+                }
             }
         ]
-    }
-    , {
-        path: "/aibees",
-        name: "Aibees",
-        component: Aibees.AibeesHome,
-        meta: { 
-            auth: true,
-            title: 'MARIA'
-        }
-    }
-    , {
-        path: "/master",
-        name: "Master",
-        component: Master
+    },
+    {
+        path: '/system',
+        name: 'System-Home',
+        component: System.SystemView,
+        meta: {
+            title: '시스템 설정'
+        },
+        children: [
+            {
+                path: '',
+                name: 'System-main',
+                component: System.SystemMain,
+                meta: {
+                    title: '시스템 설정'
+                }
+            },
+            {
+                path: 'acctcd',
+                name: 'System-acctCd',
+                component: System.SystemAcctCd,
+                meta: {
+                    title: '계정과목 설정'
+                }
+            },
+            {
+                path: 'source',
+                name: 'System-source',
+                component: System.SystemSource,
+                meta: {
+                    title: '출처범주 설정'
+                }
+            },
+            {
+                path: 'preset',
+                name: 'System-preset',
+                component: System.SystemPreset,
+                meta: {
+                    title: '프리셋 설정'
+                }
+            },
+            {
+                path: 'preset-mapping',
+                name: 'System-preset-mapping',
+                component: System.SystemPresetMap,
+                meta: {
+                    title: '프리셋 매핑 설정'
+                }
+            }
+        ]
     }
     , {
         path: "/oauth",
@@ -203,13 +163,14 @@ export const setRouterToApp = () => {
     })
 
     router.beforeEach((to, from, next) => {
-        if (to.fullPath == '/login') {
-            next();
-        } else if (to.fullPath !== '/login' && !session.isUserSession()) {
-            return next({ path: '/login' });
-        } else {
-            next();
-        }
+        next();
+        // if (to.fullPath == '/login') {
+        //     next();
+        // } else if (to.fullPath !== '/login' && !session.isUserSession()) {
+        //     return next({ path: '/login' });
+        // } else {
+        //     next();
+        // }
     })
 
     router.afterEach((to, from) => {
