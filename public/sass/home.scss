@@ -3,16 +3,10 @@
 @import "__variables";
 
 .container {
-    width: 70%;
-    height: 500px;
-    margin:auto;
-    display: flex;
+    width: 90%;
+    height: 670px;
+    display: block;
 
-    @include semiMobile {
-        width: 90%;
-        height: 670px;
-        display: block;
-    }
 
     #left {
         float:left;

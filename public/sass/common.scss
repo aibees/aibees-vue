@@ -1,0 +1,194 @@
+// 전 vue 파일 공통
+@use '@@/__variables.scss' as *;
+
+* {
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: $color-bg;
+}
+
+.with-lnb {
+    @include web {
+        display: flex;
+        margin: 20px;
+        gap: 20px;
+        height: 80vh;
+        
+        .lnb {
+            width: 240px;
+            flex-shrink: 0;
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+
+        }
+        .contents {
+            flex: 1;
+            flex-shrink: 0;
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            overflow-x: scroll;
+
+            .lnb-content {
+                background: #fff;
+            }
+        }
+    }
+}
+
+.d-roundbox {
+    background-color: #353535;
+    border-radius: 15px;
+    margin: 5px 0;
+    padding: 3px 6px;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.d-justify-end {
+    justify-content: end;
+}
+
+.d-justify-between {
+    justify-content: space-between;
+}
+
+.d-justify-center {
+    justify-content: center;
+}
+
+.d-menu-scroll {
+    height: calc(100vh - 232px);     
+    overflow: scroll;
+}
+
+.d-menu-scroll::-webkit-scrollbar{
+    width: 6px;  
+}
+
+.d-menu-scroll::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+.d-menu-scroll::-webkit-scrollbar-thumb {
+    background: #767676;
+    border-radius: 15px;
+}
+
+.container-scroll {
+    overflow: scroll;
+    // background-color: #353535;
+}
+
+.container-scroll::-webkit-scrollbar{
+    width: 6px;  
+}
+
+.container-scroll::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+.container-scroll::-webkit-scrollbar-thumb {
+    background: #767676;
+    border-radius: 15px;
+}
+
+.container-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.d-menu-no-scroll {
+    overflow: scroll;
+}
+
+.d-menu-no-scroll::-webkit-scrollbar{
+    display: none;
+}
+
+.category-transition-enter-from,
+.category-transition-leave-to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+}
+
+.category-transition-enter-active,
+.category-transition-leave-active {
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.d-frame {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 2px solid $color-black;
+}
+
+.d-panel {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 2px solid $color-border-frame;
+    padding: 10px 20px 12px;
+    box-shadow: 0 8px 20px $color-shadow-frame;
+    margin: 16px;
+
+    .d-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 8px 0;
+
+        h2 {
+            text-align: start;
+            font-size: 1rem;
+            margin: 0 0 3px;
+        }
+
+        .panel-sub {
+            margin: 0;
+            font-size: 0.78rem;
+            color: #6b7280;
+        }
+    }
+
+    .d-panel-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+
+        /* 버튼 */
+        .btn {
+            border-radius: 999px;
+            border: none;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 700;
+
+            &--primary {
+                background: #4b74ff;
+                color: #ffffff;
+            }
+
+            &--ghost {
+                background: #ffffff;
+                color: #4b5563;
+                border: 1px solid #d1d5db;
+            }
+        }
+    }
+
+    .d-scrollable {
+        border: 1px solid #e3e3e3;
+        border-radius: 6px;
+        height: calc(100% - 100px);
+        overflow: auto;
+    }
+    .d-scrollable::-webkit-scrollbar {
+        display: none;
+    }
+}

@@ -10,9 +10,25 @@
       @content;
     }
   }
+
+  @mixin web {
+    @media screen and (min-width: 1200px) {
+      @content;
+    }
+  }
   
   @mixin storeMobile {
     @media screen and (max-width: 850px) {
       @content;
     }
   }
+
+$color-white: #fcfcfc;
+$color-grey3: #b9b9b99b;
+$color-grey5: #8181819b;
+$color-grey7: #4c4c4cb6;
+$color-black: #3e3e3e;
+
+$color-bg: #e8c78e80;
+$color-border-frame: #d9b16e80;
+$color-shadow-frame: #2a210f0f;

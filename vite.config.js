@@ -1,5 +1,7 @@
-import { defineConfig, loadEnv } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import { defineConfig, loadEnv } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import AutoImport from 'unplugin-auto-import/vite';
+import AutoComponent from 'unplugin-vue-components/vite';
 
 const path = require('path')
 const env = loadEnv('', process.cwd());
@@ -16,7 +18,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@@': path.resolve(__dirname, './public/sass'),
-      '@image': path.resolve(__dirname, './src/img')
+      '@image': path.resolve(__dirname, './src/img'),
+      '@scripts': path.resolve(__dirname, './src/scripts')
     }
   },
   devServer : {
@@ -46,5 +49,18 @@ export default defineConfig({
       usePolling: true
     }
   },
-  plugins: [vue()]
+  plugins: [
+    vue(),
+    AutoImport({
+      imports: [
+        'vue',
+        'vue-router'
+      ],
+      dts: 'src/auto-imports.d.ts' // 자동 타입 선언 파일 경로
+    }),
+    AutoComponent({
+      dirs: ['src/components/common'],
+      dts: 'src/auto-components.d.ts' // 자동 타입 선언 파일 경로
+    })
+  ]
 }) 
