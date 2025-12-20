@@ -22,7 +22,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import mariaApi from '../../../scripts/util/mariaApi';
+import mariaApi from '@scripts/util/mariaApi.js';
 
 const suggested = ref([]);
 const inputFocus = ref(false);

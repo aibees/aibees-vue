@@ -22,7 +22,7 @@
     // import declaration
     import { ref, onMounted } from 'vue';
     import { userSession } from '../../scripts/util/user-session';
-    import mariaApi from '../../scripts/util/mariaApi';
+import mariaApi from '@scripts/util/mariaApi.js';
     import { useRouter } from 'vue-router';
     import MariaToast from '../../scripts/util/common/MariaToast';
 

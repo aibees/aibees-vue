@@ -58,7 +58,7 @@
 
 <script setup>
 import { ref, reactive } from "vue";
-import mariaApi from "../../../scripts/util/mariaApi";
+import mariaApi from '@scripts/util/mariaApi.js';
 
 const props = defineProps({
     id: String,
