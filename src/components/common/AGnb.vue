@@ -2,7 +2,7 @@
     <div id="footer" class="container">
         <nav class="footer-nav">
             <div class="logo" v-if="!isMobile">
-                <img src="@image/logo_image.png" />
+                <img src="https://static.aibeesworld.com/static/img/logo_image.png" />
             </div>
             <ul class="footer-nav-list">
                 <li class="footer-nav-item" v-for="(nv, idx) in navItem" :key="idx" >

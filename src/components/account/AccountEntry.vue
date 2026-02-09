@@ -61,7 +61,7 @@
                         <div class="field">
                             <label>가계 단위</label>
                             <select v-model="line.householdUnit">
-                                <option value="joint">공동</option>
+                                <option value="all">공동</option>
                                 <option value="me">본인</option>
                                 <option value="spouse">배우자</option>
                             </select>
@@ -163,7 +163,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+    import mariaApi from '@scripts/util/mariaApi.js';
 
 const openGuide = ref(false);
 
@@ -197,13 +197,20 @@ const presetGroups = [
     },
 ];
 
+const getToday = () => {
+    // format : YYYY-MM-DD
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
+    return local.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
 // ✅ 여러 줄(다건) 입력
 const lines = reactive([createLine()]);
 
 function createLine(seed = {}) {
     return {
         _id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        date: seed.date || '',
+        date: seed.date || getToday(),
         householdUnit: seed.householdUnit || 'joint',
         groupCode: seed.groupCode || '',
         presetCode: seed.presetCode || '',
@@ -217,7 +224,7 @@ function addLine(seed = {}) {
     const last = lines[lines.length - 1];
     lines.push(
         createLine({
-            date: last?.date || '',
+            date: last?.date || getToday(),
             householdUnit: last?.householdUnit || 'joint',
             groupCode: '',
             presetCode: '',
@@ -297,6 +304,10 @@ function onSubmitAll() {
         l.groupCode = '';
         l.presetCode = '';
     });
+}
+
+const getHouseHold = async () => {
+    const { data } = await mariaApi.get('/api/common/setting/')
 }
 </script>
 

@@ -1,131 +1,105 @@
 <template>
-    <div class="page">
-        <div class="container">
-            <!-- Header -->
-            <header class="header">
-                <div class="header__left">
-                    <h1>계정과목 Master</h1>
-                    <p class="sub">
-                        계정과목 트리를 관리합니다. (예: 200 부채 → 410 신용카드 → 411 삼성카드)
-                    </p>
-                </div>
-                <div class="header__right">
-                    <button class="btn btn--ghost" type="button" @click="exportJson">내보내기</button>
-                    <button class="btn btn--primary" type="button" @click="openCreate()">계정 추가</button>
-                </div>
-            </header>
-
-            <!-- Filters -->
-            <section class="card filters">
-                <div class="filters__row">
-                    <div class="field">
-                        <label>검색</label>
-                        <input v-model="filters.q" placeholder="코드/이름/설명" />
-                    </div>
-
-                    <div class="field">
-                        <label>분류</label>
-                        <select v-model="filters.type">
-                            <option value="">전체</option>
-                            <option value="ASSET">자산</option>
-                            <option value="LIABILITY">부채</option>
-                            <option value="EQUITY">자본</option>
-                            <option value="INCOME">수익</option>
-                            <option value="EXPENSE">비용</option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label>상태</label>
-                        <select v-model="filters.status">
-                            <option value="">전체</option>
-                            <option value="ACTIVE">사용</option>
-                            <option value="INACTIVE">중지</option>
-                        </select>
-                    </div>
-
-                    <div class="field field--actions">
-                        <button class="btn btn--ghost" type="button" @click="resetFilters">초기화</button>
-                    </div>
+    <div class="lnb-content system-acctcd">
+        <!-- 상단 필터 카드 -->
+        <section class="d-panel search-section">
+            <div class="condition-row">
+                <div class="field">
+                    <label>검색</label>
+                    <input v-model="filters.q" placeholder="코드/이름/설명" />
                 </div>
 
-                <div class="filters__row filters__row--sub">
-                    <label class="chk">
-                        <input type="checkbox" v-model="filters.hideInactive" />
-                        <span>중지 숨기기</span>
-                    </label>
-                    <label class="chk">
-                        <input type="checkbox" v-model="filters.onlyLeaf" />
-                        <span>말단(leaf)만</span>
-                    </label>
-
-                    <div class="spacer"></div>
-
-                    <button class="btn btn--ghost btn--sm" type="button" @click="collapseAll">전체 접기</button>
-                    <button class="btn btn--ghost btn--sm" type="button" @click="expandAll">전체 펼치기</button>
+                <div class="field">
+                    <label>분류</label>
+                    <select v-model="filters.type">
+                        <option value="">전체</option>
+                        <option value="ASSET">자산</option>
+                        <option value="LIABILITY">부채</option>
+                        <option value="EQUITY">자본</option>
+                        <option value="INCOME">수익</option>
+                        <option value="EXPENSE">비용</option>
+                    </select>
                 </div>
-            </section>
 
-            <!-- Main -->
-            <section class="layout">
-                <!-- Left: Tree -->
-                <aside class="card tree">
-                    <div class="card__head">
-                        <div>
-                            <h2>계정 트리</h2>
-                            <p class="hint">클릭하면 우측 상세가 바뀝니다.</p>
-                        </div>
-                        <div class="pill">Tree</div>
+                <div class="field">
+                    <label>상태</label>
+                    <select v-model="filters.status">
+                        <option value="">전체</option>
+                        <option value="ACTIVE">사용</option>
+                        <option value="INACTIVE">중지</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button class="btn btn--ghost" type="button" @click="resetFilters">
+                    전체 접기
+                </button>
+                <button class="btn btn--ghost" type="button" @click="resetFilters">
+                    전체 펼치기
+                </button>
+                <button class="btn btn--ghost" type="button" @click="resetFilters">
+                    필터 초기화
+                </button>
+                <button class="btn btn--primary" type="button" @click="openCreateModal()">
+                    계정 추가
+                </button>
+            </div>
+        </section>
+
+        <section class="main-section">
+
+            <!-- Left: Tree -->
+            <aside class="d-panel tree">
+                <div class="tree-head">
+                    <h2>계정 트리</h2>
+                </div>
+
+                <div class="tree-body">
+                    <div v-if="flatTree.length === 0" class="empty">
+                        조건에 맞는 계정이 없습니다.
                     </div>
 
-                    <div class="tree__body">
-                        <div v-if="flatTree.length === 0" class="empty">
-                            조건에 맞는 계정이 없습니다.
-                        </div>
+                    <button v-for="n in flatTree" :key="n.code" class="treeRow"
+                        :class="{ 'is-selected': selectedCode === n.code }" type="button" @click="select(n.code)">
+                        <span class="treeRow__indent" :style="{ width: `${n.depth * 14}px` }"></span>
 
-                        <button v-for="n in flatTree" :key="n.code" class="treeRow"
-                            :class="{ 'is-selected': selectedCode === n.code }" type="button" @click="select(n.code)">
-                            <span class="treeRow__indent" :style="{ width: `${n.depth * 14}px` }"></span>
+                        <span class="treeRow__caret" :class="{ 'is-leaf': !n.hasChildren }"
+                            @click.stop="n.hasChildren ? toggle(n.code) : null">
+                            {{ n.hasChildren ? (expanded.has(n.code) ? '▾' : '▸') : '·' }}
+                        </span>
 
-                            <span class="treeRow__caret" :class="{ 'is-leaf': !n.hasChildren }"
-                                @click.stop="n.hasChildren ? toggle(n.code) : null">
-                                {{ n.hasChildren ? (expanded.has(n.code) ? '▾' : '▸') : '·' }}
-                            </span>
+                        <span class="typeTag" :class="typeClass(n.type)">{{ typeLabel(n.type) }}</span>
 
-                            <span class="typeTag" :class="typeClass(n.type)">{{ typeLabel(n.type) }}</span>
+                        <span class="treeRow__title">
+                            <span class="mono code">{{ n.code }}</span>
+                            <span class="name">{{ n.name }}</span>
+                        </span>
 
-                            <span class="treeRow__title">
-                                <span class="mono code">{{ n.code }}</span>
-                                <span class="name">{{ n.name }}</span>
-                            </span>
+                        <span class="status" :class="n.status === 'ACTIVE' ? 'ok' : 'off'">
+                            {{ n.status === 'ACTIVE' ? '사용' : '중지' }}
+                        </span>
+                    </button>
+                </div>
 
-                            <span class="status" :class="n.status === 'ACTIVE' ? 'ok' : 'off'">
-                                {{ n.status === 'ACTIVE' ? '사용' : '중지' }}
-                            </span>
+                <div class="tree__foot">
+                    <div class="sel">
+                        선택:
+                        <strong>{{ selectedNode ? `${selectedNode.code} ${selectedNode.name}` : '-' }}</strong>
+                    </div>
+                    <div class="tree__footBtns">
+                        <button class="btn btn--ghost" type="button" :disabled="!selectedNode"
+                            @click="openCreate(selectedCode)">
+                            하위 추가
+                        </button>
+                        <button class="btn btn--primary" type="button" :disabled="!selectedNode"
+                            @click="openEdit(selectedNode)">
+                            수정
                         </button>
                     </div>
-
-                    <div class="tree__foot">
-                        <div class="sel">
-                            선택:
-                            <strong>{{ selectedNode ? `${selectedNode.code} ${selectedNode.name}` : '-' }}</strong>
-                        </div>
-                        <div class="tree__footBtns">
-                            <button class="btn btn--ghost" type="button" :disabled="!selectedNode"
-                                @click="openCreate(selectedCode)">
-                                하위 추가
-                            </button>
-                            <button class="btn btn--primary" type="button" :disabled="!selectedNode"
-                                @click="openEdit(selectedNode)">
-                                수정
-                            </button>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Right: Detail -->
-                <main class="card detail">
-                    <div class="card__head">
+                </div>
+            </aside>
+            <main class="d-panel detail">
+                <div class="card__head">
                         <div>
                             <h2>계정 상세</h2>
                             <p class="hint">속성 확인 및 상태/삭제/수정</p>
@@ -244,9 +218,10 @@
                     <div class="footnote">
                         * 운영 권장: 사용 중인 계정은 삭제 대신 “중지(비활성)”로 전환 후 히스토리 보존
                     </div>
-                </main>
-            </section>
-
+            </main>
+        </section>
+    </div>
+    <div class="container">
             <!-- Modal -->
             <div v-if="modal.open" class="modalBack" @click.self="closeModal">
                 <div class="modal">
@@ -332,7 +307,6 @@
                 </div>
             </div>
         </div>
-    </div>
 </template>
   
 <script setup>
@@ -632,769 +606,4 @@ function saveModal() {
 }
 </script>
   
-<style lang="scss" scoped>
-.page {
-    background: #f5f6fa;
-    min-height: 100vh;
-    padding: 24px 0;
-}
-
-.container {
-    width: 1200px;
-    margin: 0 auto;
-    padding: 0 16px;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: flex-start;
-    margin-bottom: 14px;
-
-    h1 {
-        margin: 0 0 4px;
-        font-size: 1.5rem;
-    }
-
-    .sub {
-        margin: 0;
-        color: #6b7280;
-        font-size: 0.86rem;
-        max-width: 820px;
-    }
-
-    .header__right {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-}
-
-.card {
-    background: #fff;
-    border-radius: 14px;
-    border: 1px solid #e9edf5;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
-}
-
-.card__head {
-    padding: 14px 16px 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-        margin: 0;
-        font-size: 1rem;
-    }
-
-    .hint {
-        margin: 3px 0 0;
-        font-size: 0.78rem;
-        color: #6b7280;
-    }
-
-    .pill {
-        font-size: 0.75rem;
-        padding: 2px 10px;
-        border-radius: 999px;
-        background: #e4ebff;
-        color: #3848c7;
-        font-weight: 800;
-    }
-}
-
-.filters {
-    padding: 14px 16px 12px;
-    margin-bottom: 16px;
-
-    .filters__row {
-        display: flex;
-        gap: 12px;
-        align-items: flex-end;
-
-        &--sub {
-            margin-top: 10px;
-            align-items: center;
-        }
-    }
-
-    .field {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-
-        &--actions {
-            flex: 0 0 120px;
-            align-items: flex-end;
-        }
-
-        label {
-            margin-bottom: 4px;
-            font-size: 0.8rem;
-            color: #4b5563;
-        }
-
-        input,
-        select {
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            padding: 9px 10px;
-            font-size: 0.92rem;
-            outline: none;
-
-            &:focus {
-                border-color: #4b74ff;
-                box-shadow: 0 0 0 1px rgba(75, 116, 255, 0.18);
-            }
-        }
-    }
-
-    .chk {
-        display: inline-flex;
-        gap: 8px;
-        align-items: center;
-        padding: 6px 10px;
-        border: 1px solid #e5e7eb;
-        background: #f9fafb;
-        border-radius: 999px;
-        font-size: 0.82rem;
-        color: #374151;
-
-        input {
-            width: 14px;
-            height: 14px;
-        }
-    }
-
-    .spacer {
-        flex: 1;
-    }
-}
-
-.layout {
-    display: grid;
-    grid-template-columns: 420px 1fr;
-    gap: 16px;
-    align-items: start;
-}
-
-.tree {
-    overflow: hidden;
-
-    .tree__body {
-        padding: 8px 8px 10px;
-        border-top: 1px solid #eef2f7;
-        max-height: 640px;
-        overflow: auto;
-    }
-
-    .treeRow {
-        width: 100%;
-        border: 1px solid transparent;
-        background: #fff;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 9px 10px;
-        cursor: pointer;
-        text-align: left;
-
-        &:hover {
-            background: #f3f6ff;
-            border-color: #e5e7eb;
-        }
-
-        &.is-selected {
-            background: #edf2ff;
-            border-color: rgba(75, 116, 255, 0.35);
-        }
-
-        .treeRow__indent {
-            flex: 0 0 auto;
-        }
-
-        .treeRow__caret {
-            width: 18px;
-            text-align: center;
-            color: #6b7280;
-            font-weight: 900;
-            user-select: none;
-
-            &.is-leaf {
-                color: #c7ced9;
-            }
-        }
-
-        .treeRow__title {
-            flex: 1;
-            min-width: 0;
-            display: inline-flex;
-            gap: 10px;
-            align-items: center;
-
-            .code {
-                font-weight: 900;
-                color: #111827;
-                width: 64px;
-                flex: 0 0 auto;
-            }
-
-            .name {
-                font-weight: 800;
-                color: #111827;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-        }
-
-        .status {
-            font-size: 0.75rem;
-            font-weight: 900;
-            padding: 3px 10px;
-            border-radius: 999px;
-            border: 1px solid #e5e7eb;
-            background: #fff;
-
-            &.ok {
-                color: #166534;
-                background: #ecfdf3;
-                border-color: #bbf7d0;
-            }
-
-            &.off {
-                color: #b91c1c;
-                background: #fef2f2;
-                border-color: #fecaca;
-            }
-        }
-    }
-
-    .tree__foot {
-        border-top: 1px solid #eef2f7;
-        padding: 10px 12px 12px;
-
-        .sel {
-            font-size: 0.84rem;
-            color: #6b7280;
-            margin-bottom: 10px;
-
-            strong {
-                color: #111827;
-            }
-        }
-
-        .tree__footBtns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-    }
-}
-
-.detail {
-    padding-bottom: 12px;
-
-    .empty--detail {
-        margin: 12px 16px 16px;
-        border: 1px dashed #d1d5db;
-        border-radius: 12px;
-        color: #9ca3af;
-        padding: 18px 12px;
-        text-align: center;
-    }
-
-    .detail__body {
-        padding: 0 16px 10px;
-    }
-
-    .detailTop {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: flex-start;
-        margin-bottom: 12px;
-    }
-
-    .detailTitle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        .big {
-            font-size: 1.05rem;
-            font-weight: 900;
-            color: #111827;
-        }
-
-        .nm {
-            font-weight: 900;
-            color: #111827;
-            margin-top: 2px;
-        }
-    }
-
-    .detailActions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .kv {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-
-        .kv__item {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 10px;
-
-            &--full {
-                grid-column: 1 / -1;
-            }
-
-            .k {
-                font-size: 0.78rem;
-                color: #6b7280;
-                margin-bottom: 4px;
-            }
-
-            .v {
-                font-weight: 800;
-                color: #111827;
-                font-size: 0.92rem;
-            }
-        }
-    }
-
-    .childBox {
-        margin-top: 12px;
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        overflow: hidden;
-
-        .childHead {
-            padding: 10px 12px;
-            background: #f9fafb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            h3 {
-                margin: 0;
-                font-size: 0.95rem;
-            }
-
-            .muted {
-                color: #9ca3af;
-                font-size: 0.82rem;
-                font-weight: 800;
-            }
-        }
-
-        .childTable {
-            overflow: auto;
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                min-width: 620px;
-
-                th,
-                td {
-                    padding: 9px 10px;
-                    border-bottom: 1px solid #e5e7eb;
-                    text-align: left;
-                }
-
-                th {
-                    background: #f3f4f6;
-                    font-size: 0.78rem;
-                    color: #4b5563;
-                    font-weight: 900;
-                }
-
-                .right {
-                    text-align: right;
-                }
-
-                .rowName {
-                    font-weight: 900;
-                    color: #111827;
-                }
-
-                .rowDesc {
-                    font-size: 0.78rem;
-                    color: #9ca3af;
-                    margin-top: 2px;
-                }
-
-                .emptyRow {
-                    text-align: center;
-                    color: #9ca3af;
-                    padding: 14px 10px;
-                }
-            }
-        }
-
-        .childFoot {
-            padding: 10px 12px;
-            display: flex;
-            justify-content: flex-end;
-            background: #fff;
-        }
-    }
-
-    .footnote {
-        margin: 10px 16px 0;
-        font-size: 0.78rem;
-        color: #9ca3af;
-    }
-}
-
-.typeTag {
-    font-size: 0.72rem;
-    font-weight: 900;
-    padding: 3px 10px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    flex: 0 0 auto;
-
-    &.t-asset {
-        background: #ecfdf3;
-        color: #166534;
-        border-color: #bbf7d0;
-    }
-
-    &.t-liab {
-        background: #fef2f2;
-        color: #b91c1c;
-        border-color: #fecaca;
-    }
-
-    &.t-eq {
-        background: #eef2ff;
-        color: #3730a3;
-        border-color: #c7d2fe;
-    }
-
-    &.t-inc {
-        background: #ecfdf3;
-        color: #166534;
-        border-color: #bbf7d0;
-    }
-
-    &.t-exp {
-        background: #fef2f2;
-        color: #b91c1c;
-        border-color: #fecaca;
-    }
-}
-
-.statusPill {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 900;
-    border: 1px solid #e5e7eb;
-
-    &.ok {
-        color: #166534;
-        background: #ecfdf3;
-        border-color: #bbf7d0;
-    }
-
-    &.off {
-        color: #b91c1c;
-        background: #fef2f2;
-        border-color: #fecaca;
-    }
-}
-
-.leafPill {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 900;
-    border: 1px solid #e5e7eb;
-
-    &.leaf {
-        background: #eef2ff;
-        color: #3730a3;
-        border-color: #c7d2fe;
-    }
-
-    &.parent {
-        background: #f3f4f6;
-        color: #6b7280;
-    }
-}
-
-.btn {
-    border-radius: 999px;
-    border: none;
-    padding: 9px 14px;
-    font-size: 0.86rem;
-    font-weight: 900;
-    cursor: pointer;
-
-    &:disabled {
-        opacity: .55;
-        cursor: not-allowed;
-    }
-
-    &--primary {
-        background: #4b74ff;
-        color: #fff;
-    }
-
-    &--ghost {
-        background: #fff;
-        border: 1px solid #d1d5db;
-        color: #4b5563;
-    }
-
-    &.danger {
-        border-color: #fecaca;
-        color: #b91c1c;
-    }
-
-    &--sm {
-        padding: 7px 12px;
-        font-size: 0.82rem;
-    }
-}
-
-.link {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-weight: 900;
-    font-size: 0.82rem;
-    color: #374151;
-
-    &:hover {
-        color: #1d3a8a;
-        text-decoration: underline;
-    }
-}
-
-.dot {
-    color: #d1d5db;
-    margin: 0 6px;
-}
-
-.mono {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-.empty {
-    color: #9ca3af;
-    text-align: center;
-    padding: 18px 10px;
-}
-
-/* Modal */
-.modalBack {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.52);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    z-index: 50;
-}
-
-.modal {
-    width: 760px;
-    background: #fff;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.25);
-
-    .modal__head {
-        padding: 14px 16px;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-
-        .modal__title {
-            font-weight: 900;
-            font-size: 1.05rem;
-            margin-bottom: 2px;
-        }
-
-        .modal__sub {
-            font-size: .78rem;
-            color: #6b7280;
-        }
-
-        .x {
-            width: 36px;
-            height: 36px;
-            border-radius: 999px;
-            border: 1px solid #e5e7eb;
-            background: #fff;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-        }
-    }
-
-    .modal__body {
-        padding: 14px 16px;
-    }
-
-    .form {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-
-        .field {
-            display: flex;
-            flex-direction: column;
-
-            &.span2 {
-                grid-column: 1 / -1;
-            }
-
-            label {
-                font-size: 0.8rem;
-                color: #4b5563;
-                margin-bottom: 4px;
-            }
-
-            input,
-            select,
-            textarea {
-                border: 1px solid #d1d5db;
-                border-radius: 12px;
-                padding: 10px 10px;
-                font-size: 0.92rem;
-                outline: none;
-
-                &:focus {
-                    border-color: #4b74ff;
-                    box-shadow: 0 0 0 1px rgba(75, 116, 255, 0.18);
-                }
-            }
-
-            textarea {
-                min-height: 90px;
-                resize: vertical;
-            }
-        }
-    }
-
-    .preview {
-        margin-top: 12px;
-        border: 1px solid #e5e7eb;
-        background: #f9fafb;
-        border-radius: 14px;
-        padding: 10px 12px;
-
-        .preview__t {
-            font-weight: 900;
-            font-size: 0.84rem;
-            margin-bottom: 8px;
-        }
-
-        .preview__row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 6px;
-
-            .k {
-                width: 60px;
-                color: #6b7280;
-                font-size: 0.78rem;
-                font-weight: 900;
-            }
-
-            .v {
-                font-weight: 900;
-                color: #111827;
-                display: inline-flex;
-                gap: 8px;
-                align-items: center;
-            }
-        }
-    }
-
-    .modal__foot {
-        padding: 12px 16px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-}
-
-/* ===== Mobile: 450x800 ===== */
-@media (max-width: 520px) {
-    .container {
-        width: 100%;
-        padding: 0 12px;
-    }
-
-    .header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .layout {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .filters .filters__row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .filters .field--actions {
-        flex: 1;
-        align-items: flex-end;
-    }
-
-    .tree .tree__body {
-        max-height: 340px;
-    }
-
-    .tree .tree__foot .tree__footBtns {
-        grid-template-columns: 1fr;
-    }
-
-    .detail .kv {
-        grid-template-columns: 1fr;
-    }
-
-    .detail .childBox table {
-        min-width: 560px;
-    }
-
-    /* 가로스크롤 */
-
-    .modal {
-        width: 100%;
-    }
-
-    .modal .form {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
+<style lang="scss" src="@@/system/systemAcctcd.scss" />

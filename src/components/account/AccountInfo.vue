@@ -237,10 +237,8 @@
         </section>
     </div>
 </template>
-  
-<script setup>
-import { computed, reactive, ref, watch } from 'vue';
 
+<script setup>
 const activeTab = ref('account'); // account | card
 const keyword = ref('');
 
@@ -478,68 +476,99 @@ function noop() { }
 </script>
   
 <style lang="scss" scoped>
+@use '@@/__variables.scss' as *;
 @use '@@/common.scss' as *;
 
 .system-pay-method-manage {
     background: #f5f6fa;
 
-    .main-section {
-        display: flex;
-        gap: 8px;
-        align-items: flex-start; // ✅ 서로 높이 공유(Stretch) 방지
-    }
-
+    /* ===== 공통 패널/배지/버튼 ===== */
     .panel {
         background: #ffffff;
         border-radius: 8px;
         border: 2px solid #c6beb080;
         padding: 10px 20px 12px;
         box-shadow: 0 8px 20px #2a210f0f;
-        margin: 16px;
+        margin: 12px; // 기본은 모바일/태블릿 기준으로 약간 컴팩트
+    }
 
-        .badge {
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: #e4ebff;
-            color: #3848c7;
-            font-weight: 700;
+    .badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #e4ebff;
+        color: #3848c7;
+        font-weight: 700;
+    }
+
+    .pill {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+        font-weight: 800;
+    }
+
+    .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-weight: 700;
+
+        &--primary {
+            background: #4b74ff;
+            color: #ffffff;
         }
 
-        .pill {
-            font-size: 0.72rem;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: #eef2ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-            font-weight: 800;
+        &--ghost {
+            background: #ffffff;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
         }
 
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 8px 0;
-
-            h2 {
-                text-align: start;
-                font-size: 1rem;
-                margin: 0 0 3px;
-            }
-
-            .panel-sub {
-                margin: 0;
-                font-size: 0.78rem;
-                color: #6b7280;
-            }
+        &--danger {
+            background: #b91c1c;
+            color: #ffffff;
         }
     }
 
-    /* LEFT */
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0;
+
+        h2 {
+            text-align: start;
+            font-size: 1rem;
+            margin: 0 0 3px;
+            font-weight: 900;
+            color: #111827;
+        }
+
+        .panel-sub {
+            margin: 0;
+            font-size: 0.78rem;
+            color: #6b7280;
+        }
+    }
+
+    /* ===== Layout =====
+     - 기본(<1200): block(세로 스택)
+     - web(>=1200): flex(좌/우) */
+    .main-section {
+        display: block;
+    }
+
+    /* ===== LEFT: List Panel ===== */
     .list-panel {
-        width: 320px;
-        min-width: 320px;
+        width: auto;
+        min-width: 0;
 
         .tab {
             display: flex;
@@ -551,7 +580,7 @@ function noop() { }
                 border-radius: 999px;
                 border: 1px solid #d1d5db;
                 padding: 8px 10px;
-                background: #fff;
+                background: #ffffff;
                 font-weight: 800;
                 cursor: pointer;
 
@@ -565,15 +594,21 @@ function noop() { }
 
         .search {
             display: flex;
-            justify-content: space-between;
             gap: 8px;
             padding: 0 0 10px;
 
             input {
                 flex: 1;
-                padding: 8px;
+                padding: 8px 10px;
                 border-radius: 10px;
                 border: 1px solid #d1d5db;
+                outline: none;
+                background: #ffffff;
+
+                &:focus {
+                    border-color: #4b74ff;
+                    box-shadow: 0 0 0 2px rgba(75, 116, 255, 0.14);
+                }
             }
         }
 
@@ -589,18 +624,20 @@ function noop() { }
             list-style: none;
             margin: 0;
             padding: 0;
+            border-top: 1px solid #f1f5f9;
 
             li {
                 padding: 10px 14px;
                 cursor: pointer;
-                border-top: 1px solid #f1f5f9;
+                border-bottom: 1px solid #f1f5f9;
 
                 &.active {
                     background: #eef2ff;
                 }
 
                 .name {
-                    font-weight: 800;
+                    font-weight: 900;
+                    color: #111827;
                 }
 
                 .desc {
@@ -617,14 +654,16 @@ function noop() { }
                     gap: 8px;
                     font-size: 0.75rem;
 
-                    .status.on {
-                        color: #15803d;
+                    .status {
                         font-weight: 900;
-                    }
 
-                    .status.off {
-                        color: #b91c1c;
-                        font-weight: 900;
+                        &.on {
+                            color: #15803d;
+                        }
+
+                        &.off {
+                            color: #b91c1c;
+                        }
                     }
                 }
             }
@@ -633,13 +672,14 @@ function noop() { }
                 padding: 16px 14px;
                 color: #9ca3af;
                 text-align: center;
+                border-bottom: 1px solid #f1f5f9;
             }
         }
     }
 
-    /* RIGHT */
+    /* ===== RIGHT: Detail Panel ===== */
     .detail-panel {
-        flex: 1;
+        width: auto;
 
         .panel-actions {
             display: flex;
@@ -663,7 +703,7 @@ function noop() { }
 
         .form-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr; // 기본은 1열(모바일/태블릿)
             gap: 10px;
 
             .field {
@@ -693,7 +733,7 @@ function noop() { }
 
                     &:focus {
                         border-color: #4b74ff;
-                        box-shadow: 0 0 0 1px rgba(75, 116, 255, 0.18);
+                        box-shadow: 0 0 0 2px rgba(75, 116, 255, 0.14);
                     }
                 }
 
@@ -762,7 +802,8 @@ function noop() { }
                 }
 
                 .mono {
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                        "Liberation Mono", "Courier New", monospace;
                     font-weight: 900;
                 }
 
@@ -795,6 +836,7 @@ function noop() { }
             justify-content: space-between;
             gap: 12px;
             align-items: center;
+            flex-wrap: wrap;
 
             .danger-hint {
                 font-size: 0.78rem;
@@ -803,51 +845,50 @@ function noop() { }
         }
     }
 
-    /* Buttons */
-    .btn {
-        border-radius: 999px;
-        border: none;
-        padding: 8px 14px;
-        font-size: 0.85rem;
-        cursor: pointer;
-        font-weight: 700;
-
-        &--primary {
-            background: #4b74ff;
-            color: #ffffff;
+    /* ===== web(>=1200px): 기존 좌/우 패널 레이아웃 복원 ===== */
+    @include web {
+        .panel {
+            margin: 16px; // 원래처럼
         }
 
-        &--ghost {
-            background: #ffffff;
-            color: #4b5563;
-            border: 1px solid #d1d5db;
-        }
-
-        &--danger {
-            background: #b91c1c;
-            color: #fff;
-        }
-    }
-
-    /* ====== 반응형: 450 x 800 ====== */
-    @media (max-width: 520px) {
         .main-section {
-            flex-direction: column;
-            gap: 12px;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start; // 높이 공유(Stretch) 방지
         }
 
         .list-panel {
-            width: auto;
-            min-width: 0;
+            width: 320px;
+            min-width: 320px;
         }
 
         .detail-panel {
-            width: auto;
+            flex: 1;
         }
 
-        .detail-panel .form-grid {
-            grid-template-columns: 1fr;
+        .detail-panel {
+            .form-grid {
+                grid-template-columns: 1fr 1fr; // web에서 2열
+            }
         }
     }
-}</style>
-  
+
+    /* ===== 추가: 아주 작은 화면(450*800 근접)에서 여백만 살짝 더 줄임 ===== */
+    @media (max-width: 520px) {
+        .panel {
+            margin: 10px;
+            padding: 10px 14px 12px;
+        }
+
+        .list-panel {
+            .search {
+                flex-direction: column;
+
+                .btn {
+                    width: 100%;
+                }
+            }
+        }
+    }
+}
+</style>

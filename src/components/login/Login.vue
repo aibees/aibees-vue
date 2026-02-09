@@ -1,7 +1,7 @@
 <template>
   <div id="loginComponent">
     <div class="loginLogo">
-        <img src="https://static.aibeesworld.com/image/asset/login_logo.png" />
+        <img src="https://static.aibeesworld.com/static/img/logo_image.png" />
     </div>
     <div class="loginform">
         <form>
@@ -14,16 +14,12 @@
         <hr style="width: 80%; border: 1.5px solid grey; margin: 30px auto 30px; color: lightgrey;" />
         로그인이 안된다면 <span @click="MngContractEvent()">담당자에게 연락하기</span>
     </div>
-  </div>
+</div>
 </template>
 
 <script setup>
-    import "vue3-toastify/dist/index.css";
-    // import declaration
-    import { ref, onMounted } from 'vue';
     import { userSession } from '../../scripts/util/user-session';
-import mariaApi from '@scripts/util/mariaApi.js';
-    import { useRouter } from 'vue-router';
+    import mariaApi from '@scripts/util/mariaApi.js';
     import MariaToast from '../../scripts/util/common/MariaToast';
 
     /******************************
@@ -58,7 +54,7 @@ import mariaApi from '@scripts/util/mariaApi.js';
         let loginPw = document.getElementById('loginPw').value;
 
         if(loginId == '' || loginPw == '') {
-            MariaToast.error('정상적으로 입력되지 않았습니다.');
+            alert("정상적으로 입력되지 않았다.");
             return false;
         } else {
             const loginParam = {
@@ -67,10 +63,9 @@ import mariaApi from '@scripts/util/mariaApi.js';
                 // loginKey : loginKey
             }
 
-            const {data} = await mariaApi.post("/login", loginParam);
-            console.log(data);
+            const { data } = await mariaApi.post("/login", loginParam);
             session.loginUpdate(data);
-            router.push("/account");
+            router.push("/home");
         }
     }
 
@@ -117,7 +112,7 @@ import mariaApi from '@scripts/util/mariaApi.js';
     #loginComponent {
         display: block;
         width: 560px;
-        height: 500px;
+        height: 600px;
         background-color: beige;
         border-radius: 5px;
         margin: 320px auto 30px;
@@ -163,6 +158,7 @@ import mariaApi from '@scripts/util/mariaApi.js';
             font-weight: 800;
             letter-spacing: 1px;
             color: white;
+            cursor: pointer;
         }
     }
 

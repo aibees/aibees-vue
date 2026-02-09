@@ -32,6 +32,7 @@ mariaApi.interceptors.response.use(
         return resp.data;
     },
     (error) => {
+        console.log("axios error...");
         console.log(error)
         if (error.response.data.error != null)
             alert(error.response.data.error.message);
