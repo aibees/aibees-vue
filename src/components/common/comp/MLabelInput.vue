@@ -1,71 +1,51 @@
 <template>
-    <div class="maria-label-input" :style="`width:${setWidth()}`">
-        <div class="labels" :hidden="props.label === '' || props.label === undefined">{{ props.label }}</div>
-        <input 
-            :id="`${props.id}`"
-            :type="`${setType()}`" 
-            v-model="typedData" />
+    <div class="d-custom n-label-input">
+        <div v-if="!props.noLabel" class="d-custom-labels" :hidden="props.label === undefined || props.label === ''">{{ props.label }}</div>
+        <div class="d-custom-inputs"
+            :style="`width: ${setWidth()}`">
+            <input 
+                :id="`${props.id}`"
+                :type="`${setType()}`"
+                :placeholder="props.placeholder"
+                :class="props.noLabel ? 'no-label' : ''"
+                v-model="typedData" />
+        </div>
     </div>
 </template>
 
 <script setup>
+    const props = defineProps({
+        id: {type: String, default: ''},
+        type: String,
+        noLabel: {type: Boolean, required: false, default: false},
+        label: String,
+        placeholder: String,
+        size: String
+    });
 
-const props = defineProps({
-    id: String,
-    type: String,
-    label: String,
-    size: String
-});
+    const typedData = defineModel();
 
-const typedData = defineModel();
-
-const setType = () => {
-    if (props.type === undefined) {
-        return 'text';
-    } else {
-        return props.type;
+    const setType = () => {
+        if (props.type === undefined) {
+            return 'text';
+        } else {
+            return props.type;
+        }
     }
-}
 
-const setWidth = () => {
-    if (props.size === undefined) {
-        return '300px';
-    } else if (props.size === 'lg') {
-        return '350px';
-    } else if (props.size === 'md') {
-        return '300px';
-    } else if (props.size === 'sm') {
-        return '250px';
-    } else {
-        return '300px';
+    const setWidth = () => {
+        if (props.size === undefined || props.size == '') {
+            return '250px';
+        } else if (props.size === 'lg') {
+            return '350px';
+        } else if (props.size === 'md') {
+            return '250px';
+        } else if (props.size === 'sm') {
+            return '150px';
+        } else {
+            return '250px';
+        }
     }
-}
 </script>
 
-<style lang="scss" scoped>
-.maria-label-input{
-    display: flex;
-    justify-content: left;
-    height: 30px;
-
-    .labels{
-        width: fit-content;
-        white-space: nowrap;
-        padding-top: 4px;
-        padding-left: 4px;
-        padding-right: 4px;
-        background-color: white;
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
-        border: 1px solid lightgrey;
-    }
-
-    input {
-        width: 100%;
-        border: 1px solid lightgrey;
-        padding-block : 0;
-        padding-inline: 0;
-        padding-left: 5px;
-    }
-}
-</style>
+<style lang="scss" src="@@/common/comp/MLabelInput.scss" scoped />

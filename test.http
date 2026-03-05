@@ -1,0 +1,12 @@
+# POST http://localhost:19010/login HTTP/1.1
+# content-type: application/json
+
+# {
+#     "email": "qwt0326@gmail.com",
+#     "password": "qkr12wns34"
+# }
+# ;
+
+GET http://localhost:19010/api/account/info/bank-accounts HTTP/1.1
+Authorization: eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZW1haWwiOiJxd3QwMzI2QGdtYWlsLmNvbSIsInJvbGVzIjpbeyJyb2xlQ2QiOiJBRE1JTiIsInJvbGVObSI6IuyatOyYgeyekCIsInJvbGVGaWVsZCI6IkFETUlOIn0seyJyb2xlQ2QiOiJMRURHRVIiLCJyb2xlTm0iOiLqsIDqs4TrtoAiLCJyb2xlRmllbGQiOiJMRURHRVIifV0sIm5hbWUiOiLsl5DsnbTruYTsiqQiLCJ0b2tlblR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzI2MzQ2MDUsImV4cCI6MTc3MjYzODIwNX0.st8ZettpsFMYw98367_FZcwqJWT77kQFX1MHjl-kt9g
+AuthorId: 1

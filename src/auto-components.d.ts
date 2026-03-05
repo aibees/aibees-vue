@@ -17,6 +17,7 @@ declare module 'vue' {
     ALnb: typeof import('./components/common/ALnb.vue')['default']
     LodingView: typeof import('./components/common/LodingView.vue')['default']
     MAutoSearch: typeof import('./components/common/comp/MAutoSearch.vue')['default']
+    MButton: typeof import('./components/common/comp/MButton.vue')['default']
     MDatePicker: typeof import('./components/common/comp/MDatePicker.vue')['default']
     MLabelInput: typeof import('./components/common/comp/MLabelInput.vue')['default']
     MLabelSelect: typeof import('./components/common/comp/MLabelSelect.vue')['default']

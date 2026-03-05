@@ -1,12 +1,10 @@
 <template>
-    <div>
-        <div v-if="!isMobile">
-            <AGnb />
-        </div>
-        <router-view />
-        <div v-if="isMobile">
-            <AGnb />
-        </div>
+    <div v-if="!isMobile">
+        <AGnb />
+    </div>
+    <router-view />
+    <div v-if="isMobile">
+        <AGnb />
     </div>
 </template>
 

@@ -45,6 +45,11 @@
                 'name': '프리셋 매핑 설정',
                 'linkTo': 'System-preset-mapping'
             }
+            ,
+            {
+                'name': '공통코드 설정',
+                'linkTo': 'System-setting'
+            }
         ]
     };
     

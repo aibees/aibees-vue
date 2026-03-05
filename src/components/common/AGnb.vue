@@ -19,13 +19,22 @@
                 </li>
             </ul>
             <div class="user" v-if="!isMobile">
-
+                <div v-if="userSession().isUserSession()" class="user-logined">
+                    {{ userInfo.name }} 님&nbsp;&nbsp;&nbsp;<span @click="logout"><font-awesome-icons id="glass" :icon="['fa-solid', 'fa-right-from-bracket']" /></span>
+                </div>
+                <div v-else @click="goToLogin">
+                    LOGIN
+                </div>
             </div>
         </nav>
     </div>
 </template>
 
 <script setup>
+    import { userSession } from '@scripts/util/user-session.js';
+    const router = useRouter();
+    const session = userSession();
+    const userInfo = session.getUserInfo;
     const navItem = reactive([
         {
             linkTo: '/home',
@@ -43,6 +52,15 @@
             label: '설정'
         }
     ]);
+
+    const goToLogin = () => {
+        router.push({ path: '/login' })
+    }
+
+    const logout = () => {
+        session.logoutUpdate();
+        goToLogin();
+    }
 
     const isMobile = ref(window.innerWidth < 1200)
 

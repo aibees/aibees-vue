@@ -239,6 +239,7 @@
 </template>
 
 <script setup>
+    import mariaApi from '@scripts/util/mariaApi.js';
 const activeTab = ref('account'); // account | card
 const keyword = ref('');
 
@@ -253,6 +254,15 @@ const payableOptions = [
     { code: '411', name: '삼성카드 미지급금' },
     { code: '412', name: '현대카드 미지급금' },
 ];
+
+onMounted(async () => {
+    await getBankAccountList();
+});
+
+const getBankAccountList = async () => {
+    const { data } = await mariaApi.get('/api/account/info/bank-accounts');
+    console.log(data);
+}
 
 const accounts = reactive([
     {

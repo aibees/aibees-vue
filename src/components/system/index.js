@@ -5,6 +5,7 @@ import SystemAcctCd from './SystemAcctCd.vue'
 import SystemSource from './SystemSource.vue'
 import SystemPreset from './SystemPreset.vue'
 import SystemPresetMap from './SystemPresetMap.vue'
+import SystemSetting from './SystemSetting.vue'
 
 export default {
 SystemView
@@ -13,4 +14,5 @@ SystemView
 , SystemSource
 , SystemPreset
 , SystemPresetMap
+, SystemSetting
 }

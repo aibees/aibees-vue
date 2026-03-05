@@ -76,7 +76,7 @@
             </aside>
 
             <main class="d-panel preset-panel">
-                <div class="panel-header">
+                <div class="d-panel-header">
                     <div>
                         <h2>Preset 목록</h2>
                     </div>

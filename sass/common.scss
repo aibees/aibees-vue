@@ -134,6 +134,7 @@
     padding: 10px 20px 12px;
     box-shadow: 0 8px 20px $color-shadow-frame;
     margin: 16px;
+    white-space: nowrap;
 
     .d-panel-header {
         display: flex;
@@ -192,3 +193,54 @@
         display: none;
     }
 }
+
+
+
+.d-custom {
+    display: flex;
+    align-items: stretch;
+    margin: 10px;
+    
+
+    .d-custom-labels {
+        height: $component-height;
+        display: flex;
+        align-items: center;
+        padding: 4px 8px;
+        font-size: 13px;
+        font-weight: 700;
+        background-color: #fffcf4;
+        border-radius: $border-radius 0 0 $border-radius;
+        border: 1px solid #ccc;
+        white-space: nowrap;
+    }
+
+    .d-custom-inputs {
+        position: relative;
+        height: $component-height;
+        
+        @include mobile {
+            width: 100%;
+        }
+
+        input {
+            width: 100%;
+            height: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            background-clip: border-box;
+            background-color: transparent;
+            border: 1px solid #ccc;
+            border-left: 0;
+            border-top-right-radius: $border-radius;
+            border-bottom-right-radius: $border-radius;
+            color: inherit;
+            display: block;
+            flex-grow: 1;
+            outline: 0;
+            padding: .1532rem .425rem;
+        }
+    }
+}
+
+

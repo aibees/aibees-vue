@@ -25,11 +25,12 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, 
          faUpload, faBars, faSave, faCircleXmark, faCaretLeft, 
-         faCaretRight, faGear, faHome, faBook } from "@fortawesome/free-solid-svg-icons";
+         faCaretRight, faGear, faHome, faBook, 
+         faRightFromBracket} from "@fortawesome/free-solid-svg-icons";
 
 library.add(faMagnifyingGlass, faXmark, faDownload, faPen, faTrash, 
             faUpload, faBars, faSave, faCircleXmark, faCaretLeft, 
-            faCaretRight, faGear, faHome, faBook);
+            faCaretRight, faGear, faHome, faBook, faRightFromBracket);
 app.component("font-awesome-icons", FontAwesomeIcon)
 // ===============================
 

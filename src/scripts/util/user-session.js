@@ -31,6 +31,7 @@ export const userSession = defineStore('user', () => {
     };
 
     const loginUpdate = (info) => {
+        console.log(info);
         user.loginInfo.uuid = info.uuid;
         user.loginInfo.accessToken = info.accessToken;
         user.loginInfo.name = info.name;
@@ -61,6 +62,7 @@ export const userSession = defineStore('user', () => {
         },
         user.roleList = [];
         user.accessTime = null;
+        sessionStorage.removeItem('user')
     }
 
     return {

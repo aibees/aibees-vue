@@ -138,6 +138,14 @@ const routes=[
                 meta: {
                     title: '프리셋 매핑 설정'
                 }
+            },
+            {
+                path: 'setting',
+                name: 'System-setting',
+                component: System.SystemSetting,
+                meta: {
+                    title: '공통코드 관리'
+                }
             }
         ]
     }
@@ -163,14 +171,12 @@ export const setRouterToApp = () => {
     })
 
     router.beforeEach((to, from, next) => {
+        if (to.fullPath == '/login') {
+            next();
+        } else if (to.fullPath !== '/login' && !session.isUserSession()) {
+            return next({ path: '/login' });
+        }
         next();
-        // if (to.fullPath == '/login') {
-        //     next();
-        // } else if (to.fullPath !== '/login' && !session.isUserSession()) {
-        //     return next({ path: '/login' });
-        // } else {
-        //     next();
-        // }
     })
 
     router.afterEach((to, from) => {

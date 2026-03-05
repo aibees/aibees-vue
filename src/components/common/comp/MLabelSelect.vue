@@ -1,76 +1,83 @@
 <template>
-    <div class="maria-label-select" :style="`width:${setWidth()}`">
-        <div class="labels" :hidden="props.label === '' || props.label === undefined">{{ props.label }}</div>
-        <select
-            :id="`${props.id}`"
-            v-model="selectedData" 
-            @change="changedValue">
-            <option v-for="(data, idx) in props.option" 
-                :key="idx" 
-                :value="data.value"
-                :selected="data.value === selectedData">
-            {{ data.name }}
-            </option>
-        </select>
+    <div class="d-custom n-label-input" ref="dropdownRef">
+
+        <div v-if="!props.noLabel" class="d-custom-labels" :hidden="props.label === '' || props.label === undefined">
+            {{ props.label }}
+        </div>
+
+        <div class="d-custom-inputs n-selects" :class="{ 'no-label': props.noLabel }" :style="`width: ${setWidth()}`">
+            <div class="select-trigger" :id="`${props.id}`" @click="toggleDropdown">
+                <span class="selected-text">{{ selectedName }}</span>
+                <i class="arrow-icon" :class="{ 'open': isOpen }"></i>
+            </div>
+
+            <transition name="dropdown-fade">
+                <ul v-if="isOpen" class="dropdown-list">
+                    <li v-for="(data, idx) in props.option" :key="idx" @click="selectOption(data)"
+                        :class="{ 'active': data.code === selectedData }">
+                        {{ data.name }}
+                    </li>
+                </ul>
+            </transition>
+        </div>
     </div>
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     id: String,
     label: String,
+    noLabel: { type: Boolean, required: false, default: false },
     size: String,
-    option: Array
+    option: { type: Array, default: () => [] },
+    defaults: { type: String, required: false, default: '' }
 });
 
 const selectedData = defineModel();
 const emit = defineEmits(["selected"]);
 
+const isOpen = ref(false);
+const dropdownRef = ref(null);
+
+// 선택된 데이터의 '이름(name)'을 찾아서 표시 (선택된 게 없으면 '선택' 표시)
+const selectedName = computed(() => {
+    const selectedOption = props.option.find(opt => opt.code === selectedData.value);
+    return selectedOption ? selectedOption.name : '선택하세요';
+});
+
 const setWidth = () => {
-    if (props.size === undefined) {
-        return '300px';
-    } else if (props.size === 'lg') {
-        return '350px';
-    } else if (props.size === 'md') {
-        return '300px';
-    } else if (props.size === 'sm') {
-        return '250px';
-    } else {
-        return '300px';
-    }
-}
+    if (props.size === 'lg') return '350px';
+    if (props.size === 'sm') return '150px';
+    return '250px'; // default or 'md'
+};
 
-const changedValue = () => {
-    console.log('change Value');
-    emit('selected', selectedData);
-}
+// 드롭다운 열기/닫기 토글
+const toggleDropdown = () => {
+    isOpen.value = !isOpen.value;
+};
+
+// 옵션 선택 시 값 변경 및 드롭다운 닫기
+const selectOption = (data) => {
+    selectedData.value = data.code;
+    emit('selected', selectedData.value);
+    isOpen.value = false;
+};
+
+// 컴포넌트 외부를 클릭하면 드롭다운이 닫히도록 처리
+const handleClickOutside = (event) => {
+    if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+        isOpen.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
 </script>
-
-<style lang="scss" scoped>
-.maria-label-select{
-    display: flex;
-    justify-content: left;
-    height: 30px;
-
-    .labels{
-        width: fit-content;
-        white-space: nowrap;
-        padding-top: 4px;
-        padding-left: 4px;
-        padding-right: 4px;
-        background-color: white;
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
-        border: 1px solid lightgrey;
-    }
-
-    select {
-        width: 100%;
-        border: 1px solid lightgrey;
-        padding-block : 0;
-        padding-inline: 0;
-        padding-left: 5px;
-    }
-}
-</style>
+<style lang="scss" src="@@/common/comp/MLabelSelect.scss" scoped />

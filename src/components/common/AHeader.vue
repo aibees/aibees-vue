@@ -1,16 +1,17 @@
 <template>
-  <div class="header">
-    <div class="title">
-        {{ title }}
+    <div class="header">
+        <div class="title">
+            {{ title }}
+        </div>
+        <div class="logo">
+            <img src="https://static.aibeesworld.com/image/logo/logo.png" />
+        </div>
     </div>
-    <div class="logo">
-        <img src="https://static.aibeesworld.com/image/logo/logo.png" />
-    </div>
-  </div>
 </template>
 
 <script setup>
-    import { ref, toRefs, onMounted } from 'vue';
+    import { userSession } from '@scripts/util/user-session.js';
+    const session = userSession();
     const props = defineProps({
         prop_title: String
     });
@@ -30,6 +31,7 @@
     background-color: #3c495a;
     width: 100%;
     height: 50px;
+
     .title {
         padding-top: 13px;
         margin-left: 10px;
@@ -37,9 +39,9 @@
         font-weight: 800;
         color: white;
     }
+
     // .logo {
 
     // }
 }
-
 </style>
