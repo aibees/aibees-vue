@@ -1,922 +1,845 @@
 <template>
-    <div class="lnb-content system-preset">
+    <div class="preset-management">
 
-        <!-- 상단 필터 카드 -->
-        <section class="d-panel search-section">
-            <div class="condition-row">
-                <div class="field">
-                    <label>검색</label>
-                    <input v-model="filters.keyword" type="text" placeholder="Preset명 / 코드 / 설명으로 검색" />
+        <section class="dynamic-tabs-container">
+            <div class="tabs-wrapper">
+                <div v-for="group in presetGroups" :key="group.presetGroupCd" class="dynamic-tab"
+                    :class="{ active: selectedGroupCode === group.presetGroupCd }"
+                    @click="selectGroup(group.presetGroupCd, group.enabledFlag)">
+                    <span class="tab-label">{{ group.presetGroupNm }}</span>
+                    <button class="icon-edit-tab" @click.stop="openGroupModal('EDIT', group)" title="그룹 설정">
+                        ⚙️
+                    </button>
                 </div>
-
-                <div class="field">
-                    <label>상태</label>
-                    <select v-model="filters.status">
-                        <option value="">전체</option>
-                        <option value="ACTIVE">사용</option>
-                        <option value="INACTIVE">중지</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label>정렬</label>
-                    <select v-model="filters.sort">
-                        <option value="ORDER_ASC">정렬순 ↑</option>
-                        <option value="ORDER_DESC">정렬순 ↓</option>
-                        <option value="NAME_ASC">이름 ↑</option>
-                        <option value="NAME_DESC">이름 ↓</option>
-                        <option value="CODE_ASC">코드 ↑</option>
-                        <option value="CODE_DESC">코드 ↓</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-actions">
-                <button class="btn btn--ghost" type="button" @click="resetFilters">
-                    필터 초기화
-                </button>
-                <button class="btn btn--primary" type="button" @click="openCreateModal()">
-                    Preset 추가
+                <button class="btn-add-tab" @click="openGroupModal('CREATE')">
+                    + 새 그룹 추가
                 </button>
             </div>
         </section>
 
-        <!-- 메인 레이아웃 -->
-        <section class="main-section">
-            <!-- 그룹 패널 -->
-            <aside class="d-panel group-panel">
-                <div class="panel-header">
-                    <div>
-                        <h2>Preset 그룹</h2>
-                    </div>
-                </div>
+        <section class="content-container">
+            <div class="action-bar">
+                <button class="btn-primary" :disabled="!selectedGroupCode" @click="openPresetModal('CREATE')">
+                    + 프리셋 등록
+                </button>
+            </div>
 
-                <div class="group-list">
-                    <button v-for="g in presetGroups" :key="g.code" type="button" class="group-item"
-                        :class="{ 'is-active': g.code === selectedGroupCode }" @click="selectedGroupCode = g.code">
-                        <div class="group-main">
-                            <div class="group-name">{{ g.label }}</div>
-                            <div class="group-code">{{ g.code }}</div>
-                        </div>
-                    </button>
-                </div>
-
-                <div class="group-footer">
-                    <div class="helper">
-                        선택 그룹:
-                        <strong>{{ selectedGroup?.label || '-' }}</strong>
-                    </div>
-                    <button class="btn btn--primary" type="button" @click="openGroupModal('c')">
-                        그룹 추가
-                    </button>
-                    <button class="btn btn--ghost w-full" type="button" @click="openGroupModal('u')">
-                        그룹 관리
-                    </button>
-                </div>
-            </aside>
-
-            <main class="d-panel preset-panel">
-                <div class="d-panel-header">
-                    <div>
-                        <h2>Preset 목록</h2>
-                    </div>
-
-                    <div class="panel-actions">
-                        <button class="btn btn--ghost" type="button" @click="toggleOnlyActive">
-                            {{ filters.onlyActive ? '전체 보기' : '사용중만' }}
-                        </button>
-                        <button class="btn btn--primary" type="button" @click="openCreateModal(selectedGroupCode)">
-                            + 추가
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 테이블 -->
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 90px;">정렬</th>
-                                <th style="width: 140px;">코드</th>
-                                <th>이름</th>
-                                <th>설명</th>
-                                <th style="width: 110px;">상태</th>
-                                <th style="width: 160px;" class="right">관리</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="p in filteredPresets" :key="p.code">
-                                <td class="mono">{{ p.order }}</td>
-                                <td class="mono">
-                                    <div class="code-cell">{{ p.code }}</div>
-                                    <div class="small muted">Group: {{ p.groupCode }}</div>
-                                </td>
-                                <td>
-                                    <div class="name-cell">{{ p.name }}</div>
-                                    <div class="small muted">등록일: {{ p.createdAt }}</div>
-                                </td>
-                                <td class="desc-cell">{{ p.description || '-' }}</td>
-                                <td>
-                                    <span class="status-pill" :class="p.status === 'ACTIVE' ? 'is-active' : 'is-inactive'">
-                                        {{ p.status === 'ACTIVE' ? '사용' : '중지' }}
-                                    </span>
-                                </td>
-                                <td class="right">
-                                    <div class="row-actions">
-                                        <button class="link-btn" type="button" @click="openEditModal(p)">수정</button>
-                                        <span class="dot">·</span>
-                                        <button class="link-btn" type="button" @click="toggleStatus(p)">
-                                            {{ p.status === 'ACTIVE' ? '중지' : '사용' }}
-                                        </button>
-                                        <span class="dot">·</span>
-                                        <button class="link-btn danger" type="button" @click="removePreset(p)">
-                                            삭제
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <tr v-if="filteredPresets.length === 0">
-                                <td class="empty" colspan="6">조건에 해당하는 Preset이 없습니다.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="panel-footer">
-                    <div class="footer-note">
-                        * 전표 생성 규칙(차/대변 매핑)은 “전표 Preset 규칙 관리” 메뉴에서 연결하는 구조를 권장합니다.
-                    </div>
-                </div>
-            </main>
-        </section>
-
-        <!-- Create/Edit Modal -->
-        <div v-if="modal.open" class="modal-backdrop" @click.self="closeModal">
-            <div class="modal">
-                <div class="modal-header">
-                    <div>
-                        <div class="modal-title">
-                            {{ modal.mode === 'create' ? 'Preset 추가' : 'Preset 수정' }}
-                        </div>
-                        <div class="modal-sub">
-                            입력 화면에서는 Preset만 선택하고, 실제 전표 규칙은 별도 메뉴에서 정의됩니다.
-                        </div>
-                    </div>
-                    <button class="icon-btn" type="button" @click="closeModal">×</button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="form-grid">
-                        <div class="field">
-                            <label>그룹</label>
-                            <select v-model="modal.form.groupCode" :disabled="modal.mode === 'edit'">
-                                <option v-for="g in presetGroups" :key="g.code" :value="g.code">{{ g.label }} ({{ g.code }})
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="field">
-                            <label>상태</label>
-                            <select v-model="modal.form.status">
-                                <option value="ACTIVE">사용</option>
-                                <option value="INACTIVE">중지</option>
-                            </select>
-                        </div>
-
-                        <div class="field">
-                            <label>정렬순서</label>
-                            <input v-model.number="modal.form.order" type="number" min="0" />
-                        </div>
-
-                        <div class="field">
-                            <label>Preset 코드</label>
-                            <input v-model="modal.form.code" type="text" placeholder="예: EXP_CARD_MEAL"
-                                :disabled="modal.mode === 'edit'" />
-                            <div class="help">* 수정 불가(권장). 코드 변경이 필요하면 새로 생성 후 마이그레이션</div>
-                        </div>
-
-                        <div class="field field--full">
-                            <label>Preset 이름</label>
-                            <input v-model="modal.form.name" type="text" placeholder="예: 식비 - 신용카드 결제" />
-                        </div>
-
-                        <div class="field field--full">
-                            <label>설명</label>
-                            <textarea v-model="modal.form.description" placeholder="입력화면에서 사용자에게 보이는 설명 문구"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="preview-box">
-                        <div class="preview-title">미리보기</div>
-                        <div class="preview-row">
-                            <span class="preview-label">표시</span>
-                            <span class="preview-value">
-                                {{ groupLabel(modal.form.groupCode) }} · {{ modal.form.name || '(이름 없음)' }}
-                            </span>
-                        </div>
-                        <div class="preview-row">
-                            <span class="preview-label">코드</span>
-                            <span class="preview-value mono">{{ modal.form.code || '-' }}</span>
-                        </div>
-                        <div class="preview-row">
-                            <span class="preview-label">상태</span>
-                            <span class="preview-value">
-                                <span class="status-pill"
-                                    :class="modal.form.status === 'ACTIVE' ? 'is-active' : 'is-inactive'">
-                                    {{ modal.form.status === 'ACTIVE' ? '사용' : '중지' }}
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="col-order">순번</th>
+                            <th class="col-code">프리셋 코드</th>
+                            <th class="col-name">프리셋 이름</th>
+                            <th class="col-desc">설명</th>
+                            <th class="col-status">상태</th>
+                            <th class="col-action">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="main-row" v-for="(preset, idx) in filteredPresets" :key="preset.presetCd">
+                            <td class="col-order mono">{{ idx + 1 }}</td>
+                            <td class="col-code mono"><strong>{{ preset.presetCd }}</strong></td>
+                            <td class="col-name font-bold">{{ preset.presetNm }}</td>
+                            <td class="col-desc desc-text">{{ preset.description || '-' }}</td>
+                            <td class="col-status">
+                                <span :class="['status-pill', preset.enabledFlag === 'Y' ? 'is-active' : 'is-inactive']">
+                                    {{ preset.enabledFlag === 'Y' ? '사용중' : '중지' }}
                                 </span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn--ghost" type="button" @click="closeModal">취소</button>
-                    <button class="btn btn--primary" type="button" @click="saveModal">
-                        {{ modal.mode === 'create' ? '추가' : '저장' }}
-                    </button>
-                </div>
+                            </td>
+                            <td class="col-action">
+                                <button class="btn-edit-sm" @click.stop="openPresetModal('EDIT', preset)">수정</button>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredPresets.length === 0">
+                            <td colspan="6" class="empty-state">
+                                {{ selectedGroupCode ? '등록된 프리셋이 없습니다.' : '먼저 그룹을 선택하거나 추가해 주세요.' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-        </div>
-        <!-- Group Manage Modal -->
-        <transition name="fade">
-            <div v-if="groupModalOption.create.open" class="modal-backdrop" @keydown.esc="closeGroupModal('c')">
-                <div class="modal">
-                    <div class="modal-header">
-                        <div>새 Preset 그룹 생성</div>
-                        <button class="icon-btn" type="button" @click="closeGroupModal('c')">×</button>
-                    </div>
+        </section>
+
+        <Transition name="fade">
+            <div v-if="groupModal.open" class="modal-overlay" @click.self="closeGroupModal">
+                <div class="modal-container modal-sm">
+                    <header class="modal-header">
+                        <h4>Preset 그룹 {{ groupModal.mode === 'CREATE' ? '추가' : '수정' }}</h4>
+                        <button class="btn-close" @click="closeGroupModal">&times;</button>
+                    </header>
 
                     <div class="modal-body">
-                        <div class="form-grid">
-
-                            <div class="field field--full">
-                                <label>Preset 그룹 코드</label>
-                                <input v-model="groupModalOption.create.form.presetGroupCd" type="text" placeholder="예: EXP_CARD" />
-                            </div>
-
-                            <div class="field field--full">
-                                <label>Preset 그룹 이름</label>
-                                <input v-model="groupModalOption.create.form.presetGroupNm" type="text" placeholder="예: 식비 - 신용카드 결제" />
-                            </div>
-
-                            <div class="field">
-                                <label>Preset 그룹 약어</label>
-                                <input v-model="groupModalOption.create.form.presetGroupEg" type="text" placeholder="예: EXP" />
-                            </div>
-
-                            <div class="field">
-                                <label>상태</label>
-                                <select v-model="groupModalOption.create.form.enabledFlag">
-                                    <option value="Y">사용</option>
-                                    <option value="N">중지</option>
-                                </select>
-                            </div>
-
-                            <div class="field">
-                                <label>정렬순서</label>
-                                <input v-model.number="modal.form.order" type="number" min="0" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button class="btn btn--ghost" type="button" @click="closeGroupModal('c')">취소</button>
-                        <button class="btn btn--primary" type="button" @click="saveNewPresetGroupList">
-                            저장
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div v-if="groupModalOption.update.open" class="modal-backdrop" @keydown.esc="closeGroupModal('u')">
-                <div class="modal">
-                    <div class="modal-header">
-                        <div>Preset 그룹 관리</div>
-                        <button class="icon-btn" type="button" @click="closeGroupModal('u')">×</button>
-                    </div>
-
-                    <div class="modal-body">
-                        <div class="form-grid">
-
-                            <div class="field">
-                                <label>상태</label>
-                                <select v-model="modal.form.status">
-                                    <option value="ACTIVE">사용</option>
-                                    <option value="INACTIVE">중지</option>
-                                </select>
-                            </div>
-
-                            <div class="field">
-                                <label>정렬순서</label>
-                                <input v-model.number="modal.form.order" type="number" min="0" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
-    </div>
-
-
-    <div v-if="groupModalOpen" class="modal-backdrop" @click.self="closeGroupModal">
-        <div class="modal modal--lg group-modal">
-            <div class="modal-header">
-                <div>
-                    <div class="modal-title">Preset 그룹 관리</div>
-                    <div class="modal-sub">
-                        그룹 추가/수정/정렬/사용여부를 관리합니다. (Preset은 그룹코드를 참조합니다)
-                    </div>
-                </div>
-                <button class="icon-btn" type="button" @click="closeGroupModal">×</button>
-            </div>
-
-            <div class="modal-body">
-                <div class="group-manage-layout">
-                    <!-- LEFT: 그룹 리스트 -->
-                    <aside class="gm-left">
-                        <div class="gm-head">
-                            <div class="gm-title">그룹 목록</div>
-                            <button class="btn btn--primary btn--sm" type="button" @click="startCreateGroup">
-                                + 그룹 추가
-                            </button>
-                        </div>
-
-                        <div class="gm-list">
-                            <button v-for="g in groupsSorted" :key="g.code" type="button" class="gm-item"
-                                :class="{ 'is-active': g.code === groupEditor.selectedCode }"
-                                @click="selectGroupForEdit(g.code)">
-                                <div class="gm-item-main">
-                                    <div class="gm-name">
-                                        {{ g.label }}
-                                        <span class="status-pill mini"
-                                            :class="g.status === 'ACTIVE' ? 'is-active' : 'is-inactive'">
-                                            {{ g.status === 'ACTIVE' ? '사용' : '중지' }}
-                                        </span>
+                        <form id="groupForm" @submit.prevent="saveGroup">
+                            <div class="form-grid-single">
+                                <div class="form-group">
+                                    <label>그룹 코드 <span class="required">*</span></label>
+                                    <input type="text" v-model="groupModal.form.presetGroupCd"
+                                        :disabled="groupModal.mode === 'EDIT'" placeholder="예: EXPENSE" required>
+                                    <div class="help" v-if="groupModal.mode === 'EDIT'">* 코드는 수정할 수 없습니다.</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>그룹명 <span class="required">*</span></label>
+                                    <input type="text" v-model="groupModal.form.presetGroupNm" placeholder="예: 지출 그룹"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label>그룹 약어 (alias)</label>
+                                    <input type="text" v-model="groupModal.form.alias" placeholder="예: EXP">
+                                </div>
+                                <div class="form-group-row">
+                                    <div class="form-group flex-1">
+                                        <label>정렬 순서</label>
+                                        <input type="number" v-model.number="groupModal.form.order" placeholder="0">
                                     </div>
-                                    <div class="gm-code mono">{{ g.code }}</div>
-                                </div>
-
-                                <div class="gm-item-meta">
-                                    <span class="cnt">Preset {{ countByGroup(g.code) }}</span>
-                                    <span class="ord mono">#{{ g.order ?? 0 }}</span>
-                                </div>
-                            </button>
-
-                            <div v-if="groupsSorted.length === 0" class="gm-empty">
-                                그룹이 없습니다. “+ 그룹 추가”로 생성해 주세요.
-                            </div>
-                        </div>
-
-                        <div class="gm-foot">
-                            <div class="note muted small">
-                                * 그룹 코드 변경은 권장하지 않습니다. 필요 시 신규 생성 후 Preset 이관을 권장합니다.
-                            </div>
-                        </div>
-                    </aside>
-
-                    <!-- RIGHT: 에디터 -->
-                    <section class="gm-right">
-                        <div class="gm-editor-head">
-                            <div>
-                                <div class="gm-title">그룹 편집</div>
-                                <div class="gm-sub muted small">
-                                    그룹 정보 변경 시, 연결된 Preset 표시/필터에도 즉시 반영됩니다.
+                                    <div class="form-group flex-1">
+                                        <label>상태</label>
+                                        <select v-model="groupModal.form.enabledFlag">
+                                            <option value="Y">사용 (Y)</option>
+                                            <option value="N">중지 (N)</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+                        </form>
+                    </div>
 
-                            <div class="gm-actions">
-                                <button class="btn btn--ghost btn--sm" type="button" @click="revertGroupEditor"
-                                    :disabled="!groupEditor.dirty">
-                                    되돌리기
-                                </button>
-                                <button class="btn btn--ghost btn--sm" type="button" @click="removeSelectedGroup"
-                                    :disabled="!groupEditor.selectedCode">
-                                    삭제
-                                </button>
-                                <button class="btn btn--primary btn--sm" type="button" @click="saveGroupEditor"
-                                    :disabled="!groupEditor.dirty">
-                                    저장
-                                </button>
-                            </div>
+                    <footer class="modal-footer flex-between">
+                        <button v-if="groupModal.mode === 'EDIT'" type="button" class="btn-danger" @click="deleteGroup">그룹
+                            삭제</button>
+                        <div v-else></div>
+                        <div class="action-buttons">
+                            <button type="button" class="btn-secondary" @click="closeGroupModal">취소</button>
+                            <button type="submit" form="groupForm" class="btn-primary">저장</button>
                         </div>
+                    </footer>
+                </div>
+            </div>
+        </Transition>
 
-                        <div v-if="!groupEditor.selectedCode && groupEditor.mode !== 'create'" class="gm-editor-empty">
-                            좌측에서 그룹을 선택하거나 “+ 그룹 추가”를 눌러 주세요.
-                        </div>
+        <Transition name="fade">
+            <div v-if="presetModal.open" class="modal-overlay" @click.self="closePresetModal">
+                <div class="modal-container">
+                    <header class="modal-header">
+                        <h4>프리셋 {{ presetModal.mode === 'CREATE' ? '등록' : '수정' }}</h4>
+                        <button class="btn-close" @click="closePresetModal">&times;</button>
+                    </header>
 
-                        <div v-else class="gm-editor">
+                    <div class="modal-body">
+                        <form id="presetForm" @submit.prevent="savePreset">
                             <div class="form-grid">
-                                <div class="field">
-                                    <label>그룹 코드</label>
-                                    <input v-model="groupEditor.form.code" type="text" placeholder="예: EXPENSE"
-                                        :disabled="groupEditor.mode === 'edit'" />
-                                    <div class="help">* 수정 불가(권장). 변경이 필요하면 새 그룹 생성 후 이관</div>
+                                <div class="form-group full-width">
+                                    <label>소속 그룹</label>
+                                    <input type="text" :value="`${selectedGroup?.presetGroupNm} (${selectedGroupCode})`"
+                                        disabled>
                                 </div>
-
-                                <div class="field">
+                                <div class="form-group">
+                                    <label>프리셋 코드 <span class="required">*</span></label>
+                                    <input type="text" v-model="presetModal.form.presetCd"
+                                        :disabled="presetModal.mode === 'EDIT'" placeholder="예: EXP_CARD_MEAL" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>프리셋 이름 <span class="required">*</span></label>
+                                    <input type="text" v-model="presetModal.form.presetNm" placeholder="예: 식비 - 신용카드"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label>정렬 순서</label>
+                                    <input type="number" v-model.number="presetModal.form.order" placeholder="0">
+                                </div>
+                                <div class="form-group">
                                     <label>상태</label>
-                                    <select v-model="groupEditor.form.status">
-                                        <option value="ACTIVE">사용</option>
-                                        <option value="INACTIVE">중지</option>
+                                    <select v-model="presetModal.form.enabledFlag">
+                                        <option value="Y">사용 (Y)</option>
+                                        <option value="N">중지 (N)</option>
                                     </select>
                                 </div>
-
-                                <div class="field">
-                                    <label>정렬순서</label>
-                                    <input v-model.number="groupEditor.form.order" type="number" min="0" />
-                                </div>
-
-                                <div class="field field--full">
-                                    <label>그룹명</label>
-                                    <input v-model="groupEditor.form.label" type="text" placeholder="예: 지출" />
+                                <div class="form-group full-width">
+                                    <label>설명</label>
+                                    <textarea v-model="presetModal.form.description" rows="2"
+                                        placeholder="어떤 상황에 사용하는 프리셋인지 설명해주세요."></textarea>
                                 </div>
                             </div>
+                        </form>
+                    </div>
 
-                            <div class="preview-box">
-                                <div class="preview-title">미리보기</div>
-                                <div class="preview-row">
-                                    <span class="preview-label">표시</span>
-                                    <span class="preview-value">
-                                        {{ groupEditor.form.label || '(이름 없음)' }}
-                                        <span class="status-pill mini"
-                                            :class="groupEditor.form.status === 'ACTIVE' ? 'is-active' : 'is-inactive'">
-                                            {{ groupEditor.form.status === 'ACTIVE' ? '사용' : '중지' }}
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="preview-row">
-                                    <span class="preview-label">코드</span>
-                                    <span class="preview-value mono">{{ (groupEditor.form.code || '-').toUpperCase()
-                                    }}</span>
-                                </div>
-                                <div class="preview-row">
-                                    <span class="preview-label">연결 Preset</span>
-                                    <span class="preview-value">총 {{ countByGroup((groupEditor.form.code ||
-                                        '').toUpperCase()) }}개</span>
-                                </div>
-                            </div>
+                    <footer class="modal-footer flex-between">
+                        <button v-if="presetModal.mode === 'EDIT'" type="button" class="btn-danger"
+                            @click="deletePreset(presetModal.form.presetCd)">프리셋 삭제</button>
+                        <div v-else></div>
 
-                            <div v-if="groupEditor.mode === 'edit'" class="warn-box">
-                                <div class="warn-title">삭제 주의</div>
-                                <div class="warn-text">
-                                    그룹 삭제는 연결된 Preset이 0개일 때만 가능하도록 권장합니다.
-                                </div>
-                            </div>
+                        <div class="action-buttons">
+                            <button type="button" class="btn-secondary" @click="closePresetModal">취소</button>
+                            <button type="submit" form="presetForm" class="btn-primary">저장</button>
                         </div>
-                    </section>
+                    </footer>
                 </div>
             </div>
+        </Transition>
 
-            <div class="modal-footer">
-                <button class="btn btn--ghost" type="button" @click="closeGroupModal">닫기</button>
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
 import mariaApi from '@scripts/util/mariaApi.js';
 
-
-/**
- * Preset Groups
- */
+// --- 원본 데이터 State ---
 const presetGroups = ref([]);
-const groupModalOption = reactive({
-    create: {
-        open: false,
-        form: {
-            presetGroupCd: '',
-            presetGroupNm: '',
-            presetGroupEg: '',
-            enabledFlag: 'Y',
-            order: 0
-        }
-    },
-    update: {
-        open: false,
-        form: {
-            presetGroupCd: '',
-            presetGroupNm: '',
-            presetGroupEg: '',
-            enabledFlag: 'Y',
-            order: 0
-        }
-    }
-});
+const presetMasters = ref([]);
 
-/**
- * Preset Master
- */
-const selectedGroupCode = ref('EXPENSE');
+// 현재 선택된 탭(그룹)의 Code
+const selectedGroupCode = ref('');
 
 onMounted(async () => {
     await getPresetGroupList();
 });
 
-/**
- * getPresetGroupList
- * - Preset Group 전체 조회
- */
 const getPresetGroupList = async () => {
-    const { data } = await mariaApi.get('/api/system/preset/groups');
-    console.log(data);
+    const { data } = await mariaApi.get('/api/system-infos/preset/groups');
+    presetGroups.value = data;
 
-    presetGroups.value = data.map(d => {
-        return {
-            code: d.presetGroupCd,
-            label: d.presetGroupNm
-        }
-    });
-}
-
-const saveNewPresetGroupList = async () => {
-    const saveData = groupModalOption.create.form;
-    const { data } = await mariaApi.post('/api/system/preset/groups', saveData);
-
-    console.log(data);
-}
-
-/**
- * Preset Master (더미 데이터)
- * 실제 구현에서는 DB 테이블 + API로 관리
- */
-const presets = reactive([
-    {
-        groupCode: 'EXPENSE',
-        code: 'EXP_CARD_MEAL',
-        name: '식비 - 신용카드 결제',
-        description: '식당/카페 등에서 카드로 결제한 식비',
-        status: 'ACTIVE',
-        order: 10,
-        createdAt: '2025-01-01'
-    },
-    {
-        groupCode: 'EXPENSE',
-        code: 'EXP_CARD_MART',
-        name: '마트/장보기 - 신용카드',
-        description: '장보기/생활용품 카드 결제',
-        status: 'ACTIVE',
-        order: 20,
-        createdAt: '2025-01-01'
-    },
-    {
-        groupCode: 'EXPENSE',
-        code: 'EXP_TRANSFER_RENT',
-        name: '월세/관리비 - 계좌이체',
-        description: '월세 및 관리비 이체',
-        status: 'ACTIVE',
-        order: 30,
-        createdAt: '2025-01-02'
-    },
-    {
-        groupCode: 'INCOME',
-        code: 'INC_SALARY_BANK',
-        name: '급여 입금 - 통장',
-        description: '월급/상여 등 급여성 수입',
-        status: 'ACTIVE',
-        order: 10,
-        createdAt: '2025-01-03'
-    },
-    {
-        groupCode: 'INCOME',
-        code: 'INC_INTEREST_BANK',
-        name: '이자/배당 - 통장',
-        description: '예금이자/배당금 등',
-        status: 'INACTIVE',
-        order: 20,
-        createdAt: '2025-02-01'
-    },
-    {
-        groupCode: 'TRANSFER',
-        code: 'TRF_CARD_PAY',
-        name: '신용카드 대금 출금',
-        description: '통장에서 카드 대금 자동이체',
-        status: 'ACTIVE',
-        order: 10,
-        createdAt: '2025-02-10'
+    if (presetGroups.value.length > 0) {
+        selectedGroupCode.value = presetGroups.value[0].presetGroupCd;
+        await getPresetHeaderList();
     }
-]);
+};
 
-/**
- * 상태/필터
- */
+const getPresetHeaderList = async () => {
+    const searchParam = {
+        presetGroupCd: selectedGroupCode.value
+    }
+    const { data } = await mariaApi.get('/api/system-infos/preset/headers', { params: searchParam });
+    presetMasters.value = data;
+}
 
-const filters = reactive({
-    keyword: '',
-    status: '',
-    sort: 'ORDER_ASC',
-    onlyActive: false
+const selectedGroup = computed(() => {
+    return presetGroups.value.find(g => g.presetGroupCd === selectedGroupCode.value) || null;
 });
-
-const selectedGroup = computed(() => presetGroups.value.find((g) => g.code === selectedGroupCode.value) || null);
 
 const filteredPresets = computed(() => {
-    const list = presets.filter((p) => p.groupCode === selectedGroupCode.value);
-
-    const keyword = filters.keyword.trim().toLowerCase();
-    let result = list.filter((p) => {
-        if (filters.onlyActive && p.status !== 'ACTIVE') return false;
-        if (filters.status && p.status !== filters.status) return false;
-
-        if (!keyword) return true;
-
-        const hay = `${p.code} ${p.name} ${p.description || ''}`.toLowerCase();
-        return hay.includes(keyword);
-    });
-
-    result = result.slice().sort((a, b) => {
-        switch (filters.sort) {
-            case 'ORDER_ASC':
-                return (a.order ?? 0) - (b.order ?? 0);
-            case 'ORDER_DESC':
-                return (b.order ?? 0) - (a.order ?? 0);
-            case 'NAME_ASC':
-                return (a.name || '').localeCompare(b.name || '');
-            case 'NAME_DESC':
-                return (b.name || '').localeCompare(a.name || '');
-            case 'CODE_ASC':
-                return (a.code || '').localeCompare(b.code || '');
-            case 'CODE_DESC':
-                return (b.code || '').localeCompare(a.code || '');
-            default:
-                return 0;
-        }
-    });
-
-    return result;
+    return presetMasters.value
+        .sort((a, b) => (a.order || 0) - (b.order || 0) || a.presetCd.localeCompare(b.presetCd));
 });
 
-function countByGroup(code) {
-    return presets.filter((p) => p.groupCode === code).length;
-}
-
-function groupLabel(code) {
-    return presetGroups.value.find((g) => g.code === code)?.label || code || '-';
-}
-
-function resetFilters() {
-    filters.keyword = '';
-    filters.status = '';
-    filters.sort = 'ORDER_ASC';
-    filters.onlyActive = false;
-}
-
-function toggleOnlyActive() {
-    filters.onlyActive = !filters.onlyActive;
-}
-
-/**
- * 모달 (create/edit)
- */
-const modal = reactive({
-
-
-
-    open: false,
-    mode: 'create', // 'create' | 'edit'
-    form: {
-        groupCode: 'EXPENSE',
-        status: 'ACTIVE',
-        order: 10,
-        code: '',
-        name: '',
-        description: ''
-    },
-    editingKey: null
-});
-
-function openCreateModal(groupCode = selectedGroupCode.value) {
-    modal.open = true;
-    modal.mode = 'create';
-    modal.editingKey = null;
-    modal.form.groupCode = groupCode;
-    modal.form.status = 'ACTIVE';
-    modal.form.order = 10;
-    modal.form.code = '';
-    modal.form.name = '';
-    modal.form.description = '';
-}
-
-function openEditModal(p) {
-    modal.open = true;
-    modal.mode = 'edit';
-    modal.editingKey = p.code;
-    modal.form.groupCode = p.groupCode;
-    modal.form.status = p.status;
-    modal.form.order = p.order ?? 0;
-    modal.form.code = p.code;
-    modal.form.name = p.name;
-    modal.form.description = p.description || '';
-}
-
-function closeModal() {
-    modal.open = false;
-}
-
-function saveModal() {
-    // 간단 검증
-    if (!modal.form.groupCode) return alert('그룹을 선택하세요.');
-    if (!modal.form.code.trim()) return alert('Preset 코드를 입력하세요.');
-    if (!modal.form.name.trim()) return alert('Preset 이름을 입력하세요.');
-
-    const code = modal.form.code.trim().toUpperCase();
-
-    if (modal.mode === 'create') {
-        const exists = presets.some((p) => p.code === code);
-        if (exists) return alert('이미 존재하는 Preset 코드입니다.');
-
-        presets.push({
-            groupCode: modal.form.groupCode,
-            code,
-            name: modal.form.name.trim(),
-            description: modal.form.description.trim(),
-            status: modal.form.status,
-            order: Number(modal.form.order || 0),
-            createdAt: new Date().toISOString().slice(0, 10)
-        });
-
-        selectedGroupCode.value = modal.form.groupCode;
-    } else {
-        const idx = presets.findIndex((p) => p.code === modal.editingKey);
-        if (idx === -1) return alert('대상을 찾을 수 없습니다.');
-
-        presets[idx].status = modal.form.status;
-        presets[idx].order = Number(modal.form.order || 0);
-        presets[idx].name = modal.form.name.trim();
-        presets[idx].description = modal.form.description.trim();
-    }
-
-    modal.open = false;
-}
-
-function toggleStatus(p) {
-    p.status = p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-}
-
-function removePreset(p) {
-    const ok = confirm(`삭제하시겠습니까?\n- ${p.code}\n- ${p.name}`);
-    if (!ok) return;
-
-    const idx = presets.findIndex((x) => x.code === p.code);
-    if (idx >= 0) presets.splice(idx, 1);
-}
-
-function onExport() {
-    alert('내보내기(예시): 실제 구현 시 CSV/JSON 다운로드로 연결하세요.');
-}
-
-
-    /******************************
-     ******* Modal  Function ******
-     ******************************/
-    // Group Modal
-    function openGroupModal(type) {
-        if (type === 'c') {
-            groupModalOption.create.form = {
-                presetGroupCd: '',
-                presetGroupNm: '',
-                presetGroupEg: '',
-                enabledFlag: 'Y'
-            };
-            groupModalOption.create.open = true;
-        } else if (type === 'u') {
-            groupModalOption.update.open = true;
-        }
-
-        // 모달 열 때 현재 선택 그룹을 에디터에 로드
-        // if (selectedGroupCode.value) {
-        //     selectGroupForEdit(selectedGroupCode.value);
-        // } else if (presetGroups.value[0]?.code) {
-        //     selectGroupForEdit(presetGroups.value[0].code);
-        // }
-    }
-    function closeGroupModal(type) {
-        if (type === 'c') {
-            groupModalOption.create.open = false;
-        } else if (type === 'u') {
-            groupModalOption.update.open = false;
-            groupModalOption.update.form = {
-                presetGroupCd: '',
-                presetGroupNm: '',
-                presetGroupEg: '',
-                enabledFlag: 'Y'
-            };
-        }
-    }
-
-const groupsSorted = computed(() => {
-    return presetGroups.value
-        .map((g, idx) => ({
-            code: (g.code || "").toUpperCase(),
-            label: g.label,
-            order: g.order ?? (idx + 1) * 10,
-            status: g.status ?? "ACTIVE",
-        }))
-        .slice()
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-});
-
-/**
- * Editor (create/edit)
- */
-const groupEditor = reactive({
-    mode: "edit", // 'create' | 'edit'
-    selectedCode: "", // 현재 선택된 그룹 code
-    form: {
-        code: "",
-        label: "",
-        order: 10,
-        status: "ACTIVE",
-    },
-    baseline: null,
-    dirty: false,
-});
-
-function setGroupEditorBaseline() {
-    groupEditor.baseline = {
-        code: groupEditor.form.code,
-        label: groupEditor.form.label,
-        order: groupEditor.form.order,
-        status: groupEditor.form.status,
-    };
-    groupEditor.dirty = false;
-}
-
-function selectGroupForEdit(code) {
-    const upper = (code || "").toUpperCase();
-    const g = groupsSorted.value.find((x) => x.code === upper);
-    if (!g) return;
-
-    groupEditor.mode = "edit";
-    groupEditor.selectedCode = g.code;
-    groupEditor.form.code = g.code;
-    groupEditor.form.label = g.label;
-    groupEditor.form.order = Number(g.order ?? 0);
-    groupEditor.form.status = g.status ?? "ACTIVE";
-    setGroupEditorBaseline();
-}
-
-function startCreateGroup() {
-    groupEditor.mode = "create";
-    groupEditor.selectedCode = ""; // create 모드에서는 기존 선택 해제
-    groupEditor.form.code = "";
-    groupEditor.form.label = "";
-    groupEditor.form.order = (groupsSorted.value.at(-1)?.order || 0) + 10;
-    groupEditor.form.status = "ACTIVE";
-    setGroupEditorBaseline();
-    // create 모드는 입력 즉시 dirty가 켜지는 게 자연스러우므로 baseline 후 강제 dirty on
-    groupEditor.dirty = true;
-}
-
-function revertGroupEditor() {
-    if (!groupEditor.baseline) return;
-    groupEditor.form.code = groupEditor.baseline.code;
-    groupEditor.form.label = groupEditor.baseline.label;
-    groupEditor.form.order = groupEditor.baseline.order;
-    groupEditor.form.status = groupEditor.baseline.status;
-    groupEditor.dirty = false;
-}
-
-function saveGroupEditor() {
-    // validation
-    const code = (groupEditor.form.code || "").trim().toUpperCase();
-    const label = (groupEditor.form.label || "").trim();
-    if (!code) return alert("그룹 코드를 입력해 주세요.");
-    if (!label) return alert("그룹명을 입력해 주세요.");
-
-    if (groupEditor.mode === "create") {
-        const exists = presetGroups.value.some((g) => (g.code || "").toUpperCase() === code);
-        if (exists) return alert("이미 존재하는 그룹 코드입니다.");
-
-        presetGroups.value.push({
-            code,
-            label,
-            order: Number(groupEditor.form.order || 0),
-            status: groupEditor.form.status,
-        });
-
-        // 생성한 그룹을 선택 그룹으로
+// --- Methods ---
+const selectGroup = async (code, flag) => {
+    if (flag == 'Y') {
         selectedGroupCode.value = code;
-        selectGroupForEdit(code);
-    } else {
-        const idx = presetGroups.value.findIndex((g) => (g.code || "").toUpperCase() === groupEditor.selectedCode);
-        if (idx < 0) return alert("대상을 찾을 수 없습니다.");
-
-        // code는 edit에서 수정 불가
-        presetGroups.value[idx] = {
-            ...presetGroups.value[idx],
-            label,
-            order: Number(groupEditor.form.order || 0),
-            status: groupEditor.form.status,
-        };
-        selectGroupForEdit(groupEditor.selectedCode);
+        await getPresetHeaderList();
     }
-}
+};
+
+
+// =====================================
+// 1. Group Modal Logic
+// =====================================
+const groupModal = reactive({
+    open: false, 
+    mode: 'CREATE',
+    form: {
+        presetGroupId: '',
+        presetGroupCd: '', 
+        presetGroupNm: '', 
+        alias: '', 
+        enabledFlag: 'Y' 
+    }
+});
+
+const openGroupModal = (mode, data = null) => {
+    groupModal.mode = mode;
+    if (mode === 'EDIT' && data) {
+        groupModal.form = { ...data };
+    } else {
+        groupModal.form = {
+            presetGroupCd: '', 
+            presetGroupNm: '', 
+            alias: '', 
+            enabledFlag: 'Y'
+        };
+    }
+    groupModal.open = true;
+};
+
+const closeGroupModal = () => groupModal.open = false;
+
+const saveGroup = async () => {
+    const payload = { ...groupModal.form, presetGroupCd: groupModal.form.presetGroupCd.trim().toUpperCase() };
+
+    if (groupModal.mode === 'CREATE') {
+        const result = await mariaApi.post('/api/system-infos/preset/groups', payload);
+        if (result.success) {
+            await getPresetGroupList();
+            selectedGroupCode.value = payload.presetGroupCd; // 새로 만든 탭으로 포커스
+        }
+
+    } else {
+        await mariaApi.put('/api/system-infos/preset/groups', payload);
+        if (result.success) {
+            await getPresetGroupList();
+        }
+    }
+    closeGroupModal();
+};
+
+const deleteGroup = async () => {
+    const code = groupModal.form.presetGroupCd;
+    const childCount = presetMasters.value.filter(p => p.presetGroupCd === code).length;
+
+    if (childCount > 0) {
+        return alert(`이 그룹에 속한 프리셋이 ${childCount}개 있습니다. 프리셋을 먼저 삭제하거나 이동해 주세요.`);
+    }
+
+    await mariaApi.delete(`/api/system-infos/preset/groups/${groupModal.form.presetGroupId}`);
+
+    closeGroupModal();
+};
+
+
+// =====================================
+// 2. Preset Modal Logic
+// =====================================
+const presetModal = reactive({
+    open: false, 
+    mode: 'CREATE',
+    form: {
+        presetCd: '', 
+        presetNm: '', 
+        description: '', 
+        order: 0, 
+        enabledFlag: 'Y'
+    }
+});
+
+const openPresetModal = (mode, data = null) => {
+    presetModal.mode = mode;
+    if (mode === 'EDIT' && data) {
+        presetModal.form = { ...data };
+    } else { // CREATE
+        presetModal.form = { presetCd: '', presetNm: '', description: '', enabledFlag: 'Y', presetGroupCd: selectedGroupCode.value };
+    }
+    presetModal.open = true;
+};
+
+const closePresetModal = () => presetModal.open = false;
+
+const savePreset = async () => {
+    const payload = { ...presetModal.form, presetCd: presetModal.form.presetCd.trim().toUpperCase(), presetGroupCd: selectedGroupCode.value };
+
+    if (presetModal.mode === 'CREATE') {
+        const exists = presetMasters.value.some(p => p.presetCd === payload.presetCd);
+        if (exists) {
+            return alert('이미 존재하는 프리셋 코드입니다.')
+        };
+
+        await mariaApi.post('/api/system-infos/preset/headers', payload);
+    } else {
+        await mariaApi.put('/api/system-infos/preset/headers', payload);
+    }
+    await getPresetHeaderList();
+    closePresetModal();
+};
+
+const deletePreset = async (code) => {
+    await mariaApi.delete(`/api/system-infos/preset/headers/${code}`);
+    await getPresetHeaderList();
+    closePresetModal();
+};
 </script>
 
-<style lang="scss" src="@@/system/systemPreset.scss" />
+<style lang="scss" scoped>
+/* 디자인 시스템 변수 (실제 프로젝트 변수에 맞춰 조정) */
+$primary: #4a90e2;
+$primary-hover: #357abd;
+$text-main: #333333;
+$text-sub: #666666;
+$text-light: #999999;
+$bg-main: #f8f9fa;
+$bg-white: #ffffff;
+$border-color: #e9ecef;
+$danger: #e03131;
+
+.preset-management {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: 'Pretendard', sans-serif;
+    color: $text-main;
+}
+
+.page-header {
+    margin-bottom: 24px;
+
+    h2 {
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        font-weight: 800;
+    }
+
+    p {
+        margin: 0;
+        color: $text-sub;
+        font-size: 14px;
+    }
+}
+
+/* =======================================
+   Dynamic Tabs (유동적 그룹 탭)
+======================================= */
+.dynamic-tabs-container {
+    margin-bottom: 24px;
+    border-bottom: 2px solid $border-color;
+
+    .tabs-wrapper {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .dynamic-tab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: transparent;
+        border: none;
+        font-size: 16px;
+        color: $text-sub;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        border-radius: 8px 8px 0 0;
+
+        &:hover {
+            color: $primary;
+            background: rgba($primary, 0.03);
+        }
+
+        &.active {
+            color: $primary;
+            font-weight: 700;
+            background: $bg-white;
+            border: 1px solid $border-color;
+            border-bottom: 2px solid $bg-white;
+            margin-bottom: -2px;
+            /* 아래 테두리를 덮기 위함 */
+        }
+
+        .tab-label {
+            user-select: none;
+        }
+
+        .icon-edit-tab {
+            background: none;
+            border: none;
+            padding: 2px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+            filter: grayscale(100%);
+
+            &:hover {
+                opacity: 1;
+                filter: grayscale(0%);
+                transform: scale(1.1);
+            }
+        }
+
+        &.active .icon-edit-tab {
+            opacity: 0.7;
+            filter: grayscale(0%);
+        }
+    }
+
+    .btn-add-tab {
+        padding: 10px 16px;
+        margin-bottom: 4px;
+        margin-left: 8px;
+        background: $bg-white;
+        border: 1px dashed #adb5bd;
+        border-radius: 6px;
+        color: #868e96;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+            border-color: $primary;
+            color: $primary;
+            background: #f8faff;
+        }
+    }
+}
+
+/* =======================================
+   Content Area (Table)
+======================================= */
+.action-bar {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+
+        .highlight {
+            color: $primary;
+            font-weight: 800;
+        }
+    }
+}
+
+.data-table-wrapper {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+
+    th {
+        background: $bg-main;
+        padding: 14px 16px;
+        font-size: 13px;
+        color: $text-sub;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 1px 0 $border-color;
+    }
+
+    td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid $border-color;
+        font-size: 14px;
+    }
+
+    .col-order {
+        width: 80px;
+        text-align: center;
+        color: $text-light;
+    }
+
+    .col-code {
+        width: 180px;
+    }
+
+    .col-name {
+        width: auto;
+    }
+
+    .col-desc {
+        width: auto;
+    }
+
+    .col-status {
+        width: 100px;
+        text-align: center;
+    }
+
+    .col-action {
+        width: 90px;
+        text-align: center;
+    }
+
+    .main-row {
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: rgba($primary, 0.02);
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px;
+        color: $text-light;
+        font-size: 15px;
+    }
+
+    .mono {
+        font-family: monospace;
+    }
+
+    .font-bold {
+        font-weight: 700;
+        color: #111;
+    }
+
+    .desc-text {
+        color: $text-sub;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 280px;
+    }
+
+    .status-pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+
+        &.is-active {
+            background: #ecfdf3;
+            color: #166534;
+        }
+
+        &.is-inactive {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+    }
+}
+
+/* =======================================
+   Modals & Forms
+======================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-container {
+    background-color: $bg-white;
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+
+    &.modal-sm {
+        max-width: 450px;
+    }
+
+    /* 그룹 모달은 좀 더 작게 */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid $border-color;
+
+    h4 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: $text-light;
+        cursor: pointer;
+
+        &:hover {
+            color: $text-main;
+        }
+    }
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid $border-color;
+    background-color: $bg-main;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-grid-single {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 그룹 모달용 세로 폼 */
+
+.form-group-row {
+    display: flex;
+    gap: 16px;
+
+    .flex-1 {
+        flex: 1;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &.full-width {
+        grid-column: 1 / -1;
+    }
+
+    label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #495057;
+
+        .required {
+            color: $danger;
+        }
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+
+        &:focus {
+            outline: none;
+            border-color: $primary;
+            box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+
+        &:disabled {
+            background-color: #f1f3f5;
+            color: #868e96;
+            cursor: not-allowed;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .help {
+        font-size: 12px;
+        color: $text-light;
+        margin-top: 2px;
+    }
+}
+
+/* =======================================
+   Buttons
+======================================= */
+.btn-primary {
+    background: $primary;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &:hover {
+        background: $primary-hover;
+    }
+
+    &:disabled {
+        background: #adb5bd;
+        cursor: not-allowed;
+    }
+}
+
+.btn-secondary {
+    background: white;
+    color: $text-sub;
+    border: 1px solid #ced4da;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &:hover {
+        background: #f1f3f5;
+    }
+}
+
+.btn-danger {
+    background: transparent;
+    color: $danger;
+    border: none;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+        background: #fff5f5;
+        border-radius: 6px;
+    }
+}
+
+.btn-edit-sm {
+    background: white;
+    color: $text-sub;
+    border: 1px solid #ced4da;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+        border-color: $primary;
+        color: $primary;
+    }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}</style>

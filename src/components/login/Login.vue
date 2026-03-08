@@ -18,9 +18,8 @@
 </template>
 
 <script setup>
-    import { userSession } from '../../scripts/util/user-session';
+    import { userSession } from '@scripts/util/user-session';
     import mariaApi from '@scripts/util/mariaApi.js';
-    import MariaToast from '../../scripts/util/common/MariaToast';
 
     /******************************
      ******* Const  Variable ******

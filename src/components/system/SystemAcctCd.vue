@@ -1,609 +1,736 @@
 <template>
-    <div class="lnb-content system-acctcd">
-        <!-- 상단 필터 카드 -->
-        <section class="d-panel search-section">
-            <div class="condition-row">
-                <div class="field">
-                    <label>검색</label>
-                    <input v-model="filters.q" placeholder="코드/이름/설명" />
-                </div>
+    <div class="account-code-management">
+        <MNav :tabs="tabs" :currentTab="currentTab" @tab-click="handleTabChange" />
 
-                <div class="field">
-                    <label>분류</label>
-                    <select v-model="filters.type">
-                        <option value="">전체</option>
-                        <option value="ASSET">자산</option>
-                        <option value="LIABILITY">부채</option>
-                        <option value="EQUITY">자본</option>
-                        <option value="INCOME">수익</option>
-                        <option value="EXPENSE">비용</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label>상태</label>
-                    <select v-model="filters.status">
-                        <option value="">전체</option>
-                        <option value="ACTIVE">사용</option>
-                        <option value="INACTIVE">중지</option>
-                    </select>
-                </div>
+        <section class="content-container">
+            <div class="action-bar">
+                <h3>{{ currentTabName }} 계정 마스터 관리</h3>
+                <button class="btn-primary" @click.stop="openModal()">+ 신규 계정 등록</button>
             </div>
 
-            <div class="filter-actions">
-                <button class="btn btn--ghost" type="button" @click="resetFilters">
-                    전체 접기
-                </button>
-                <button class="btn btn--ghost" type="button" @click="resetFilters">
-                    전체 펼치기
-                </button>
-                <button class="btn btn--ghost" type="button" @click="resetFilters">
-                    필터 초기화
-                </button>
-                <button class="btn btn--primary" type="button" @click="openCreateModal()">
-                    계정 추가
-                </button>
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="col-code">계정코드</th>
+                            <th class="col-type">분류</th>
+                            <th class="col-name">계정과목명</th>
+                            <th class="col-parent">상위계정</th>
+                            <th class="col-drcr">차대구분</th>
+                            <th class="col-status">상태</th>
+                            <th class="col-action">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template v-for="(acct, index) in treeList" :key="acct.acctCd">
+                            <tr class="main-row" :class="{ 'is-open': acct.isExpanded }" @click="toggleRow(acct.acctCd)">
+                                <td class="col-code">
+                                    <strong :style="{ color: acct._depth === 0 ? '#333333' : '#666666' }">
+                                        {{ acct.acctCd }}
+                                    </strong>
+                                </td>
+                                <td class="col-type">
+                                    <span
+                                        :class="['type-badge', acct.finalFlag === 'Y' ? 'final' : (acct._depth === 0 ? 'group-main' : 'group-sub')]">
+                                        {{ acct.finalFlag === 'Y' ? '기표' : `그룹(D${acct._depth + 1})` }}
+                                    </span>
+                                </td>
+
+                                <td class="col-name" :style="{ paddingLeft: `${(acct._depth * 24) + 16}px` }">
+                                    <span v-if="acct._depth > 0" class="tree-line">-</span>
+                                    <span :class="{ 'font-bold': acct._depth > 1 }">{{ acct.acctNm }}</span>
+                                </td>
+
+                                <td class="col-parent">{{ acct.parentAcctCd || '-' }}</td>
+                                <td class="col-drcr">
+                                    <span class="drcr-text">{{ acct.dcFlag === 'D' ? '차변(D)' : '대변(C)' }}</span>
+                                </td>
+                                <td class="col-status">
+                                    <span :class="['status-dot', acct.enabledFlag === 'Y' ? 'on' : 'off']"></span>
+                                    {{ acct.enabledFlag === 'Y' ? '사용중' : '중지' }}
+                                </td>
+                                <td class="col-action">
+                                    <button class="btn-edit-sm" @click.stop="openModal(acct)">수정</button>
+                                </td>
+                            </tr>
+
+                            <tr v-if="acct.isExpanded" class="detail-row">
+                                <td colspan="7" class="detail-cell">
+                                    <div class="detail-wrapper">
+                                        <div class="detail-grid">
+                                            <div class="detail-item">
+                                                <span class="label">정렬 순서:</span>
+                                                <span class="value">{{ acct.sortOrder }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="label">추가 속성(Flag):</span>
+                                                <span class="value">{{ acct.additional_flag || '-' }}</span>
+                                            </div>
+                                            <div class="detail-item full-width">
+                                                <span class="label">계정 설명:</span>
+                                                <span class="value">{{ acct.description || '등록된 설명이 없습니다.' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr v-if="treeList.length === 0">
+                            <td colspan="7" class="empty-state">등록된 계정과목이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 
-        <section class="main-section">
+        <Transition name="fade">
+            <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
+                <div class="modal-container">
+                    <header class="modal-header">
+                        <h4>{{ formData.isEdit ? '계정과목 수정' : '신규 계정과목 등록' }}</h4>
+                        <button class="btn-close" @click="closeModal">&times;</button>
+                    </header>
 
-            <!-- Left: Tree -->
-            <aside class="d-panel tree">
-                <div class="tree-head">
-                    <h2>계정 트리</h2>
-                </div>
+                    <div class="modal-body">
+                        <form id="acctForm" @submit.prevent="saveAccountInfo">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>계정코드 <span class="required">*</span></label>
+                                    <input type="text" v-model="formData.acctCd" :disabled="formData.isEdit"
+                                        placeholder="예: 5110" required>
+                                </div>
 
-                <div class="tree-body">
-                    <div v-if="flatTree.length === 0" class="empty">
-                        조건에 맞는 계정이 없습니다.
-                    </div>
+                                <div class="form-group">
+                                    <label>계정과목명 <span class="required">*</span></label>
+                                    <input type="text" v-model="formData.acctNm" placeholder="예: 월세" required>
+                                </div>
 
-                    <button v-for="n in flatTree" :key="n.code" class="treeRow"
-                        :class="{ 'is-selected': selectedCode === n.code }" type="button" @click="select(n.code)">
-                        <span class="treeRow__indent" :style="{ width: `${n.depth * 14}px` }"></span>
+                                <div class="form-group">
+                                    <label>계정 유형</label>
+                                    <select v-model="formData.acctType" disabled>
+                                        <option v-for="tab in tabs" :key="tab.value" :value="tab.value">{{ tab.label }}
+                                        </option>
+                                    </select>
+                                </div>
 
-                        <span class="treeRow__caret" :class="{ 'is-leaf': !n.hasChildren }"
-                            @click.stop="n.hasChildren ? toggle(n.code) : null">
-                            {{ n.hasChildren ? (expanded.has(n.code) ? '▾' : '▸') : '·' }}
-                        </span>
+                                <div class="form-group">
+                                    <label>상위계정 (parentAcctCd)</label>
+                                    <input type="text" v-model="formData.parentAcctCd" placeholder="최상위 그룹일 경우 비워둠">
+                                </div>
 
-                        <span class="typeTag" :class="typeClass(n.type)">{{ typeLabel(n.type) }}</span>
+                                <div class="form-group">
+                                    <label>차대 구분 <span class="required">*</span></label>
+                                    <select v-model="formData.dcFlag">
+                                        <option value="D">차변 (Debit) - 자산/비용 증가</option>
+                                        <option value="C">대변 (Credit) - 부채/자본/수익 증가</option>
+                                    </select>
+                                </div>
 
-                        <span class="treeRow__title">
-                            <span class="mono code">{{ n.code }}</span>
-                            <span class="name">{{ n.name }}</span>
-                        </span>
-
-                        <span class="status" :class="n.status === 'ACTIVE' ? 'ok' : 'off'">
-                            {{ n.status === 'ACTIVE' ? '사용' : '중지' }}
-                        </span>
-                    </button>
-                </div>
-
-                <div class="tree__foot">
-                    <div class="sel">
-                        선택:
-                        <strong>{{ selectedNode ? `${selectedNode.code} ${selectedNode.name}` : '-' }}</strong>
-                    </div>
-                    <div class="tree__footBtns">
-                        <button class="btn btn--ghost" type="button" :disabled="!selectedNode"
-                            @click="openCreate(selectedCode)">
-                            하위 추가
-                        </button>
-                        <button class="btn btn--primary" type="button" :disabled="!selectedNode"
-                            @click="openEdit(selectedNode)">
-                            수정
-                        </button>
-                    </div>
-                </div>
-            </aside>
-            <main class="d-panel detail">
-                <div class="card__head">
-                        <div>
-                            <h2>계정 상세</h2>
-                            <p class="hint">속성 확인 및 상태/삭제/수정</p>
-                        </div>
-                        <div class="pill">Detail</div>
-                    </div>
-
-                    <div v-if="!selectedNode" class="empty empty--detail">
-                        왼쪽 트리에서 계정을 선택해주세요.
-                    </div>
-
-                    <div v-else class="detail__body">
-                        <div class="detailTop">
-                            <div class="detailTitle">
-                                <span class="typeTag" :class="typeClass(selectedNode.type)">
-                                    {{ typeLabel(selectedNode.type) }}
-                                </span>
-                                <div>
-                                    <div class="mono big">{{ selectedNode.code }}</div>
-                                    <div class="nm">{{ selectedNode.name }}</div>
+                                <div class="form-group">
+                                    <label>정렬 순서</label>
+                                    <input type="number" v-model="formData.sortOrder" placeholder="0">
                                 </div>
                             </div>
 
-                            <div class="detailActions">
-                                <button class="btn btn--ghost" type="button" @click="toggleStatus(selectedNode)">
-                                    {{ selectedNode.status === 'ACTIVE' ? '중지' : '사용' }}
-                                </button>
-                                <button class="btn btn--ghost danger" type="button" @click="remove(selectedNode)">
-                                    삭제
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="kv">
-                            <div class="kv__item">
-                                <div class="k">상태</div>
-                                <div class="v">
-                                    <span class="statusPill" :class="selectedNode.status === 'ACTIVE' ? 'ok' : 'off'">
-                                        {{ selectedNode.status === 'ACTIVE' ? '사용' : '중지' }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="kv__item">
-                                <div class="k">부모</div>
-                                <div class="v mono">{{ selectedNode.parentCode || '-' }}</div>
-                            </div>
-                            <div class="kv__item">
-                                <div class="k">Depth</div>
-                                <div class="v mono">{{ depthOf(selectedNode.code) }}</div>
-                            </div>
-                            <div class="kv__item">
-                                <div class="k">Leaf</div>
-                                <div class="v">
-                                    <span class="leafPill" :class="isLeaf(selectedNode.code) ? 'leaf' : 'parent'">
-                                        {{ isLeaf(selectedNode.code) ? 'Leaf' : 'Parent' }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="kv__item kv__item--full">
-                                <div class="k">설명</div>
-                                <div class="v">{{ selectedNode.description || '-' }}</div>
-                            </div>
-                        </div>
-
-                        <div class="childBox">
-                            <div class="childHead">
-                                <h3>하위 계정</h3>
-                                <span class="muted">{{ childrenOf(selectedNode.code).length }}개</span>
+                            <div class="form-group full-width mt-15">
+                                <label>상세 설명 (Description)</label>
+                                <textarea v-model="formData.memo" rows="2"
+                                    placeholder="이 계정에 어떤 내역을 기록할지 설명해 주세요."></textarea>
                             </div>
 
-                            <div class="childTable">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 140px;">코드</th>
-                                            <th>이름</th>
-                                            <th style="width: 110px;">상태</th>
-                                            <th style="width: 150px;" class="right">관리</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="c in childrenOf(selectedNode.code)" :key="c.code">
-                                            <td class="mono">{{ c.code }}</td>
-                                            <td>
-                                                <div class="rowName">{{ c.name }}</div>
-                                                <div class="rowDesc">{{ c.description || '-' }}</div>
-                                            </td>
-                                            <td>
-                                                <span class="statusPill" :class="c.status === 'ACTIVE' ? 'ok' : 'off'">
-                                                    {{ c.status === 'ACTIVE' ? '사용' : '중지' }}
-                                                </span>
-                                            </td>
-                                            <td class="right">
-                                                <button class="link" type="button" @click="openEdit(c)">수정</button>
-                                                <span class="dot">·</span>
-                                                <button class="link" type="button" @click="toggleStatus(c)">
-                                                    {{ c.status === 'ACTIVE' ? '중지' : '사용' }}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="childrenOf(selectedNode.code).length === 0">
-                                            <td colspan="4" class="emptyRow">하위 계정이 없습니다.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="checkbox-group mt-15">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" v-model="formData.finalFlag" true-value="Y" false-value="N">
+                                    <span><strong>기표가능 (final_flag)</strong> : 하위 계정이 없는 마지막 뎁스의 실제 입력용 계정입니까?</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" v-model="formData.enabledFlag" true-value="Y" false-value="N">
+                                    <span><strong>사용 활성화 (enabled_flag)</strong> : 현재 가계부에서 사용 중입니까?</span>
+                                </label>
                             </div>
-
-                            <div class="childFoot">
-                                <button class="btn btn--primary" type="button" @click="openCreate(selectedNode.code)">
-                                    + 하위 계정 추가
-                                </button>
-                            </div>
-                        </div>
+                        </form>
                     </div>
 
-                    <div class="footnote">
-                        * 운영 권장: 사용 중인 계정은 삭제 대신 “중지(비활성)”로 전환 후 히스토리 보존
-                    </div>
-            </main>
-        </section>
+                    <footer class="modal-footer">
+                        <button type="button" class="btn-secondary" @click="closeModal">취소</button>
+                        <button type="submit" form="acctForm" class="btn-primary">저장하기</button>
+                    </footer>
+                </div>
+            </div>
+        </Transition>
     </div>
-    <div class="container">
-            <!-- Modal -->
-            <div v-if="modal.open" class="modalBack" @click.self="closeModal">
-                <div class="modal">
-                    <div class="modal__head">
-                        <div>
-                            <div class="modal__title">{{ modal.mode === 'create' ? '계정 추가' : '계정 수정' }}</div>
-                            <div class="modal__sub">코드 변경은 운영상 위험하므로 수정 화면에서는 비활성 처리했습니다.</div>
-                        </div>
-                        <button class="x" type="button" @click="closeModal">×</button>
-                    </div>
-
-                    <div class="modal__body">
-                        <div class="form">
-                            <div class="field">
-                                <label>분류</label>
-                                <select v-model="modal.form.type">
-                                    <option value="ASSET">자산</option>
-                                    <option value="LIABILITY">부채</option>
-                                    <option value="EQUITY">자본</option>
-                                    <option value="INCOME">수익</option>
-                                    <option value="EXPENSE">비용</option>
-                                </select>
-                            </div>
-
-                            <div class="field">
-                                <label>상태</label>
-                                <select v-model="modal.form.status">
-                                    <option value="ACTIVE">사용</option>
-                                    <option value="INACTIVE">중지</option>
-                                </select>
-                            </div>
-
-                            <div class="field">
-                                <label>부모 코드</label>
-                                <input v-model="modal.form.parentCode" placeholder="없으면 비움" />
-                            </div>
-
-                            <div class="field">
-                                <label>정렬</label>
-                                <input v-model.number="modal.form.order" type="number" min="0" />
-                            </div>
-
-                            <div class="field">
-                                <label>계정 코드</label>
-                                <input v-model="modal.form.code" :disabled="modal.mode === 'edit'" placeholder="예: 411" />
-                            </div>
-
-                            <div class="field span2">
-                                <label>계정명</label>
-                                <input v-model="modal.form.name" placeholder="예: 삼성카드" />
-                            </div>
-
-                            <div class="field span2">
-                                <label>설명</label>
-                                <textarea v-model="modal.form.description" placeholder="선택 입력"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="preview">
-                            <div class="preview__t">미리보기</div>
-                            <div class="preview__row">
-                                <span class="k">표시</span>
-                                <span class="v">
-                                    <span class="typeTag" :class="typeClass(modal.form.type)">{{ typeLabel(modal.form.type)
-                                    }}</span>
-                                    <span class="mono">{{ modal.form.code || '-' }}</span>
-                                    {{ modal.form.name || '(이름 없음)' }}
-                                </span>
-                            </div>
-                            <div class="preview__row">
-                                <span class="k">부모</span>
-                                <span class="v mono">{{ modal.form.parentCode || '-' }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal__foot">
-                        <button class="btn btn--ghost" type="button" @click="closeModal">취소</button>
-                        <button class="btn btn--primary" type="button" @click="saveModal">
-                            {{ modal.mode === 'create' ? '추가' : '저장' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
 </template>
-  
+
 <script setup>
-import { computed, reactive, ref } from 'vue';
+    import mariaApi from '@scripts/util/mariaApi.js';
+    // tab
+    const tabs = [
+        { label: '자산', value: 'ASSET' },
+        { label: '부채', value: 'LIABILITY' },
+        { label: '자본', value: 'EQUITY' },
+        { label: '수익', value: 'REVENUE' },
+        { label: '비용', value: 'EXPENSE' }
+    ];
+    const currentTab = ref('EXPENSE');
+    const currentTabName = computed(() => tabs.find(t => t.value === currentTab.value)?.label);
 
-/** 데이터(더미) */
-const accounts = reactive([
-    { code: '100', parentCode: '', type: 'ASSET', name: '자산', description: '자산 루트', status: 'ACTIVE', order: 10 },
-    { code: '110', parentCode: '100', type: 'ASSET', name: '현금성자산', description: '', status: 'ACTIVE', order: 10 },
-    { code: '111', parentCode: '110', type: 'ASSET', name: '현금', description: '', status: 'ACTIVE', order: 10 },
-    { code: '112', parentCode: '110', type: 'ASSET', name: '입출금통장', description: '', status: 'ACTIVE', order: 20 },
+    const isModalOpen = ref(false);
 
-    { code: '200', parentCode: '', type: 'LIABILITY', name: '부채', description: '부채 루트', status: 'ACTIVE', order: 20 },
-    { code: '410', parentCode: '200', type: 'LIABILITY', name: '신용카드', description: '', status: 'ACTIVE', order: 10 },
-    { code: '411', parentCode: '410', type: 'LIABILITY', name: '삼성카드', description: '미지급금', status: 'ACTIVE', order: 10 },
-    { code: '412', parentCode: '410', type: 'LIABILITY', name: '현대카드', description: '미지급금', status: 'INACTIVE', order: 20 },
+    const accountList = ref([]);
 
-    { code: '300', parentCode: '', type: 'EQUITY', name: '자본', description: '자본 루트', status: 'ACTIVE', order: 30 },
-    { code: '400', parentCode: '', type: 'INCOME', name: '수익', description: '수익 루트', status: 'ACTIVE', order: 40 },
-    { code: '500', parentCode: '', type: 'EXPENSE', name: '비용', description: '비용 루트', status: 'ACTIVE', order: 50 },
-    { code: '510', parentCode: '500', type: 'EXPENSE', name: '식비', description: '', status: 'ACTIVE', order: 10 },
-]);
+    onMounted(async () => {
+        await getAccountList();
+    });
 
-/** UI 상태 */
-const selectedCode = ref('');
-const expanded = reactive(new Set()); // 펼친 노드 코드 Set
-
-/** 필터 */
-const filters = reactive({
-    q: '',
-    type: '',
-    status: '',
-    hideInactive: false,
-    onlyLeaf: false,
-});
-
-/** 인덱스 */
-const byCode = computed(() => {
-    const m = new Map();
-    accounts.forEach(a => m.set(a.code, a));
-    return m;
-});
-
-function childrenOf(code) {
-    return accounts
-        .filter(a => a.parentCode === code)
-        .slice()
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.code).localeCompare(String(b.code)));
-}
-
-function isLeaf(code) {
-    return childrenOf(code).length === 0;
-}
-
-function depthOf(code) {
-    let d = 1;
-    let cur = byCode.value.get(code);
-    while (cur && cur.parentCode) {
-        d += 1;
-        cur = byCode.value.get(cur.parentCode);
+    const getAccountList = async () => {
+        const searchParam = {
+            acctType: currentTab.value
+        }
+        const { data } = await mariaApi.get('/api/system-infos/acct', {params: searchParam});
+        data.forEach(d => {
+            d.isExpanded = false;
+        });
+        accountList.value = data;
     }
-    return d;
+
+    const handleTabChange = async (selectedTabValue) => {
+        currentTab.value = selectedTabValue;
+        await getAccountList();
+    }
+
+    // 계정과목 귀속 Tree 만들기
+    const buildTreeList = (list, parentId = null, depth = 0) => {
+        let result = [];
+        const children = list
+            .filter(item => item.parentAcctCd === parentId)
+            .sort((a, b) => a.sortOrder - b.sortOrder || a.acctCd.localeCompare(b.acctCd));
+
+        for (const child of children) {
+            result.push({ ...child, _depth: depth });
+            result = result.concat(buildTreeList(list, child.acctCd, depth + 1));
+        }
+        return result;
+    };
+
+    const treeList = computed(() => {
+        const filteredByType = accountList.value.filter(acct => acct.acctType === currentTab.value);
+        return buildTreeList(filteredByType, null, 0);
+    });
+
+    const initialForm = {
+        isEdit: false, 
+        acctCd: '', 
+        acctNm: '', 
+        parentAcctCd: '',
+        enabledFlag: 'Y', 
+        finalFlag: 'Y', 
+        acctType: 'EXPENSE', 
+        dcFlag: 'D',
+        memo: '',
+    };
+
+    const formData = reactive({ ...initialForm });
+
+    const toggleRow = (acctCd) => {
+        // 원본 상태인 accountList에서 대상을 찾아 값을 변경합니다.
+        const target = accountList.value.find(item => item.acctCd === acctCd);
+        if (target) {
+            target.isExpanded = !target.isExpanded;
+        }
+    };
+
+    const openModal = (data = null) => {
+        if (data) {
+            Object.assign(formData, data);
+            formData.isEdit = true;
+        } else {
+            Object.assign(formData, initialForm);
+            formData.acctType = currentTab.value;
+            formData.dcFlag = ['ASSET', 'EXPENSE'].includes(currentTab.value) ? 'D' : 'C';
+            formData.isEdit = false;
+        }
+        isModalOpen.value = true;
+    };
+
+    const closeModal = () => {
+        isModalOpen.value = false;
+    };
+
+    const saveAccountInfo = async () => {
+        let result;
+        if (formData.isEdit) {
+            result = await mariaApi.put('/api/system-infos/acct', formData);
+        } else {
+            result = await mariaApi.post('/api/system-infos/acct', formData);
+        }
+
+
+        closeModal();
+    };
+</script>
+
+<style lang="scss" scoped>
+@use '@@/__variables.scss' as *;
+
+.account-code-management {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    color: $text-main;
 }
 
-/** 필터 매칭 */
-function matchNode(a) {
-    if (filters.hideInactive && a.status === 'INACTIVE') return false;
-    if (filters.type && a.type !== filters.type) return false;
-    if (filters.status && a.status !== filters.status) return false;
-    if (filters.onlyLeaf && !isLeaf(a.code)) return false;
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 
-    const q = filters.q.trim().toLowerCase();
-    if (!q) return true;
-    const hay = `${a.code} ${a.name} ${a.description || ''}`.toLowerCase();
-    return hay.includes(q);
+    h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+    }
 }
 
-/**
- * 트리 표시를 안정적으로: flatten 방식
- * - 필터가 없으면: (root부터) expanded set 기반으로만 펼침
- * - 필터가 있으면: match 노드 + 조상 경로는 자동 포함/자동 펼침(가독성↑)
- */
-const flatTree = computed(() => {
-    const roots = accounts
-        .filter(a => !a.parentCode)
-        .slice()
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.code).localeCompare(String(b.code)));
+/* 💡 추가/수정된 부분: data-table-wrapper에 스크롤 속성 부여 */
+.data-table-wrapper {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 
-    const hasAnyFilter =
-        !!filters.q.trim() || !!filters.type || !!filters.status || filters.hideInactive || filters.onlyLeaf;
+    /* 스크롤 제어 속성 추가 */
+    max-height: 57vh;
+    overflow-y: auto;
+}
 
-    // 필터 모드: match된 노드들의 조상들을 visible로 만들기
-    const visible = new Set();
-    const forceExpand = new Set();
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
 
-    if (hasAnyFilter) {
-        for (const a of accounts) {
-            if (!matchNode(a)) continue;
-            // 조상 포함
-            let cur = a;
-            visible.add(cur.code);
-            while (cur.parentCode) {
-                visible.add(cur.parentCode);
-                forceExpand.add(cur.parentCode); // 조상은 펼쳐야 하위가 보임
-                cur = byCode.value.get(cur.parentCode);
-                if (!cur) break;
+    th {
+        background-color: $bg-main;
+        padding: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-sub;
+
+        /* 💡 추가된 부분: 테이블 헤더 고정 (Sticky) */
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        /* Sticky 상태에서 border-bottom이 잘리는 현상 방지용 */
+        box-shadow: 0 1px 0 $border-color;
+    }
+
+    td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid $border-color;
+    }
+
+    .col-code {
+        width: 90px;
+        font-family: monospace;
+    }
+
+    .col-type {
+        width: 100px;
+        text-align: center;
+    }
+
+    .col-name {
+        width: auto;
+        font-size: 15px;
+    }
+
+    .col-parent {
+        width: 90px;
+        color: $text-light;
+        font-family: monospace;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .col-drcr {
+        width: 100px;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .col-status {
+        width: 100px;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .col-action {
+        width: 90px;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .main-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: rgba($primary, 0.03);
+        }
+
+        &.is-open {
+            background-color: rgba($primary, 0.06);
+            border-bottom: none;
+
+            td {
+                border-bottom: none;
             }
         }
     }
 
-    const out = [];
-    const walk = (node, depth) => {
-        if (hasAnyFilter && !visible.has(node.code)) return;
-
-        // 필터가 없을 때도 hideInactive 적용
-        if (!hasAnyFilter && filters.hideInactive && node.status === 'INACTIVE') return;
-
-        const kids = childrenOf(node.code).filter(k => (filters.hideInactive ? k.status !== 'INACTIVE' : true));
-        const hasChildren = kids.length > 0;
-
-        out.push({
-            ...node,
-            depth,
-            hasChildren,
-        });
-
-        const open = hasAnyFilter ? forceExpand.has(node.code) : expanded.has(node.code);
-        if (hasChildren && open) kids.forEach(k => walk(k, depth + 1));
-    };
-
-    roots.forEach(r => walk(r, 0));
-    return out;
-});
-
-const selectedNode = computed(() => accounts.find(a => a.code === selectedCode.value) || null);
-
-/** 액션 */
-function select(code) {
-    selectedCode.value = code;
-
-    // 선택 시 조상 펼치기 (UX)
-    let cur = byCode.value.get(code);
-    while (cur && cur.parentCode) {
-        expanded.add(cur.parentCode);
-        cur = byCode.value.get(cur.parentCode);
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: $text-light;
     }
-}
 
-function toggle(code) {
-    if (expanded.has(code)) expanded.delete(code);
-    else expanded.add(code);
-}
+    .type-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 700;
 
-function expandAll() {
-    accounts.forEach(a => {
-        if (!isLeaf(a.code)) expanded.add(a.code);
-    });
-}
-function collapseAll() {
-    expanded.clear();
-}
+        &.group-main {
+            background-color: #e9ecef;
+            color: #495057;
+        }
 
-function resetFilters() {
-    filters.q = '';
-    filters.type = '';
-    filters.status = '';
-    filters.hideInactive = false;
-    filters.onlyLeaf = false;
-}
+        &.group-sub {
+            background-color: #f1f3f5;
+            color: #868e96;
+            border: 1px dashed #ced4da;
+        }
 
-function toggleStatus(node) {
-    node.status = node.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-}
-
-function remove(node) {
-    if (!isLeaf(node.code)) {
-        alert('하위 계정이 있어 삭제할 수 없습니다. (중지 처리 권장)');
-        return;
-    }
-    const ok = confirm(`삭제하시겠습니까?\n${node.code} ${node.name}`);
-    if (!ok) return;
-    const idx = accounts.findIndex(a => a.code === node.code);
-    if (idx >= 0) accounts.splice(idx, 1);
-    if (selectedCode.value === node.code) selectedCode.value = '';
-}
-
-function exportJson() {
-    alert('내보내기(예시): 실제 구현 시 JSON/CSV 다운로드로 연결하세요.');
-}
-
-/** 라벨 */
-function typeLabel(t) {
-    const map = { ASSET: '자산', LIABILITY: '부채', EQUITY: '자본', INCOME: '수익', EXPENSE: '비용' };
-    return map[t] || t;
-}
-function typeClass(t) {
-    const map = {
-        ASSET: 't-asset',
-        LIABILITY: 't-liab',
-        EQUITY: 't-eq',
-        INCOME: 't-inc',
-        EXPENSE: 't-exp',
-    };
-    return map[t] || '';
-}
-
-/** Modal */
-const modal = reactive({
-    open: false,
-    mode: 'create', // create | edit
-    editingCode: '',
-    form: {
-        code: '',
-        parentCode: '',
-        type: 'ASSET',
-        name: '',
-        description: '',
-        status: 'ACTIVE',
-        order: 10,
-    }
-});
-
-function openCreate(parentCode = '') {
-    modal.open = true;
-    modal.mode = 'create';
-    modal.editingCode = '';
-    modal.form.code = '';
-    modal.form.parentCode = parentCode || '';
-    modal.form.type = parentCode ? (byCode.value.get(parentCode)?.type || 'ASSET') : 'ASSET';
-    modal.form.name = '';
-    modal.form.description = '';
-    modal.form.status = 'ACTIVE';
-    modal.form.order = 10;
-
-    if (parentCode) expanded.add(parentCode);
-}
-
-function openEdit(node) {
-    modal.open = true;
-    modal.mode = 'edit';
-    modal.editingCode = node.code;
-    modal.form.code = node.code;
-    modal.form.parentCode = node.parentCode || '';
-    modal.form.type = node.type;
-    modal.form.name = node.name;
-    modal.form.description = node.description || '';
-    modal.form.status = node.status;
-    modal.form.order = node.order ?? 0;
-}
-
-function closeModal() {
-    modal.open = false;
-}
-
-function saveModal() {
-    const code = modal.form.code.trim();
-    const name = modal.form.name.trim();
-    const parentCode = modal.form.parentCode.trim();
-
-    if (!code) return alert('계정 코드를 입력하세요.');
-    if (!name) return alert('계정명을 입력하세요.');
-
-    if (parentCode) {
-        const parent = byCode.value.get(parentCode);
-        if (!parent) return alert('부모 코드가 존재하지 않습니다.');
-        if (parent.type !== modal.form.type) {
-            return alert('부모 계정과 분류(Type)가 달라질 수 없습니다. (부모 Type을 따르세요)');
+        &.final {
+            background-color: #e6fcf5;
+            color: #0ca678;
         }
     }
 
-    if (modal.mode === 'create') {
-        if (byCode.value.get(code)) return alert('이미 존재하는 코드입니다.');
-        accounts.push({
-            code,
-            parentCode,
-            type: modal.form.type,
-            name,
-            description: modal.form.description.trim(),
-            status: modal.form.status,
-            order: Number(modal.form.order || 0)
-        });
-        if (parentCode) expanded.add(parentCode);
-        select(code);
-    } else {
-        const idx = accounts.findIndex(a => a.code === modal.editingCode);
-        if (idx < 0) return alert('대상을 찾을 수 없습니다.');
-        // code/parent 변경 제한(권장)
-        accounts[idx].type = modal.form.type;
-        accounts[idx].name = name;
-        accounts[idx].description = modal.form.description.trim();
-        accounts[idx].status = modal.form.status;
-        accounts[idx].order = Number(modal.form.order || 0);
-        select(accounts[idx].code);
+    .tree-line {
+        margin-right: 8px;
+        font-family: monospace;
     }
 
-    modal.open = false;
+    .font-bold {
+        font-weight: 700;
+    }
+
+    .drcr-text {
+        font-size: 13px;
+        color: $text-sub;
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+
+        &.on {
+            background-color: #2b8a3e;
+        }
+
+        &.off {
+            background-color: #e03131;
+        }
+    }
+
+    .detail-row {
+        background-color: #fafbfc;
+
+        .detail-cell {
+            padding: 0;
+        }
+
+        .detail-wrapper {
+            padding: 24px;
+            border-left: 4px solid $primary;
+            animation: slideDown 0.3s forwards;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            .label {
+                font-size: 13px;
+                color: $text-light;
+                font-weight: 500;
+            }
+
+            .value {
+                font-size: 15px;
+                color: $text-main;
+            }
+
+            &.full-width {
+                grid-column: 1 / -1;
+                border-top: 1px dashed $border-color;
+                padding-top: 16px;
+                margin-top: 4px;
+            }
+        }
+    }
 }
-</script>
-  
-<style lang="scss" src="@@/system/systemAcctcd.scss" />
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-container {
+    background-color: $bg-white;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid $border-color;
+
+    h4 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        font-size: 28px;
+        line-height: 1;
+        color: $text-light;
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &:hover {
+            color: $text-main;
+        }
+    }
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid $border-color;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background-color: $bg-main;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &.full-width {
+        grid-column: 1 / -1;
+    }
+
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-main;
+
+        .required {
+            color: #e03131;
+            margin-left: 2px;
+        }
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px;
+        font-size: 15px;
+        border: 1px solid $border-color;
+        border-radius: 8px;
+        background-color: $bg-white;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+
+        &:focus {
+            outline: none;
+            border-color: $primary;
+            box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+
+        &:disabled {
+            background-color: #f1f3f5;
+            cursor: not-allowed;
+            color: #868e96;
+        }
+
+        &::placeholder {
+            color: $text-light;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+    }
+}
+
+.mt-15 {
+    margin-top: 15px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background-color: #f8fbff;
+    border: 1px solid #d0ebff;
+    border-radius: 8px;
+
+    .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 14px;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            accent-color: $primary;
+            cursor: pointer;
+        }
+
+        span {
+            line-height: 1.4;
+
+            strong {
+                font-weight: 600;
+                color: #333;
+            }
+
+            color: #555;
+        }
+    }
+}
+
+.btn-primary {
+    background-color: $primary;
+    color: $bg-white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: $primary-hover;
+    }
+}
+
+.btn-secondary {
+    background-color: $bg-white;
+    color: $text-sub;
+    border: 1px solid $border-color;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: $bg-main;
+    }
+}
+
+.btn-edit-sm {
+    background-color: $bg-white;
+    color: $text-sub;
+    border: 1px solid $border-color;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: $primary;
+        color: $bg-white;
+        border-color: $primary;
+    }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}</style>

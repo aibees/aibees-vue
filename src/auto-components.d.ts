@@ -11,10 +11,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AConfirm: typeof import('./components/common/AConfirm.vue')['default']
     AFooter: typeof import('./components/common/AFooter.vue')['default']
     AGnb: typeof import('./components/common/AGnb.vue')['default']
     AHeader: typeof import('./components/common/AHeader.vue')['default']
     ALnb: typeof import('./components/common/ALnb.vue')['default']
+    AToast: typeof import('./components/common/AToast.vue')['default']
     LodingView: typeof import('./components/common/LodingView.vue')['default']
     MAutoSearch: typeof import('./components/common/comp/MAutoSearch.vue')['default']
     MButton: typeof import('./components/common/comp/MButton.vue')['default']
@@ -22,6 +24,7 @@ declare module 'vue' {
     MLabelInput: typeof import('./components/common/comp/MLabelInput.vue')['default']
     MLabelSelect: typeof import('./components/common/comp/MLabelSelect.vue')['default']
     MMultiSelect: typeof import('./components/common/comp/MMultiSelect.vue')['default']
+    MNav: typeof import('./components/common/comp/MNav.vue')['default']
     MSelect: typeof import('./components/common/comp/MSelect.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

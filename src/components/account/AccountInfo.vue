@@ -1,904 +1,734 @@
 <template>
-    <div class="lnb-content system-pay-method-manage">
-        <section class="main-section">
-            <!-- LEFT : List Panel -->
-            <aside class="panel list-panel">
-                <div class="panel-header">
-                    <h2>결제수단 목록</h2>
-                    <span class="badge">{{ activeTab === 'account' ? 'Account' : 'Card' }}</span>
-                </div>
+    <div class="account-management">
+        <MNav :tabs="tabs" v-model="currentTab" />
 
-                <div class="tab">
-                    <button class="tab-btn" :class="{ on: activeTab === 'account' }"
-                        @click="switchTab('account')">계좌</button>
-                    <button class="tab-btn" :class="{ on: activeTab === 'card' }" @click="switchTab('card')">카드</button>
-                </div>
+        <section class="content-container">
+            <div class="action-bar">
+                <h3>{{ currentTab === 'BANK' ? '계좌 목록' : '카드 목록' }}</h3>
+                <button class="btn-primary" @click.stop="openModal()">+ 신규 등록</button>
+            </div>
 
-                <div class="search">
-                    <input v-model="keyword" :placeholder="activeTab === 'account' ? '은행/별칭 검색' : '카드명/번호 검색'" />
-                    <button class="btn btn--primary" @click="noop">검색</button>
-                </div>
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="col-badge">주계좌</th>
+                            <th class="col-name">은행/명칭</th>
+                            <th class="col-account">계좌번호</th>
+                            <th class="col-type">용도</th>
+                            <th class="col-status">상태</th>
+                            <th class="col-action">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template v-for="(bank, index) in bankList" :key="bank.bankId">
+                            <tr class="main-row" :class="{ 'is-open': bank.isExpanded }" @click="toggleRow(index)">
+                                <td class="col-badge">
+                                    <span v-if="bank.mainFlag === 'Y'" class="badge-main">주</span>
+                                </td>
+                                <td class="col-name">
+                                    <div class="bank-info-cell">
+                                        <span class="bank-nm">{{ bank.bankNm }}</span>
+                                        <span class="bank-alias">{{ bank.alias }}</span>
+                                    </div>
+                                </td>
+                                <td class="col-account">{{ bank.bankAcct }}</td>
+                                <td class="col-type"><span class="type-tag">{{ bank.bankType }}</span></td>
+                                <td class="col-status">
+                                    <span :class="['status-dot', bank.enabledFlag === 'Y' ? 'on' : 'off']"></span>
+                                    {{ bank.enabledFlag === 'Y' ? '사용중' : '중지' }}
+                                </td>
+                                <td class="col-action">
+                                    <button class="btn-edit-sm" @click.stop="openModal(bank)">수정</button>
+                                </td>
+                            </tr>
 
-                <div class="list-actions">
-                    <button class="btn btn--ghost w-full" @click="openCreate">
-                        + {{ activeTab === 'account' ? '계좌 추가' : '카드 추가' }}
-                    </button>
-                </div>
-
-                <ul class="item-list">
-                    <li v-for="it in filteredItems" :key="it.id" :class="{ active: selected?.id === it.id }"
-                        @click="selectItem(it)">
-                        <div class="name">{{ it.displayName }}</div>
-                        <div class="desc">{{ it.subText }}</div>
-                        <div class="meta">
-                            <span class="pill">{{ it.unitLabel }}</span>
-                            <span class="status" :class="it.active ? 'on' : 'off'">{{ it.active ? '사용' : '중지' }}</span>
-                        </div>
-                    </li>
-
-                    <li v-if="filteredItems.length === 0" class="empty-li">
-                        검색 결과가 없습니다.
-                    </li>
-                </ul>
-            </aside>
-
-            <!-- RIGHT : Detail Panel -->
-            <main class="panel detail-panel">
-                <div class="panel-header">
-                    <div>
-                        <h2>{{ headerTitle }}</h2>
-                        <div class="panel-sub">{{ headerSub }}</div>
-                    </div>
-
-                    <div class="panel-actions">
-                        <button class="btn btn--ghost" @click="openCreate">신규</button>
-                        <button class="btn btn--primary" @click="save">저장</button>
-                    </div>
-                </div>
-
-                <div v-if="!selected" class="empty-state">
-                    좌측에서 항목을 선택하거나 “신규”로 추가하세요.
-                </div>
-
-                <div v-else class="detail-body">
-                    <!-- Common fields -->
-                    <div class="form-grid">
-                        <div class="field">
-                            <label>가계 단위</label>
-                            <select v-model="form.unit">
-                                <option value="joint">공동</option>
-                                <option value="me">본인</option>
-                                <option value="spouse">배우자</option>
-                            </select>
-                        </div>
-
-                        <div class="field">
-                            <label>상태</label>
-                            <select v-model="form.active">
-                                <option :value="true">사용</option>
-                                <option :value="false">중지</option>
-                            </select>
-                        </div>
-
-                        <div class="field field--full">
-                            <label>표시명(별칭)</label>
-                            <input v-model="form.alias" placeholder="예: 월급통장, 생활비카드" />
-                            <div class="help">좌측 목록에 표시되는 이름입니다.</div>
-                        </div>
-
-                        <!-- Account fields -->
-                        <template v-if="activeTab === 'account'">
-                            <div class="field">
-                                <label>은행</label>
-                                <input v-model="form.bankName" placeholder="예: 국민은행, 신한은행" />
-                            </div>
-
-                            <div class="field">
-                                <label>계좌번호(마스킹 표시)</label>
-                                <input v-model="form.accountNo" placeholder="예: 123-****-****-45" />
-                                <div class="help">실서비스에서는 저장 시 암호화/토큰화를 권장합니다.</div>
-                            </div>
-
-                            <div class="field">
-                                <label>연결 계정과목</label>
-                                <select v-model="form.accountCode">
-                                    <option value="">선택</option>
-                                    <option v-for="a in accountOptions" :key="a.code" :value="a.code">
-                                        {{ a.code }} {{ a.name }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="field">
-                                <label>기본 계좌</label>
-                                <select v-model="form.isDefault">
-                                    <option :value="false">아니오</option>
-                                    <option :value="true">예</option>
-                                </select>
-                            </div>
-
-                            <div class="field field--full">
-                                <label>메모</label>
-                                <textarea v-model="form.memo" placeholder="예: 생활비 이체, 공과금 자동이체"></textarea>
-                            </div>
+                            <tr v-if="bank.isExpanded" class="detail-row">
+                                <td colspan="6" class="detail-cell">
+                                    <div class="detail-wrapper">
+                                        <div class="detail-grid">
+                                            <div class="detail-item">
+                                                <span class="label">사용 한도:</span>
+                                                <span class="value">{{ bank.limitAmt ? bank.limitAmt.toLocaleString() + '원'
+                                                    : '무제한' }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="label">시작일자:</span>
+                                                <span class="value">{{ bank.startDate || '-' }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="label">연결계정:</span>
+                                                <span class="value">{{ bank.acctCd || '-' }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="label">가계단위:</span>
+                                                <span class="value">{{ bank.householdType || '-' }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="label">엑셀업로드:</span>
+                                                <span class="value">{{ bank.excelableFlag === 'Y' ? '가능' : '불가' }}</span>
+                                            </div>
+                                            <div class="detail-item full-width">
+                                                <span class="label">메모:</span>
+                                                <span class="value">{{ bank.memo || '등록된 메모가 없습니다.' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
                         </template>
-
-                        <!-- Card fields -->
-                        <template v-else>
-                            <div class="field">
-                                <label>카드사</label>
-                                <input v-model="form.cardCompany" placeholder="예: 삼성, 현대, 신한" />
-                            </div>
-
-                            <div class="field">
-                                <label>카드번호(마스킹)</label>
-                                <input v-model="form.cardNoMasked" placeholder="예: ****-****-****-1234" />
-                                <div class="help">원본 카드번호는 저장하지 않는 것을 권장합니다(토큰/끝4자리만).</div>
-                            </div>
-
-                            <div class="field">
-                                <label>결제일(일)</label>
-                                <input type="number" min="1" max="31" v-model.number="form.payDay" />
-                            </div>
-
-                            <div class="field">
-                                <label>연결 미지급금 계정</label>
-                                <select v-model="form.payableAccountCode">
-                                    <option value="">선택</option>
-                                    <option v-for="a in payableOptions" :key="a.code" :value="a.code">
-                                        {{ a.code }} {{ a.name }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="field field--full">
-                                <label>기본 라인적요(카드 사용 시)</label>
-                                <input v-model="form.memoTpl" placeholder="예: {월} 카드사용({카드명})" />
-                            </div>
-
-                            <div class="field field--full">
-                                <label>메모</label>
-                                <textarea v-model="form.memo" placeholder="예: 생활비 카드, 구독 결제용"></textarea>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Bottom Preview Panel -->
-                    <div class="preview-panel">
-                        <div class="preview-head">
-                            <div>
-                                <div class="preview-title">설정 요약</div>
-                                <div class="preview-sub">현재 입력값 기준 미리보기입니다.</div>
-                            </div>
-                            <span class="badge">Preview</span>
-                        </div>
-
-                        <div class="preview-body">
-                            <div class="kv">
-                                <span class="k">가계 단위</span>
-                                <span class="v">{{ unitLabel(form.unit) }}</span>
-                            </div>
-                            <div class="kv">
-                                <span class="k">상태</span>
-                                <span class="v">
-                                    <span class="status-pill" :class="form.active ? 'on' : 'off'">
-                                        {{ form.active ? '사용' : '중지' }}
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="kv">
-                                <span class="k">표시명</span>
-                                <span class="v mono">{{ form.alias || '-' }}</span>
-                            </div>
-
-                            <template v-if="activeTab === 'account'">
-                                <div class="kv">
-                                    <span class="k">은행/계좌</span>
-                                    <span class="v mono">{{ (form.bankName || '-') }} / {{ (form.accountNo || '-') }}</span>
-                                </div>
-                                <div class="kv">
-                                    <span class="k">계정과목</span>
-                                    <span class="v mono">{{ form.accountCode || '-' }}</span>
-                                </div>
-                                <div class="kv">
-                                    <span class="k">기본 계좌</span>
-                                    <span class="v">{{ form.isDefault ? '예' : '아니오' }}</span>
-                                </div>
-                            </template>
-
-                            <template v-else>
-                                <div class="kv">
-                                    <span class="k">카드</span>
-                                    <span class="v mono">{{ (form.cardCompany || '-') }} / {{ (form.cardNoMasked || '-')
-                                    }}</span>
-                                </div>
-                                <div class="kv">
-                                    <span class="k">결제일</span>
-                                    <span class="v mono">{{ form.payDay ? `${form.payDay}일` : '-' }}</span>
-                                </div>
-                                <div class="kv">
-                                    <span class="k">미지급금</span>
-                                    <span class="v mono">{{ form.payableAccountCode || '-' }}</span>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="danger-zone">
-                        <button class="btn btn--danger" type="button" @click="remove">
-                            삭제
-                        </button>
-                        <div class="danger-hint">
-                            * 실서비스에서는 “삭제” 대신 비활성(중지) 처리를 권장합니다.
-                        </div>
-                    </div>
-                </div>
-            </main>
+                    </tbody>
+                </table>
+            </div>
         </section>
+
+        <Transition name="fade">
+            <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
+                <div class="modal-container">
+                    <header class="modal-header">
+                        <h4>{{ formData.bankId ? '계좌 정보 수정' : '신규 계좌 등록' }}</h4>
+                        <button class="btn-close" @click="closeModal">&times;</button>
+                    </header>
+
+                    <div class="modal-body">
+                        <form id="bankForm" @submit.prevent="saveBankInfo">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label>별명 (Alias)</label>
+                                    <input type="text" v-model="formData.alias" placeholder="예: 생활비 통장">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>계좌 명 <span class="required">*</span></label>
+                                    <input type="text" v-model="formData.bankNm" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>귀속은행코드</label>
+                                    <input type="text" v-model="formData.bankCd" placeholder="003">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>계좌번호 <span class="required">*</span></label>
+                                    <input type="text" v-model="formData.bankAcct" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>사용용도</label>
+                                    <select v-model="formData.bankType">
+                                        <option value="입출금">입출금</option>
+                                        <option value="예적금">예적금</option>
+                                        <option value="투자">투자</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>사용 한도</label>
+                                    <input type="number" v-model="formData.limitAmt" placeholder="비워두면 무제한">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>시작일자</label>
+                                    <input type="date" v-model="formData.startDate">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>연결계정 (acctCd)</label>
+                                    <input type="text" v-model="formData.acctCd">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>가계단위</label>
+                                    <input type="text" v-model="formData.householdType">
+                                </div>
+                            </div>
+
+                            <div class="form-group full-width mt-15">
+                                <label>메모</label>
+                                <textarea v-model="formData.memo" rows="3" placeholder="추가적인 메모를 입력하세요"></textarea>
+                            </div>
+
+                            <div class="checkbox-group mt-15">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" v-model="formData.mainFlag" true-value="Y" false-value="N">
+                                    <span>주계좌 설정</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" v-model="formData.enabledFlag" true-value="Y" false-value="N">
+                                    <span>사용 활성화</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" v-model="formData.excelableFlag" true-value="Y" false-value="N">
+                                    <span>엑셀 업로드 허용</span>
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+
+                    <footer class="modal-footer">
+                        <button type="button" class="btn-secondary" @click="closeModal">취소</button>
+                        <button type="submit" form="bankForm" class="btn-primary">저장하기</button>
+                    </footer>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>
 
 <script setup>
-    import mariaApi from '@scripts/util/mariaApi.js';
-const activeTab = ref('account'); // account | card
-const keyword = ref('');
+import { ref, reactive } from 'vue';
 
-const accountOptions = [
-    { code: '210', name: '보통예금' },
-    { code: '211', name: '적금' },
-    { code: '111', name: '현금' },
-];
+const currentTab = ref('BANK');
+const isModalOpen = ref(false);
 
-const payableOptions = [
-    { code: '410', name: '신용카드' },
-    { code: '411', name: '삼성카드 미지급금' },
-    { code: '412', name: '현대카드 미지급금' },
-];
+const tabs = [
+    { label: '은행계좌관리', value: 'BANK' },
+    { label: '카드관리', value: 'CARD' },
+    ]
 
-onMounted(async () => {
-    await getBankAccountList();
-});
-
-const getBankAccountList = async () => {
-    const { data } = await mariaApi.get('/api/account/info/bank-accounts');
-    console.log(data);
-}
-
-const accounts = reactive([
+const bankList = ref([
     {
-        id: 1, unit: 'joint', active: true,
-        alias: '생활비통장', bankName: '국민은행', accountNo: '123-****-****-45',
-        accountCode: '210', isDefault: true, memo: '공과금 자동이체'
+        bankId: 'BK001', bankAcct: '110-123-456789', bankCd: '088', bankNm: '신한마이홈',
+        bankType: '입출금', limitAmt: null, startDate: '2023-01-01', enabledFlag: 'Y',
+        displayFlag: 'Y', excelableFlag: 'Y', mainFlag: 'Y', alias: '월급통장',
+        memo: '급여 이체 및 공과금 자동이체 전용 계좌', acctCd: '101', householdType: '공통',
+        isExpanded: false
     },
     {
-        id: 2, unit: 'me', active: true,
-        alias: '월급통장', bankName: '신한은행', accountNo: '777-****-****-01',
-        accountCode: '210', isDefault: false, memo: ''
-    },
+        bankId: 'BK002', bankAcct: '3333-01-02030', bankCd: '090', bankNm: '카카오뱅크',
+        bankType: '예적금', limitAmt: 50000000, startDate: '2024-05-15', enabledFlag: 'Y',
+        displayFlag: 'Y', excelableFlag: 'N', mainFlag: 'N', alias: '비상금',
+        memo: '경조사비 및 비상시 사용 목적', acctCd: '202', householdType: '개인',
+        isExpanded: false
+    }
 ]);
 
-const cards = reactive([
-    {
-        id: 101, unit: 'joint', active: true,
-        alias: '생활비카드', cardCompany: '삼성',
-        cardNoMasked: '****-****-****-1234',
-        payDay: 14, payableAccountCode: '411',
-        memoTpl: '{월} 카드사용(삼성)', memo: ''
-    },
-    {
-        id: 102, unit: 'me', active: true,
-        alias: '교통카드', cardCompany: '현대',
-        cardNoMasked: '****-****-****-7788',
-        payDay: 25, payableAccountCode: '412',
-        memoTpl: '{월} 카드사용(현대)', memo: '대중교통 전용'
-    },
-]);
+const initialForm = {
+    bankId: null, bankAcct: '', bankCd: '', bankNm: '', bankType: '입출금',
+    limitAmt: null, startDate: new Date().toISOString().substr(0, 10),
+    enabledFlag: 'Y', displayFlag: 'Y', excelableFlag: 'Y', mainFlag: 'N',
+    alias: '', memo: '', acctCd: '', householdType: ''
+};
 
-const selected = ref(null);
+const formData = reactive({ ...initialForm });
 
-const form = reactive({
-    id: null,
-    unit: 'joint',
-    active: true,
-    alias: '',
-    // account
-    bankName: '',
-    accountNo: '',
-    accountCode: '',
-    isDefault: false,
-    // card
-    cardCompany: '',
-    cardNoMasked: '',
-    payDay: null,
-    payableAccountCode: '',
-    memoTpl: '',
-    memo: '',
-});
+const toggleRow = (index) => {
+    bankList.value[index].isExpanded = !bankList.value[index].isExpanded;
+};
 
-const items = computed(() => (activeTab.value === 'account' ? accounts : cards));
-
-const filteredItems = computed(() => {
-    const q = keyword.value.trim().toLowerCase();
-    const list = items.value.map(x => ({
-        ...x,
-        displayName: x.alias || (activeTab.value === 'account' ? x.bankName : x.cardCompany) || '(이름없음)',
-        subText: activeTab.value === 'account'
-            ? `${x.bankName || '-'} · ${x.accountNo || '-'}`
-            : `${x.cardCompany || '-'} · ${x.cardNoMasked || '-'}`,
-        unitLabel: unitLabel(x.unit),
-    }));
-
-    if (!q) return list;
-
-    return list.filter(x => {
-        const hay = `${x.displayName} ${x.subText}`.toLowerCase();
-        return hay.includes(q);
-    });
-});
-
-const headerTitle = computed(() => {
-    if (!selected.value) return activeTab.value === 'account' ? '계좌 상세' : '카드 상세';
-    return activeTab.value === 'account'
-        ? `계좌: ${selected.value.alias || selected.value.bankName || ''}`
-        : `카드: ${selected.value.alias || selected.value.cardCompany || ''}`;
-});
-
-const headerSub = computed(() => {
-    return activeTab.value === 'account'
-        ? '은행/계좌번호(마스킹), 계정과목 매핑, 기본계좌를 관리합니다.'
-        : '카드번호(마스킹), 결제일, 미지급금 계정 매핑을 관리합니다.';
-});
-
-function unitLabel(u) {
-    return u === 'joint' ? '공동' : u === 'me' ? '본인' : '배우자';
-}
-
-function switchTab(tab) {
-    if (activeTab.value === tab) return;
-    activeTab.value = tab;
-    keyword.value = '';
-    selected.value = null;
-    resetForm();
-}
-
-function selectItem(it) {
-    // it는 computed에서 displayName/subText가 붙어있으니 원본 찾아서 바인딩
-    const src = items.value.find(x => x.id === it.id);
-    selected.value = src;
-    fillForm(src);
-}
-
-function openCreate() {
-    selected.value = { id: null }; // 신규 표시용
-    resetForm();
-}
-
-function fillForm(src) {
-    resetForm();
-    form.id = src.id;
-    form.unit = src.unit;
-    form.active = src.active;
-    form.alias = src.alias || '';
-    form.memo = src.memo || '';
-
-    if (activeTab.value === 'account') {
-        form.bankName = src.bankName || '';
-        form.accountNo = src.accountNo || '';
-        form.accountCode = src.accountCode || '';
-        form.isDefault = !!src.isDefault;
+const openModal = (data = null) => {
+    if (data) {
+        Object.assign(formData, data);
     } else {
-        form.cardCompany = src.cardCompany || '';
-        form.cardNoMasked = src.cardNoMasked || '';
-        form.payDay = src.payDay || null;
-        form.payableAccountCode = src.payableAccountCode || '';
-        form.memoTpl = src.memoTpl || '';
+        Object.assign(formData, initialForm);
     }
-}
+    isModalOpen.value = true;
+};
 
-function resetForm() {
-    form.id = null;
-    form.unit = 'joint';
-    form.active = true;
-    form.alias = '';
-    form.bankName = '';
-    form.accountNo = '';
-    form.accountCode = '';
-    form.isDefault = false;
-    form.cardCompany = '';
-    form.cardNoMasked = '';
-    form.payDay = null;
-    form.payableAccountCode = '';
-    form.memoTpl = '';
-    form.memo = '';
-}
+const closeModal = () => {
+    isModalOpen.value = false;
+};
 
-function save() {
-    if (!form.alias.trim()) return alert('표시명(별칭)을 입력하세요.');
-
-    if (activeTab.value === 'account') {
-        if (!form.bankName.trim()) return alert('은행을 입력하세요.');
-        if (!form.accountCode) return alert('연결 계정과목을 선택하세요.');
-    } else {
-        if (!form.cardCompany.trim()) return alert('카드사를 입력하세요.');
-        if (form.payDay && (form.payDay < 1 || form.payDay > 31)) return alert('결제일(1~31)을 확인하세요.');
-        if (!form.payableAccountCode) return alert('연결 미지급금 계정을 선택하세요.');
-    }
-
-    const target = activeTab.value === 'account' ? accounts : cards;
-
-    if (!form.id) {
-        const newId = Date.now();
-        const obj = buildPayload(newId);
-        target.unshift(obj);
-        selected.value = obj;
-    } else {
-        const idx = target.findIndex(x => x.id === form.id);
-        if (idx < 0) return alert('대상을 찾을 수 없습니다.');
-        target[idx] = { ...target[idx], ...buildPayload(form.id) };
-        selected.value = target[idx];
-    }
-
-    alert('저장(예시)');
-}
-
-function buildPayload(id) {
-    if (activeTab.value === 'account') {
-        return {
-            id,
-            unit: form.unit,
-            active: !!form.active,
-            alias: form.alias.trim(),
-            bankName: form.bankName.trim(),
-            accountNo: form.accountNo.trim(),
-            accountCode: form.accountCode,
-            isDefault: !!form.isDefault,
-            memo: form.memo.trim(),
-        };
-    }
-
-    return {
-        id,
-        unit: form.unit,
-        active: !!form.active,
-        alias: form.alias.trim(),
-        cardCompany: form.cardCompany.trim(),
-        cardNoMasked: form.cardNoMasked.trim(),
-        payDay: form.payDay ? Number(form.payDay) : null,
-        payableAccountCode: form.payableAccountCode,
-        memoTpl: form.memoTpl.trim(),
-        memo: form.memo.trim(),
-    };
-}
-
-function remove() {
-    if (!selected.value || !selected.value.id) return alert('삭제할 항목을 선택하세요.');
-    const target = activeTab.value === 'account' ? accounts : cards;
-    const idx = target.findIndex(x => x.id === selected.value.id);
-    if (idx < 0) return;
-
-    target.splice(idx, 1);
-    selected.value = null;
-    resetForm();
-    alert('삭제(예시)');
-}
-
-function noop() { }
+const saveBankInfo = () => {
+    console.log('Saved:', formData);
+    alert('저장되었습니다.');
+    closeModal();
+};
 </script>
-  
+
 <style lang="scss" scoped>
-@use '@@/__variables.scss' as *;
-@use '@@/common.scss' as *;
+/* =======================================
+   Variables & Mixins
+======================================= */
+$primary: #4a90e2;
+$primary-hover: #357abd;
+$text-main: #333333;
+$text-sub: #666666;
+$text-light: #999999;
+$bg-main: #f8f9fa;
+$bg-white: #ffffff;
+$border-color: #e9ecef;
+$border-focus: #b3d4fc;
 
-.system-pay-method-manage {
-    background: #f5f6fa;
+/* =======================================
+   Layout & Typography
+======================================= */
+.account-management {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    color: $text-main;
+}
 
-    /* ===== 공통 패널/배지/버튼 ===== */
-    .panel {
-        background: #ffffff;
-        border-radius: 8px;
-        border: 2px solid #c6beb080;
-        padding: 10px 20px 12px;
-        box-shadow: 0 8px 20px #2a210f0f;
-        margin: 12px; // 기본은 모바일/태블릿 기준으로 약간 컴팩트
-    }
+/* =======================================
+   Tab Menu
+======================================= */
+.tab-menu {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    border-bottom: 2px solid $border-color;
 
-    .badge {
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: #e4ebff;
-        color: #3848c7;
-        font-weight: 700;
-    }
-
-    .pill {
-        font-size: 0.72rem;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: #eef2ff;
-        color: #3730a3;
-        border: 1px solid #c7d2fe;
-        font-weight: 800;
-    }
-
-    .btn {
-        border-radius: 999px;
+    button {
+        padding: 12px 24px;
+        background: transparent;
         border: none;
-        padding: 8px 14px;
-        font-size: 0.85rem;
+        font-size: 16px;
+        color: $text-sub;
         cursor: pointer;
-        font-weight: 700;
+        position: relative;
+        transition: color 0.2s ease;
 
-        &--primary {
-            background: #4b74ff;
-            color: #ffffff;
+        &:hover {
+            color: $primary;
         }
 
-        &--ghost {
-            background: #ffffff;
-            color: #4b5563;
-            border: 1px solid #d1d5db;
-        }
+        &.active {
+            color: $primary;
+            font-weight: 700;
 
-        &--danger {
-            background: #b91c1c;
-            color: #ffffff;
-        }
-    }
-
-    .panel-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: center;
-        margin: 8px 0;
-
-        h2 {
-            text-align: start;
-            font-size: 1rem;
-            margin: 0 0 3px;
-            font-weight: 900;
-            color: #111827;
-        }
-
-        .panel-sub {
-            margin: 0;
-            font-size: 0.78rem;
-            color: #6b7280;
-        }
-    }
-
-    /* ===== Layout =====
-     - 기본(<1200): block(세로 스택)
-     - web(>=1200): flex(좌/우) */
-    .main-section {
-        display: block;
-    }
-
-    /* ===== LEFT: List Panel ===== */
-    .list-panel {
-        width: auto;
-        min-width: 0;
-
-        .tab {
-            display: flex;
-            gap: 8px;
-            padding: 6px 0 10px;
-
-            .tab-btn {
-                flex: 1;
-                border-radius: 999px;
-                border: 1px solid #d1d5db;
-                padding: 8px 10px;
-                background: #ffffff;
-                font-weight: 800;
-                cursor: pointer;
-
-                &.on {
-                    background: #edf2ff;
-                    border-color: #c7d2fe;
-                    color: #1d3a8a;
-                }
-            }
-        }
-
-        .search {
-            display: flex;
-            gap: 8px;
-            padding: 0 0 10px;
-
-            input {
-                flex: 1;
-                padding: 8px 10px;
-                border-radius: 10px;
-                border: 1px solid #d1d5db;
-                outline: none;
-                background: #ffffff;
-
-                &:focus {
-                    border-color: #4b74ff;
-                    box-shadow: 0 0 0 2px rgba(75, 116, 255, 0.14);
-                }
-            }
-        }
-
-        .list-actions {
-            padding-bottom: 10px;
-
-            .w-full {
+            &::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
                 width: 100%;
-            }
-        }
-
-        .item-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            border-top: 1px solid #f1f5f9;
-
-            li {
-                padding: 10px 14px;
-                cursor: pointer;
-                border-bottom: 1px solid #f1f5f9;
-
-                &.active {
-                    background: #eef2ff;
-                }
-
-                .name {
-                    font-weight: 900;
-                    color: #111827;
-                }
-
-                .desc {
-                    padding-top: 5px;
-                    font-size: 0.8rem;
-                    color: #6b7280;
-                }
-
-                .meta {
-                    margin-top: 6px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 0.75rem;
-
-                    .status {
-                        font-weight: 900;
-
-                        &.on {
-                            color: #15803d;
-                        }
-
-                        &.off {
-                            color: #b91c1c;
-                        }
-                    }
-                }
-            }
-
-            .empty-li {
-                padding: 16px 14px;
-                color: #9ca3af;
-                text-align: center;
-                border-bottom: 1px solid #f1f5f9;
-            }
-        }
-    }
-
-    /* ===== RIGHT: Detail Panel ===== */
-    .detail-panel {
-        width: auto;
-
-        .panel-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .empty-state {
-            margin-top: 18px;
-            padding: 18px;
-            border: 1px dashed #d1d5db;
-            border-radius: 10px;
-            color: #9ca3af;
-            text-align: center;
-        }
-
-        .detail-body {
-            margin-top: 10px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr; // 기본은 1열(모바일/태블릿)
-            gap: 10px;
-
-            .field {
-                display: flex;
-                flex-direction: column;
-
-                &--full {
-                    grid-column: 1 / -1;
-                }
-
-                label {
-                    font-size: 0.8rem;
-                    margin-bottom: 4px;
-                    color: #4b5563;
-                    font-weight: 700;
-                }
-
-                input,
-                select,
-                textarea {
-                    border-radius: 10px;
-                    border: 1px solid #d1d5db;
-                    padding: 9px 10px;
-                    font-size: 0.92rem;
-                    outline: none;
-                    background: #ffffff;
-
-                    &:focus {
-                        border-color: #4b74ff;
-                        box-shadow: 0 0 0 2px rgba(75, 116, 255, 0.14);
-                    }
-                }
-
-                textarea {
-                    min-height: 92px;
-                    resize: vertical;
-                }
-
-                .help {
-                    margin-top: 4px;
-                    font-size: 0.75rem;
-                    color: #9ca3af;
-                }
-            }
-        }
-
-        .preview-panel {
-            margin-top: 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            background: #f9fafb;
-            overflow: hidden;
-
-            .preview-head {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 12px;
-                border-bottom: 1px solid #e5e7eb;
-                background: #ffffff;
-
-                .preview-title {
-                    font-weight: 900;
-                    color: #111827;
-                }
-
-                .preview-sub {
-                    margin-top: 2px;
-                    font-size: 0.78rem;
-                    color: #6b7280;
-                }
-            }
-
-            .preview-body {
-                padding: 10px 12px;
-                display: grid;
-                gap: 8px;
-
-                .kv {
-                    display: grid;
-                    grid-template-columns: 90px 1fr;
-                    gap: 10px;
-                    align-items: center;
-
-                    .k {
-                        font-size: 0.78rem;
-                        color: #6b7280;
-                        font-weight: 800;
-                    }
-
-                    .v {
-                        font-size: 0.85rem;
-                        color: #111827;
-                        font-weight: 800;
-                    }
-                }
-
-                .mono {
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-                        "Liberation Mono", "Courier New", monospace;
-                    font-weight: 900;
-                }
-
-                .status-pill {
-                    display: inline-flex;
-                    padding: 3px 10px;
-                    border-radius: 999px;
-                    font-size: 0.75rem;
-                    font-weight: 900;
-                    border: 1px solid #e5e7eb;
-
-                    &.on {
-                        background: #ecfdf3;
-                        color: #166534;
-                        border-color: #bbf7d0;
-                    }
-
-                    &.off {
-                        background: #fef2f2;
-                        color: #b91c1c;
-                        border-color: #fecaca;
-                    }
-                }
-            }
-        }
-
-        .danger-zone {
-            margin-top: 12px;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-
-            .danger-hint {
-                font-size: 0.78rem;
-                color: #9ca3af;
-            }
-        }
-    }
-
-    /* ===== web(>=1200px): 기존 좌/우 패널 레이아웃 복원 ===== */
-    @include web {
-        .panel {
-            margin: 16px; // 원래처럼
-        }
-
-        .main-section {
-            display: flex;
-            gap: 8px;
-            align-items: flex-start; // 높이 공유(Stretch) 방지
-        }
-
-        .list-panel {
-            width: 320px;
-            min-width: 320px;
-        }
-
-        .detail-panel {
-            flex: 1;
-        }
-
-        .detail-panel {
-            .form-grid {
-                grid-template-columns: 1fr 1fr; // web에서 2열
-            }
-        }
-    }
-
-    /* ===== 추가: 아주 작은 화면(450*800 근접)에서 여백만 살짝 더 줄임 ===== */
-    @media (max-width: 520px) {
-        .panel {
-            margin: 10px;
-            padding: 10px 14px 12px;
-        }
-
-        .list-panel {
-            .search {
-                flex-direction: column;
-
-                .btn {
-                    width: 100%;
-                }
+                height: 3px;
+                background-color: $primary;
+                border-radius: 3px 3px 0 0;
             }
         }
     }
 }
-</style>
+
+/* =======================================
+   Action Bar
+======================================= */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+    }
+}
+
+/* =======================================
+   Data Table (Accordion List)
+======================================= */
+.data-table-wrapper {
+    background-color: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+
+    th {
+        background-color: $bg-main;
+        padding: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-sub;
+        border-bottom: 1px solid $border-color;
+    }
+
+    td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid $border-color;
+    }
+
+    /* 컬럼 너비 제어 */
+    .col-badge {
+        width: 60px;
+        text-align: center;
+    }
+
+    .col-name {
+        width: auto;
+    }
+
+    .col-account {
+        width: 200px;
+        font-family: monospace;
+        font-size: 15px;
+    }
+
+    .col-type {
+        width: 120px;
+    }
+
+    .col-status {
+        width: 120px;
+    }
+
+    .col-action {
+        width: 80px;
+        text-align: center;
+    }
+
+    /* 메인 Row */
+    .main-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: rgba($primary, 0.03);
+        }
+
+        &.is-open {
+            background-color: rgba($primary, 0.06);
+            border-bottom: none;
+
+            td {
+                border-bottom: none;
+                /* 열렸을 때 선 제거 */
+            }
+        }
+    }
+
+    /* 테이블 내부 요소들 */
+    .bank-info-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .bank-nm {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .bank-alias {
+            font-size: 13px;
+            color: $text-light;
+        }
+    }
+
+    .badge-main {
+        display: inline-block;
+        background-color: #e1f5fe;
+        color: #0288d1;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .type-tag {
+        background-color: #f1f3f5;
+        color: #495057;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+
+        &.on {
+            background-color: #2b8a3e;
+        }
+
+        &.off {
+            background-color: #e03131;
+        }
+    }
+
+    /* 상세 정보 Row (Accordion) */
+    .detail-row {
+        background-color: #fafbfc;
+
+        .detail-cell {
+            padding: 0;
+            /* td 자체의 패딩을 없애고 내부 div에 줌 */
+        }
+
+        .detail-wrapper {
+            padding: 24px;
+            border-left: 4px solid $primary;
+            animation: slideDown 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            .label {
+                font-size: 13px;
+                color: $text-light;
+                font-weight: 500;
+            }
+
+            .value {
+                font-size: 15px;
+                color: $text-main;
+            }
+
+            &.full-width {
+                grid-column: 1 / -1;
+                border-top: 1px dashed $border-color;
+                padding-top: 16px;
+                margin-top: 4px;
+            }
+        }
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =======================================
+   Modal (Layered Popup)
+======================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-container {
+    background-color: $bg-white;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid $border-color;
+
+    h4 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        font-size: 28px;
+        line-height: 1;
+        color: $text-light;
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &:hover {
+            color: $text-main;
+        }
+    }
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    /* 내용이 길면 내부 스크롤 */
+}
+
+.modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid $border-color;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background-color: $bg-main;
+}
+
+/* =======================================
+   Forms inside Modal
+======================================= */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &.full-width {
+        grid-column: 1 / -1;
+    }
+
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-main;
+
+        .required {
+            color: #e03131;
+            margin-left: 2px;
+        }
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px;
+        font-size: 15px;
+        border: 1px solid $border-color;
+        border-radius: 8px;
+        background-color: $bg-white;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+
+        &:focus {
+            outline: none;
+            border-color: $primary;
+            box-shadow: 0 0 0 3px rgba($primary, 0.1);
+        }
+
+        &::placeholder {
+            color: $text-light;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+    }
+}
+
+.mt-15 {
+    margin-top: 15px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 16px;
+    background-color: #f8fbff;
+    border: 1px solid #d0ebff;
+    border-radius: 8px;
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: $primary;
+            cursor: pointer;
+        }
+    }
+}
+
+/* =======================================
+   Buttons
+======================================= */
+.btn-primary {
+    background-color: $primary;
+    color: $bg-white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: $primary-hover;
+    }
+}
+
+.btn-secondary {
+    background-color: $bg-white;
+    color: $text-sub;
+    border: 1px solid $border-color;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: $bg-main;
+    }
+}
+
+.btn-edit-sm {
+    background-color: $bg-white;
+    color: $text-sub;
+    border: 1px solid $border-color;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: $primary;
+        color: $bg-white;
+        border-color: $primary;
+    }
+}
+
+/* =======================================
+   Transitions
+======================================= */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}</style>
