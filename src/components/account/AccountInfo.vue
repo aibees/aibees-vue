@@ -1,244 +1,35 @@
 <template>
     <div class="account-management">
-        <MNav :tabs="tabs" v-model="currentTab" />
+        <MNav :tabs="tabs" :currentTab="currentTab" @tab-click="handleTabChange"  />
 
-        <section class="content-container">
-            <div class="action-bar">
-                <h3>{{ currentTab === 'BANK' ? '계좌 목록' : '카드 목록' }}</h3>
-                <button class="btn-primary" @click.stop="openModal()">+ 신규 등록</button>
-            </div>
-
-            <div class="data-table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th class="col-badge">주계좌</th>
-                            <th class="col-name">은행/명칭</th>
-                            <th class="col-account">계좌번호</th>
-                            <th class="col-type">용도</th>
-                            <th class="col-status">상태</th>
-                            <th class="col-action">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template v-for="(bank, index) in bankList" :key="bank.bankId">
-                            <tr class="main-row" :class="{ 'is-open': bank.isExpanded }" @click="toggleRow(index)">
-                                <td class="col-badge">
-                                    <span v-if="bank.mainFlag === 'Y'" class="badge-main">주</span>
-                                </td>
-                                <td class="col-name">
-                                    <div class="bank-info-cell">
-                                        <span class="bank-nm">{{ bank.bankNm }}</span>
-                                        <span class="bank-alias">{{ bank.alias }}</span>
-                                    </div>
-                                </td>
-                                <td class="col-account">{{ bank.bankAcct }}</td>
-                                <td class="col-type"><span class="type-tag">{{ bank.bankType }}</span></td>
-                                <td class="col-status">
-                                    <span :class="['status-dot', bank.enabledFlag === 'Y' ? 'on' : 'off']"></span>
-                                    {{ bank.enabledFlag === 'Y' ? '사용중' : '중지' }}
-                                </td>
-                                <td class="col-action">
-                                    <button class="btn-edit-sm" @click.stop="openModal(bank)">수정</button>
-                                </td>
-                            </tr>
-
-                            <tr v-if="bank.isExpanded" class="detail-row">
-                                <td colspan="6" class="detail-cell">
-                                    <div class="detail-wrapper">
-                                        <div class="detail-grid">
-                                            <div class="detail-item">
-                                                <span class="label">사용 한도:</span>
-                                                <span class="value">{{ bank.limitAmt ? bank.limitAmt.toLocaleString() + '원'
-                                                    : '무제한' }}</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <span class="label">시작일자:</span>
-                                                <span class="value">{{ bank.startDate || '-' }}</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <span class="label">연결계정:</span>
-                                                <span class="value">{{ bank.acctCd || '-' }}</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <span class="label">가계단위:</span>
-                                                <span class="value">{{ bank.householdType || '-' }}</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <span class="label">엑셀업로드:</span>
-                                                <span class="value">{{ bank.excelableFlag === 'Y' ? '가능' : '불가' }}</span>
-                                            </div>
-                                            <div class="detail-item full-width">
-                                                <span class="label">메모:</span>
-                                                <span class="value">{{ bank.memo || '등록된 메모가 없습니다.' }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <Transition name="fade">
-            <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
-                <div class="modal-container">
-                    <header class="modal-header">
-                        <h4>{{ formData.bankId ? '계좌 정보 수정' : '신규 계좌 등록' }}</h4>
-                        <button class="btn-close" @click="closeModal">&times;</button>
-                    </header>
-
-                    <div class="modal-body">
-                        <form id="bankForm" @submit.prevent="saveBankInfo">
-                            <div class="form-grid">
-                                <div class="form-group full-width">
-                                    <label>별명 (Alias)</label>
-                                    <input type="text" v-model="formData.alias" placeholder="예: 생활비 통장">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>계좌 명 <span class="required">*</span></label>
-                                    <input type="text" v-model="formData.bankNm" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>귀속은행코드</label>
-                                    <input type="text" v-model="formData.bankCd" placeholder="003">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>계좌번호 <span class="required">*</span></label>
-                                    <input type="text" v-model="formData.bankAcct" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>사용용도</label>
-                                    <select v-model="formData.bankType">
-                                        <option value="입출금">입출금</option>
-                                        <option value="예적금">예적금</option>
-                                        <option value="투자">투자</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>사용 한도</label>
-                                    <input type="number" v-model="formData.limitAmt" placeholder="비워두면 무제한">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>시작일자</label>
-                                    <input type="date" v-model="formData.startDate">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>연결계정 (acctCd)</label>
-                                    <input type="text" v-model="formData.acctCd">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>가계단위</label>
-                                    <input type="text" v-model="formData.householdType">
-                                </div>
-                            </div>
-
-                            <div class="form-group full-width mt-15">
-                                <label>메모</label>
-                                <textarea v-model="formData.memo" rows="3" placeholder="추가적인 메모를 입력하세요"></textarea>
-                            </div>
-
-                            <div class="checkbox-group mt-15">
-                                <label class="checkbox-item">
-                                    <input type="checkbox" v-model="formData.mainFlag" true-value="Y" false-value="N">
-                                    <span>주계좌 설정</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" v-model="formData.enabledFlag" true-value="Y" false-value="N">
-                                    <span>사용 활성화</span>
-                                </label>
-                                <label class="checkbox-item">
-                                    <input type="checkbox" v-model="formData.excelableFlag" true-value="Y" false-value="N">
-                                    <span>엑셀 업로드 허용</span>
-                                </label>
-                            </div>
-                        </form>
-                    </div>
-
-                    <footer class="modal-footer">
-                        <button type="button" class="btn-secondary" @click="closeModal">취소</button>
-                        <button type="submit" form="bankForm" class="btn-primary">저장하기</button>
-                    </footer>
-                </div>
-            </div>
-        </Transition>
+        <div v-if="currentTab == 'BANK'">
+            <BankInfoTab />
+        </div>
+        <div v-else>
+            <CardInfoTab />
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+    import BankInfoTab from './accountInfos/BankInfoTab.vue';
+    import CardInfoTab from './accountInfos/CardInfoTab.vue';
 
-const currentTab = ref('BANK');
-const isModalOpen = ref(false);
+    const currentTab = ref('BANK');
 
-const tabs = [
-    { label: '은행계좌관리', value: 'BANK' },
-    { label: '카드관리', value: 'CARD' },
+    const tabs = [
+        { label: '은행계좌관리', value: 'BANK' },
+        { label: '카드관리', value: 'CARD' },
     ]
-
-const bankList = ref([
-    {
-        bankId: 'BK001', bankAcct: '110-123-456789', bankCd: '088', bankNm: '신한마이홈',
-        bankType: '입출금', limitAmt: null, startDate: '2023-01-01', enabledFlag: 'Y',
-        displayFlag: 'Y', excelableFlag: 'Y', mainFlag: 'Y', alias: '월급통장',
-        memo: '급여 이체 및 공과금 자동이체 전용 계좌', acctCd: '101', householdType: '공통',
-        isExpanded: false
-    },
-    {
-        bankId: 'BK002', bankAcct: '3333-01-02030', bankCd: '090', bankNm: '카카오뱅크',
-        bankType: '예적금', limitAmt: 50000000, startDate: '2024-05-15', enabledFlag: 'Y',
-        displayFlag: 'Y', excelableFlag: 'N', mainFlag: 'N', alias: '비상금',
-        memo: '경조사비 및 비상시 사용 목적', acctCd: '202', householdType: '개인',
-        isExpanded: false
+    const handleTabChange = async (selectedTabValue) => {
+        currentTab.value = selectedTabValue;
     }
-]);
 
-const initialForm = {
-    bankId: null, bankAcct: '', bankCd: '', bankNm: '', bankType: '입출금',
-    limitAmt: null, startDate: new Date().toISOString().substr(0, 10),
-    enabledFlag: 'Y', displayFlag: 'Y', excelableFlag: 'Y', mainFlag: 'N',
-    alias: '', memo: '', acctCd: '', householdType: ''
-};
-
-const formData = reactive({ ...initialForm });
-
-const toggleRow = (index) => {
-    bankList.value[index].isExpanded = !bankList.value[index].isExpanded;
-};
-
-const openModal = (data = null) => {
-    if (data) {
-        Object.assign(formData, data);
-    } else {
-        Object.assign(formData, initialForm);
-    }
-    isModalOpen.value = true;
-};
-
-const closeModal = () => {
-    isModalOpen.value = false;
-};
-
-const saveBankInfo = () => {
-    console.log('Saved:', formData);
-    alert('저장되었습니다.');
-    closeModal();
-};
 </script>
 
 <style lang="scss" scoped>
 /* =======================================
-   Variables & Mixins
+    Variables & Mixins
 ======================================= */
 $primary: #4a90e2;
 $primary-hover: #357abd;
@@ -251,7 +42,7 @@ $border-color: #e9ecef;
 $border-focus: #b3d4fc;
 
 /* =======================================
-   Layout & Typography
+    Layout & Typography
 ======================================= */
 .account-management {
     max-width: 1200px;
@@ -262,7 +53,7 @@ $border-focus: #b3d4fc;
 }
 
 /* =======================================
-   Tab Menu
+    Tab Menu
 ======================================= */
 .tab-menu {
     display: flex;
@@ -351,16 +142,20 @@ $border-focus: #b3d4fc;
 
     /* 컬럼 너비 제어 */
     .col-badge {
-        width: 60px;
+        width: 70px;
         text-align: center;
     }
 
+    .col-bank {
+        width: 100px;
+    }
+
     .col-name {
-        width: auto;
+        width: 200px;
     }
 
     .col-account {
-        width: 200px;
+        width: auto;
         font-family: monospace;
         font-size: 15px;
     }
@@ -374,7 +169,7 @@ $border-focus: #b3d4fc;
     }
 
     .col-action {
-        width: 80px;
+        width: 100px;
         text-align: center;
     }
 

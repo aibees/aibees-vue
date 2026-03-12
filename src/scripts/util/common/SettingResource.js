@@ -1,35 +1,13 @@
 
 
-const url = aibeesGlobal.API_SERVER_URL + "/master/detail"
+import mariaApi from '@scripts/util/mariaApi.js';
 
-const getResourceList = (depart, category, title) => {
-    const data = {
-        'mainCategory': depart,
-        'subCategory' : category,
-        'hCode' : title
+const getResourceList = async (systemCd, codeType) => {
+    const searchParam = {
+        systemCd, codeType
     }
-
-    let result = [];
-
-    $.ajax({
-        'method': 'POST',
-        'url' : url,
-        'data': JSON.stringify(data),
-        'async': false,
-        'headers' : {
-            'content-type': 'application/json'
-        },
-        'dataType': 'json',
-        'success': function(res) {
-            result = res.data;
-        },
-        'failed': function(err) {
-            alert(err);
-            return null;
-        }
-    })
-
-    return result;
+    const { data } = await mariaApi.get('/api/settings/headers/resources', { params: searchParam });
+    return data.detailList; 
 }
 
 const getResourceItem = (depart, category, code, id) => {

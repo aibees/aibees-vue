@@ -29,6 +29,16 @@ const getsystemMenu = () => {
         }
         ,
         {
+            'name': '확정 처리',
+            'linkTo': 'Account-confirm'
+        }
+        ,
+        {
+            'name': '월별 마감',
+            'linkTo': 'Account-closing'
+        }
+        ,
+        {
             'name': '가계부 조회',
             'linkTo': 'Account-search'
         }
@@ -50,6 +60,10 @@ const getsystemMenu = () => {
         {
             'name': '계좌/카드 정보',
             'linkTo': 'Account-info'
+        },
+        {
+            'name': '카드대금 반제처리',
+            'linkTo': 'Account-apply'
         }
     ]
 };

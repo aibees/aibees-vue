@@ -47,6 +47,11 @@
             label: '가계부 입력관리'
         },
         {
+            linkTo: '/chart',
+            icon: 'fa-book',
+            label: '가계부 통계'
+        },
+        {
             linkTo: '/system',
             icon: 'fa-gear',
             label: '설정'

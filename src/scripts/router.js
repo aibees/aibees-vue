@@ -2,6 +2,7 @@ import { createWebHistory, createRouter } from 'vue-router';
 import Login from '@/components/login/Login.vue';
 import Home from '@/components/Home.vue';
 import Account from '@/components/account';
+import Chart from '@/components/chart';
 import System from '@/components/system';
 import NotFound from '@/components/except/NotFound.vue';
 import NAVERLogin from '@/components/login/NaverLogin.vue';
@@ -58,6 +59,22 @@ const routes=[
                 }
             },
             {
+                path: 'closing',
+                name: 'Account-confirm',
+                component: Account.AccountConfirm,
+                meta: {
+                    title: '월별 마감'
+                }
+            },
+            {
+                path: 'closing',
+                name: 'Account-closing',
+                component: Account.AccountClosing,
+                meta: {
+                    title: '월별 마감'
+                }
+            },
+            {
                 path: 'cashflow',
                 name: 'Account-cashflow',
                 component: Account.AccountCashflow,
@@ -88,6 +105,29 @@ const routes=[
                 meta: {
                     title: '선급비용 관리'
                 }
+            },
+            {
+                path: 'apply',
+                name: 'Account-apply',
+                component: Account.AccountApply,
+                meta: {
+                    title: '선급비용 관리'
+                }
+            }
+        ]
+    },
+    {
+        path: '/chart',
+        name: 'Chart-Home',
+        component: Chart.ChartView,
+        meta: {
+            title: '가계부 통계차트'
+        },
+        children: [
+            {
+                path: 'expense',
+                name: 'Chart-expense',
+                component: Chart.ChartExpense
             }
         ]
     },

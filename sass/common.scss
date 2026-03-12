@@ -110,6 +110,13 @@
     display: none;
 }
 
+/**********************
+ * Text 관련
+ **********************/
+.d-text-align-center {
+    text-align: center;
+}
+
 .category-transition-enter-from,
 .category-transition-leave-to {
     opacity: 0;

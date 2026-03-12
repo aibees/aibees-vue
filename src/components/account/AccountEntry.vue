@@ -1,314 +1,596 @@
 <template>
-    <div class="lnb-content account-entry">
+    <div class="journal-entry-management">
 
-        <!-- 상단 요약카드 -->
-        <section class="d-panel summary-section">
-            <div class="col">
-                <div class="hint-list">
-                    <div class="hint-item">총 건수: <strong>{{ lines.length }}</strong>건</div>
-                    <div class="hint-item">정상 건수: <strong>{{ validCount }}</strong>건</div>
-                    <div class="hint-item">오류 건수: <strong>{{ errorCount }}</strong>건</div>
-                    <div class="hint-item">총 금액(정상만): <strong>{{ totalAmountText }}</strong></div>
-                </div>
+        <section class="top-action-bar d-panel">
+            <div class="base-account-selector">
+                <label>거래 귀속 계좌/카드 (bank_id) <span class="required">*</span></label>
+                <select v-model="globalState.baseAccountId">
+                    <option value="" disabled>출금되거나 결제된 계좌/카드를 선택하세요</option>
+                    <optgroup v-for="group in myAccounts" :key="group.type" :label="group.type">
+                        <option v-for="acc in group.items" :key="acc.id" :value="acc.id">
+                            {{ acc.name }} ({{ acc.number || '번호없음' }})
+                        </option>
+                    </optgroup>
+                </select>
             </div>
-            <div class="col">
-                <div class="d-panel-actions d-justify-end">
-                        <button type="button" class="btn btn--ghost" @click="openGuide = true">
-                            가이드
-                        </button>
-                        <button type="button" class="btn btn--ghost" @click="openGuide = true">
-                            초기화
-                        </button>
-                        <button type="button" class="btn btn--primary" @click="addLine()">
-                            + 추가
-                        </button>
-                        <button type="button" class="btn btn--primary" @click="addLine()">
-                            <font-awesome-icons id="glass" :icon="['fa-solid', 'fa-save']" />&nbsp;&nbsp;저장
-                        </button>
-                    </div>
+
+            <div class="action-buttons">
+                <div class="summary-text" v-if="entries.length > 0">
+                    총 <strong>{{ entries.length }}</strong>건 / 합계 <strong>{{ totalAmount.toLocaleString() }}</strong>원
+                </div>
+                <button class="btn-primary btn-large" @click="saveAllEntries"
+                    :disabled="!globalState.baseAccountId || entries.length === 0">
+                    💾 전체 전표 저장
+                </button>
             </div>
         </section>
 
-        <section class="d-panel entry-container">
-            <section class="entry-card">
-
-                <!-- 라인 반복 -->
-                <div class="line-card" v-for="(line, idx) in lines" :key="line._id"
-                    :class="{ bad: lineErrors(idx).length > 0 }">
-                    <div class="line-head">
-                        <div class="line-title">
-                            <span class="pill">#{{ idx + 1 }}</span>
-                            <span v-if="lineErrors(idx).length === 0" class="status ok">정상</span>
-                            <span v-else class="status warn">오류 {{ lineErrors(idx).length }}개</span>
-                        </div>
-
-                        <div class="line-actions">
-                            <button type="button" class="btn-mini" @click="duplicateLine(idx)">복제</button>
-                            <button type="button" class="btn-mini danger" @click="removeLine(idx)"
-                                :disabled="lines.length === 1">
-                                삭제
+        <section class="entry-cards-container">
+            <TransitionGroup name="list">
+                <div class="entry-card" v-for="(entry, index) in entries" :key="entry._id">
+                    <div class="card-header">
+                        <span class="entry-number">#{{ index + 1 }}</span>
+                        <div class="card-actions">
+                            <button class="btn-icon-copy" @click="copyEntry(index)" title="이 전표 복사하기">
+                                📋 복사
+                            </button>
+                            <button class="btn-icon-danger" @click="removeEntry(index)" title="이 전표 삭제">
+                                ✕
                             </button>
                         </div>
                     </div>
 
-                    <!-- 기본 정보 -->
-                    <div class="row row--meta">
-                        <div class="field">
-                            <label>날짜</label>
-                            <input type="date" v-model="line.date" />
-                        </div>
-
-                        <div class="field">
-                            <label>가계 단위</label>
-                            <select v-model="line.householdUnit">
-                                <option value="all">공동</option>
-                                <option value="me">본인</option>
-                                <option value="spouse">배우자</option>
-                            </select>
-                        </div>
-
-                        <div class="field">
-                            <label>거래 큰 유형</label>
-                            <select v-model="line.groupCode">
-                                <option disabled value="">선택하세요</option>
-                                <option v-for="group in presetGroups" :key="group.code" :value="group.code">
-                                    {{ group.label }}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Preset 선택 -->
-                    <div class="row row--preset">
-                        <div class="field field--preset-select">
-                            <label>세부 거래 유형 (Preset)</label>
-                            <select v-model="line.presetCode">
-                                <option disabled value="">유형을 선택하세요</option>
-                                <option v-for="preset in getFilteredPresets(line.groupCode)" :key="preset.code"
-                                    :value="preset.code">
-                                    {{ preset.label }}
-                                </option>
-                            </select>
-
-                            <p class="field-help" v-if="getSelectedPreset(line.groupCode, line.presetCode)">
-                                {{ getSelectedPreset(line.groupCode, line.presetCode).description }}
-                            </p>
-                            <p class="field-help" v-else>
-                                위의 "거래 큰 유형"을 먼저 선택한 뒤, 세부 유형을 선택하세요.
-                            </p>
-                        </div>
-
-                        <div class="preset-tags" v-if="getSelectedPreset(line.groupCode, line.presetCode)">
-                            <div class="tag">
-                                <span class="tag-label">Preset 코드</span>
-                                <span class="tag-value">{{ line.presetCode }}</span>
+                    <div class="card-body form-grid">
+                        <div class="form-group-row full-width">
+                            <div class="form-group flex-1">
+                                <label>거래 일자 <span class="required">*</span></label>
+                                <input type="date" v-model="entry.txDate" required>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- 금액 / 메모 -->
-                    <div class="row row--amount">
-                        <div class="field field--amount">
-                            <label>금액</label>
-                            <div class="amount-wrapper">
-                                <span class="amount-prefix">₩</span>
-                                <input type="number" min="0" step="100" v-model.number="line.amount"
-                                    placeholder="예: 12000" />
+                            <div class="form-group flex-1">
+                                <label>거래 시간 (시:분:초) <span class="required">*</span></label>
+                                <input type="time" step="1" v-model="entry.txTime" required>
                             </div>
                         </div>
 
-                        <div class="field field--memo">
-                            <label>메모</label>
-                            <input type="text" v-model="line.memo" placeholder="예: 회사 점심, 12월 관리비, 월급 입금 등" />
+                        <div class="form-group">
+                            <label>거래 유형 (그룹)</label>
+                            <select v-model="entry.presetGroupCd" @change="entry.presetCd = ''">
+                                <option value="" disabled>그룹 선택</option>
+                                <option v-for="g in presetGroups" :key="g.presetGroupCd" :value="g.presetGroupCd">
+                                    {{ g.presetGroupNm }}
+                                </option>
+                            </select>
                         </div>
-                    </div>
 
-                    <!-- 라인 에러 표시 -->
-                    <div class="line-errors" v-if="lineErrors(idx).length">
-                        <div class="err-title">입력 오류</div>
-                        <ul>
-                            <li v-for="(e, i) in lineErrors(idx)" :key="i">• {{ e }}</li>
-                        </ul>
+                        <div class="form-group">
+                            <label>프리셋 (상세) <span class="required">*</span></label>
+                            <select v-model="entry.presetCd" :disabled="!entry.presetGroupCd">
+                                <option value="" disabled>프리셋 선택</option>
+                                <option v-for="p in getPresetsByGroup(entry.presetGroupCd)" :key="p.presetCd"
+                                    :value="p.presetCd">
+                                    {{ p.presetNm }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>금액 <span class="required">*</span></label>
+                            <div class="input-with-unit">
+                                <input type="number" v-model.number="entry.amount" placeholder="0" min="0">
+                                <span class="unit">원</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>적요 (메모)</label>
+                            <input type="text" v-model="entry.remark" placeholder="어디서, 무엇을 거래했는지 입력 (선택)">
+                        </div>
                     </div>
                 </div>
+            </TransitionGroup>
 
-                <!-- 하단 요약 + 버튼 -->
-            </section>
+            <button class="btn-add-card" @click="addEntry()">
+                <span class="icon">+</span> 새로운 전표 항목 추가하기
+            </button>
         </section>
-
-        <!-- 가이드 레이어 팝업 -->
-        <div class="modal-backdrop" v-if="openGuide" @click.self="openGuide = false">
-            <div class="modal">
-                <div class="modal-header">
-                    <div>
-                        <div class="modal-title">다건 입력 가이드</div>
-                        <div class="modal-sub">여러 줄을 추가하고 한 번에 저장할 수 있습니다.</div>
-                    </div>
-                    <button class="icon-btn" @click="openGuide = false">✕</button>
-                </div>
-
-                <div class="modal-body">
-                    <ul class="guide-ul">
-                        <li>“+ 추가”로 라인을 계속 늘릴 수 있습니다.</li>
-                        <li>오류가 있는 라인이 하나라도 있으면 저장 버튼이 비활성화됩니다.</li>
-                    </ul>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn--ghost" @click="openGuide = false">닫기</button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
-    import mariaApi from '@scripts/util/mariaApi.js';
+import { ref, reactive, computed, onMounted } from 'vue';
+import mariaApi from '@scripts/util/mariaApi.js'; // 환경에 맞게 수정
 
-const openGuide = ref(false);
-
-// Preset 그룹 및 Preset 목록 (예시)
-const presetGroups = [
+// ==========================================
+// 1. 기초 마스터 데이터 (Mock Data)
+// ==========================================
+// DB: bank_id 에 매핑될 계좌/카드 목록
+const myAccounts = ref([
     {
-        code: 'EXPENSE',
-        label: '지출',
-        presets: [
-            { code: 'EXP_CARD_MEAL', label: '식비 - 신용카드 결제', description: '식당, 카페 등에서 신용카드로 결제한 식비 지출' },
-            { code: 'EXP_CARD_MART', label: '마트/장보기 - 신용카드', description: '대형마트, 온라인몰 등 식료품/생활용품 카드 결제' },
-            { code: 'EXP_TRANSFER_RENT', label: '월세/관리비 - 계좌이체', description: '월세, 관리비 등을 계좌이체로 납부' },
-        ],
+        type: '입출금 통장',
+        items: [
+            { id: 'ACC_001', name: '신한 주거래통장', number: '110-123-456789' },
+            { id: 'ACC_002', name: '카카오뱅크 생활비', number: '3333-01-1234567' }
+        ]
     },
     {
-        code: 'INCOME',
-        label: '수입',
-        presets: [
-            { code: 'INC_SALARY_BANK', label: '급여 입금 - 통장', description: '월급, 상여 등 급여성 수입이 통장으로 입금' },
-            { code: 'INC_INTEREST_BANK', label: '이자/배당 - 통장', description: '예금이자, 배당금 등이 통장으로 입금' },
-        ],
-    },
-    {
-        code: 'TRANSFER',
-        label: '이체/내부이동',
-        presets: [
-            { code: 'TRF_BANK_TO_BANK', label: '통장 ↔ 통장 이체', description: 'A은행에서 B은행으로 계좌이체 등 내부 자금 이동' },
-            { code: 'TRF_BANK_TO_SAVING', label: '통장 → 저축예금', description: '입출금통장에서 저축/적금 계좌로 이체' },
-            { code: 'TRF_CARD_PAY', label: '신용카드 대금 출금', description: '통장에서 신용카드 대금이 자동이체로 빠져나가는 거래' },
-        ],
-    },
-];
+        type: '신용/체크카드',
+        items: [
+            { id: 'CARD_001', name: '현대카드 Zero', number: '1234' },
+            { id: 'CARD_002', name: '신한카드 Mr.Life', number: '5678' }
+        ]
+    }
+]);
 
-const getToday = () => {
-    // format : YYYY-MM-DD
+// DB: preset_cd 에 매핑될 프리셋 데이터
+const presetGroups = ref([
+    { presetGroupCd: 'EXPENSE', presetGroupNm: '지출 (비용)' },
+    { presetGroupCd: 'INCOME', presetGroupNm: '수입 (수익)' },
+    { presetGroupCd: 'TRANSFER', presetGroupNm: '이체 (자산이동)' }
+]);
+
+const presetMasters = ref([
+    { presetCd: 'EXP_MEAL', presetNm: '식비 결제', presetGroupCd: 'EXPENSE' },
+    { presetCd: 'EXP_TRANS', presetNm: '교통비 결제', presetGroupCd: 'EXPENSE' },
+    { presetCd: 'INC_SALARY', presetNm: '급여 입금', presetGroupCd: 'INCOME' },
+    { presetCd: 'TRF_SAVE', presetNm: '적금 이체', presetGroupCd: 'TRANSFER' }
+]);
+
+// ==========================================
+// 2. State Management
+// ==========================================
+const globalState = reactive({
+    baseAccountId: '' // DB: bank_id
+});
+
+const entries = ref([]);
+let entryIdCounter = 0; // 화면 랜더링용 고유 ID (DB에는 안들어감)
+
+// 날짜/시간 유틸리티 함수
+const getCurrentDateStr = () => {
+    const tzOffset = new Date().getTimezoneOffset() * 60000;
+    return new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+};
+
+const getCurrentTimeStr = () => {
+    // HH:mm:ss 포맷으로 반환
     const now = new Date();
-    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
-    return local.toISOString().slice(0, 10); // YYYY-MM-DD
-}
+    return now.toTimeString().split(' ')[0];
+};
 
-// ✅ 여러 줄(다건) 입력
-const lines = reactive([createLine()]);
+// ==========================================
+// 3. Methods
+// ==========================================
+onMounted(() => {
+    addEntry(); // 최초 화면 진입 시 빈 카드 1개 세팅
+});
 
-function createLine(seed = {}) {
-    return {
-        _id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        date: seed.date || getToday(),
-        householdUnit: seed.householdUnit || 'joint',
-        groupCode: seed.groupCode || '',
-        presetCode: seed.presetCode || '',
-        amount: seed.amount ?? null,
-        memo: seed.memo || '',
+const getPresetsByGroup = (groupCd) => {
+    if (!groupCd) return [];
+    return presetMasters.value.filter(p => p.presetGroupCd === groupCd);
+};
+
+// 카드 신규 추가
+const addEntry = () => {
+    entries.value.push({
+        _id: `entry_${entryIdCounter++}`, // 렌더링용 고유 키
+        txDate: getCurrentDateStr(),      // 기본값: 오늘 일자
+        txTime: getCurrentTimeStr(),      // 기본값: 현재 시간
+        presetGroupCd: '',
+        presetCd: '',
+        amount: null,
+        remark: ''
+    });
+};
+
+// 💡 카드 복사 기능 (Duplicate)
+const copyEntry = (index) => {
+    const target = entries.value[index];
+    // 깊은 복사 후 고유 ID만 새로 발급하여 바로 아랫줄에 삽입
+    const copiedData = {
+        ...target,
+        _id: `entry_${entryIdCounter++}`
     };
-}
+    entries.value.splice(index + 1, 0, copiedData);
+};
 
-function addLine(seed = {}) {
-    // UX: 직전 라인의 date/unit을 이어받고 싶으면 seed로 주입
-    const last = lines[lines.length - 1];
-    lines.push(
-        createLine({
-            date: last?.date || getToday(),
-            householdUnit: last?.householdUnit || 'joint',
-            groupCode: '',
-            presetCode: '',
-            amount: null,
-            memo: '',
-            ...seed,
-        })
-    );
-}
+// 카드 삭제
+const removeEntry = (index) => {
+    entries.value.splice(index, 1);
+};
 
-function duplicateLine(idx) {
-    const src = lines[idx];
-    lines.splice(idx + 1, 0, createLine({ ...src }));
-}
+// 총 합계 계산 (화면 표시용)
+const totalAmount = computed(() => {
+    return entries.value.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
+});
 
-function removeLine(idx) {
-    if (lines.length === 1) return;
-    lines.splice(idx, 1);
-}
-
-function resetAll() {
-    lines.splice(0, lines.length, createLine());
-}
-
-// 프리셋 조회 helper
-function getFilteredPresets(groupCode) {
-    const g = presetGroups.find((x) => x.code === groupCode);
-    return g ? g.presets : [];
-}
-function getSelectedPreset(groupCode, presetCode) {
-    const g = presetGroups.find((x) => x.code === groupCode);
-    if (!g) return null;
-    return g.presets.find((p) => p.code === presetCode) || null;
-}
-
-// 라인 검증
-function lineErrors(idx) {
-    const l = lines[idx];
-    const errs = [];
-    if (!l.date) errs.push('날짜를 입력하세요.');
-    if (!l.groupCode) errs.push('거래 큰 유형을 선택하세요.');
-    if (!l.presetCode) errs.push('세부 거래 유형(Preset)을 선택하세요.');
-    if (!l.amount || l.amount <= 0) errs.push('금액을 올바르게 입력하세요.');
-    return errs;
-}
-
-const errorCount = computed(() => lines.filter((_, idx) => lineErrors(idx).length > 0).length);
-const validCount = computed(() => lines.length - errorCount.value);
-
-const totalAmount = computed(() =>
-    lines
-        .filter((_, idx) => lineErrors(idx).length === 0)
-        .reduce((a, c) => a + Number(c.amount || 0), 0)
-);
-
-const totalAmountText = computed(() => `${totalAmount.value.toLocaleString('ko-KR')}원`);
-
-function onSubmitAll() {
-    // 하나라도 오류 있으면 막기
-    if (errorCount.value > 0) {
-        alert('오류가 있는 라인이 있습니다. 수정 후 저장하세요.');
-        return;
+// 서버 전송 (DB 저장)
+const saveAllEntries = async () => {
+    // 1. 유효성 검사 (Validation)
+    if (!globalState.baseAccountId) {
+        return alert('거래 계좌/카드를 선택해 주세요.');
     }
 
-    const payload = {
-        mode: 'PRESET_MULTI',
-        rows: lines.map(({ _id, ...rest }) => rest),
-    };
+    const invalidEntry = entries.value.find(e => !e.txDate || !e.txTime || !e.presetCd || !e.amount || e.amount <= 0);
+    if (invalidEntry) {
+        return alert('모든 전표의 날짜, 시간, 프리셋, 금액(0보다 커야함)을 정확히 입력해 주세요.');
+    }
 
-    console.log('다건 저장 payload:', payload);
-    alert(`다건 저장(가정): ${payload.rows.length}건`);
+    // 2. Payload 구성 (DB 컬럼 구조에 맞게 매핑)
+    const journalHeaders = entries.value.map(e => {
+        // 일자와 시간을 DB의 datetime 형식('YYYY-MM-DD HH:mm:ss')으로 결합
+        const jeDateFull = `${e.txDate} ${e.txTime}`;
 
-    // 저장 후: 금액/메모만 비우고 이어서 입력 가능하게(취향에 따라)
-    lines.forEach((l) => {
-        l.amount = null;
-        l.memo = '';
-        l.groupCode = '';
-        l.presetCode = '';
+        return {
+            bankId: globalState.baseAccountId, // bank_id
+            jeDate: jeDateFull,                // je_date
+            presetCd: e.presetCd,              // preset_cd
+            amount: e.amount,                  // amount
+            remark: e.remark,                  // remark
+
+            // 간접 관리 필드 (프론트에서 고정값으로 넘기거나 백엔드에서 강제 세팅)
+            sourceCd: 'MANUAL',                // 수기 분개임을 명시
+            status: 'INIT'                     // 초기 입력 상태
+            // je_header_no, statement_id, transaction_date 등은 백엔드에서 생성하도록 위임
+        };
     });
-}
 
-const getHouseHold = async () => {
-    const { data } = await mariaApi.get('/api/common/setting/')
-}
+    console.log('서버로 전송될 Payload (List<JournalHeaderReq>):', journalHeaders);
+
+    // 3. API 전송
+    try {
+        // 백엔드 컨트롤러가 List 형태를 직접 받거나, 래핑 객체를 받도록 설정되어 있다고 가정
+        // await mariaApi.post('/api/journals/manual-batch', journalHeaders);
+        alert(`${entries.value.length}건의 전표가 성공적으로 저장되었습니다.`);
+
+        // 성공 시 폼 초기화
+        entries.value = [];
+        addEntry();
+    } catch (error) {
+        console.error('저장 실패:', error);
+    }
+};
 </script>
 
-<style src="@@/account/accountEntry.scss" />
+<style lang="scss" scoped>
+/* 시스템 기본 변수 */
+$primary: #4b74ff;
+$primary-hover: #3848c7;
+$text-main: #111827;
+$text-sub: #4b5563;
+$text-light: #9ca3af;
+$bg-main: #f5f6fa;
+$bg-white: #ffffff;
+$border-color: #e5e7eb;
+$danger: #ef4444;
+
+.journal-entry-management {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: 'Pretendard', sans-serif;
+    color: $text-main;
+
+    .page-header {
+        margin-bottom: 24px;
+
+        h2 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        p {
+            margin: 0;
+            color: $text-sub;
+            font-size: 14px;
+        }
+    }
+}
+
+/* 상단 액션 바 (고정 영역) */
+.d-panel {
+    background: $bg-white;
+    border-radius: 12px;
+    border: 1px solid $border-color;
+    padding: 20px 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.top-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+
+    .base-account-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 320px;
+
+        label {
+            font-size: 13px;
+            font-weight: 700;
+            color: $text-sub;
+
+            .required {
+                color: $danger;
+            }
+        }
+
+        select {
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            font-weight: 600;
+
+            &:focus {
+                border-color: $primary;
+                box-shadow: 0 0 0 3px rgba($primary, 0.1);
+            }
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .summary-text {
+            font-size: 14px;
+            color: $text-sub;
+
+            strong {
+                color: $primary;
+                font-size: 16px;
+                font-weight: 800;
+            }
+        }
+    }
+}
+
+/* 메인 카드 영역 */
+.entry-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 60px;
+}
+
+.entry-card {
+    background: $bg-white;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+
+    &:focus-within {
+        border-color: $primary;
+        box-shadow: 0 4px 12px rgba(75, 116, 255, 0.15);
+    }
+
+    .card-header {
+        background: #f8fafc;
+        padding: 10px 20px;
+        border-bottom: 1px solid $border-color;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .entry-number {
+            font-size: 14px;
+            font-weight: 800;
+            color: $text-sub;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+
+            .btn-icon-copy {
+                background: #eef2ff;
+                border: 1px solid #c7d2fe;
+                color: #4338ca;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: 0.2s;
+
+                &:hover {
+                    background: #e0e7ff;
+                }
+            }
+
+            .btn-icon-danger {
+                background: none;
+                border: none;
+                color: #adb5bd;
+                font-size: 18px;
+                cursor: pointer;
+                transition: 0.2s;
+
+                &:hover {
+                    color: $danger;
+                    transform: scale(1.1);
+                }
+            }
+        }
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+}
+
+/* 폼 요소 */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+
+    .form-group-row {
+        display: flex;
+        gap: 16px;
+
+        .flex-1 {
+            flex: 1;
+        }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        &.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: $text-sub;
+
+            .required {
+                color: $danger;
+            }
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.2s;
+
+            &:focus {
+                border-color: $primary;
+            }
+
+            &:disabled {
+                background: #f3f4f6;
+                color: $text-light;
+                cursor: not-allowed;
+            }
+
+            /* 시간 입력칸에서 초 단위 포맷이 예쁘게 보이도록 폰트 고정 */
+            &[type="time"] {
+                font-family: monospace;
+                font-size: 15px;
+            }
+
+            &[type="date"] {
+                font-family: monospace;
+                font-size: 15px;
+            }
+        }
+
+        .input-with-unit {
+            position: relative;
+
+            input {
+                padding-right: 30px;
+                text-align: right;
+                font-family: monospace;
+                font-size: 16px;
+                font-weight: 700;
+                color: $primary;
+            }
+
+            .unit {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: $text-light;
+                font-size: 14px;
+                font-weight: 600;
+                pointer-events: none;
+            }
+        }
+    }
+}
+
+/* 카드 추가 버튼 */
+.btn-add-card {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+
+    .icon {
+        font-size: 18px;
+        font-weight: 900;
+    }
+
+    &:hover {
+        background: #f0fdf4;
+        border-color: #86efac;
+        color: #16a34a;
+    }
+}
+
+/* 일반 버튼 */
+.btn-primary {
+    background: $primary;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &.btn-large {
+        padding: 14px 28px;
+        font-size: 15px;
+    }
+
+    &:hover:not(:disabled) {
+        background: $primary-hover;
+    }
+
+    &:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+}
+
+/* Vue 애니메이션 (리스트 추가/제거) */
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.3s ease;
+}
+
+.list-enter-from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+}
+
+.list-leave-to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+}</style>
