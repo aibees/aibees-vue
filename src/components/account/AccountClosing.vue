@@ -1,9 +1,6 @@
 <template>
     <div class="monthly-closing-management">
-        <header class="page-header">
-            <h2>월별 마감 및 잔액 대사</h2>
-            <p>장부상의 계산된 잔액과 실제 계좌 잔액을 대조하여 이상이 없으면 해당 월을 마감 확정합니다.</p>
-        </header>
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
 
         <section class="top-action-bar d-panel">
             <div class="month-selector">
@@ -204,6 +201,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 
+const route = useRoute();
 // ==========================================
 // 1. State Management (월 및 데이터 로드)
 // ==========================================

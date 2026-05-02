@@ -1,5 +1,7 @@
 <template>
     <div id="journal-upload-management" class="d-container">
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
         <section class="top-action-bar d-panel">
             <div class="base-account-selector">
                 <label>거래 귀속 계좌/카드<span class="required">*</span></label>
@@ -114,6 +116,7 @@
     import mariaApi from '@scripts/util/mariaApi.js';
     import { getResourceList } from '@scripts/util/common/SettingResource.js';
 
+    const route = useRoute();
     // ==========================================
     // State Management
     // ==========================================

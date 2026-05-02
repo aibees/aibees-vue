@@ -1,5 +1,7 @@
 <template>
     <div>
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
         <section class="monthly-section d-panel">
             <div class="panel-header flex-between">
                 <div class="left-wrap flex-align-center">
@@ -104,6 +106,7 @@
 <script setup>
     import { ref, reactive, computed, onMounted } from 'vue';
 
+    const route = useRoute();
     // ==========================================
     // 1. 초기화 및 유틸리티 설정
     // ==========================================

@@ -1,5 +1,7 @@
 <template>
     <div class="account-management">
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
         <MNav :tabs="tabs" :currentTab="currentTab" @tab-click="handleTabChange"  />
 
         <div v-if="currentTab == 'BANK'">
@@ -15,6 +17,7 @@
     import BankInfoTab from './accountInfos/BankInfoTab.vue';
     import CardInfoTab from './accountInfos/CardInfoTab.vue';
 
+    const route = useRoute();
     const currentTab = ref('BANK');
 
     const tabs = [

@@ -1,5 +1,7 @@
 <template>
     <div id="journal-entry-management" class="d-container">
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
 
         <section class="top-action-bar d-panel">
             <div class="base-account-selector">
@@ -100,6 +102,8 @@
 
 <script setup>
     import mariaApi from '@scripts/util/mariaApi.js'; // 환경에 맞게 수정
+
+    const route = useRoute();
 
     let entryIdCounter = 0; // 화면 랜더링용 고유 ID (DB에는 안들어감)
     const entries = ref([]);

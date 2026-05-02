@@ -52,7 +52,7 @@ const routes=[
                 name: 'Account-upload',
                 component: Account.AccountUpload,
                 meta: {
-                    title: '가계부 일괄 업로드'
+                    title: '엑셀 일괄 입력'
                 }
             }
             ,
@@ -61,7 +61,7 @@ const routes=[
                 name: 'Account-search',
                 component: Account.AccountSearch,
                 meta: {
-                    title: '가계부 조회'
+                    title: '상세내역 보고서'
                 }
             },
             {
@@ -77,7 +77,7 @@ const routes=[
                 name: 'Account-closing',
                 component: Account.AccountClosing,
                 meta: {
-                    title: '월별 마감'
+                    title: '월별 마감 입력'
                 }
             },
             {
@@ -85,7 +85,7 @@ const routes=[
                 name: 'Account-cashflow',
                 component: Account.AccountCashflow,
                 meta: {
-                    title: '월별 현금흐름표'
+                    title: '통장내역 보고서'
                 }
             },
             {
@@ -101,7 +101,7 @@ const routes=[
                 name: 'Account-fixed-monthly',
                 component: Account.AccountFixedMonthly,
                 meta: {
-                    title: '고정비 월별 관리'
+                    title: '고정비 관리'
                 }
             },
             {
@@ -109,7 +109,7 @@ const routes=[
                 name: 'Account-info',
                 component: Account.AccountInfo,
                 meta: {
-                    title: '계좌/카드 정보'
+                    title: '계좌/카드 관리'
                 }
             },
             {
@@ -117,7 +117,7 @@ const routes=[
                 name: 'Account-apply',
                 component: Account.AccountApply,
                 meta: {
-                    title: '선급비용 관리'
+                    title: '신용카드 사용내역 확인'
                 }
             }
         ]

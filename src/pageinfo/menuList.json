@@ -6,40 +6,44 @@
             "linkTo": "/account",
             "subMenu": [
                 {
-                    "name": "현금흐름표",
-                    "linkTo": "Account-cashflow"
+                    "name": "통장내역 보고서",
+                    "linkTo": "Account-cashflow",
+                    "group": "조회"
+                },
+                {
+                    "name": "상세내역 보고서",
+                    "linkTo": "Account-search",
+                    "group": "조회"
                 },
                 {
                     "name": "가계부 입력",
-                    "linkTo": "Account-entry"
+                    "linkTo": "Account-entry",
+                    "group": "입력"
                 },
                 {
-                    "name": "월별 마감",
-                    "linkTo": "Account-closing"
+                    "name": "엑셀 일괄 입력",
+                    "linkTo": "Account-upload",
+                    "group": "입력"
                 },
                 {
-                    "name": "가계부 조회",
-                    "linkTo": "Account-search"
+                    "name": "신용카드 사용내역 입력",
+                    "linkTo": "Account-apply",
+                    "group": "입력"
+                },
+                {
+                    "name": "월별 마감 입력",
+                    "linkTo": "Account-closing",
+                    "group": "입력"
                 },
                 {
                     "name": "고정비 관리",
-                    "linkTo": "Account-fixed"
+                    "linkTo": "Account-fixed",
+                    "group": "관리"
                 },
                 {
-                    "name": "고정비 월별 집행",
-                    "linkTo": "Account-fixed-monthly"
-                },
-                {
-                    "name": "계좌/카드 정보",
-                    "linkTo": "Account-info"
-                },
-                {
-                    "name": "카드대금 반제처리",
-                    "linkTo": "Account-apply"
-                },
-                {
-                    "name": "일괄 업로드",
-                    "linkTo": "Account-upload"
+                    "name": "계좌/카드 관리",
+                    "linkTo": "Account-info",
+                    "group": "관리"
                 }
             ]
         },

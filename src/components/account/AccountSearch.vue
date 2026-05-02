@@ -1,5 +1,7 @@
 <template>
     <div class="journal-inquiry-management">
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
         <section class="search-filter-section d-panel">
             <div class="filter-wrap">
                 <div class="form-group period-group">
@@ -185,7 +187,7 @@
 
 <script setup>
     import mariaApi from '@scripts/util/mariaApi.js';
-
+    const route = useRoute();
     // ==========================================
     // 1. Mock Data & Masters
     // ==========================================

@@ -45,7 +45,7 @@
         {
             linkTo: '/account',
             icon: 'fa-book',
-            label: '가계부 입력관리',
+            label: '가계부 관리',
             env: 'W'
         },
         {

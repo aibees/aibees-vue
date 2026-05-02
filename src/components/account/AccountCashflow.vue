@@ -1,5 +1,6 @@
 <template>
     <div class="cashflow-management">
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
 
         <!-- 상단 필터 바 -->
         <section class="top-filter-bar d-panel">
@@ -177,6 +178,8 @@
     // import mariaApi from '@scripts/util/mariaApi.js'; // TODO: API 연동 시 주석 해제
     import MDatePicker    from '@/components/common/comp/MDatePicker.vue';
     import MMultiCheckBox from '@/components/common/comp/MMultiCheckBox.vue';
+
+    const route = useRoute();
 
     // 정렬 아이콘 인라인 컴포넌트
     const SortIcon = defineComponent({
@@ -890,7 +893,7 @@ $amber:         #f59e0b;
         }
 
         /* 컬럼 너비 */
-        .col-date    { width: 110px; }
+        .col-date    { width: 130px; }
         .col-account { width: 150px; }
         .col-preset  { width: 140px; }
         .col-remark  { width: auto; }

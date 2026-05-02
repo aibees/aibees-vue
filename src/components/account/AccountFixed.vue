@@ -1,5 +1,8 @@
 <template>
     <div class="d-container fixed-expense-management">
+
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
         <header class="header-section">
             <div class="header-title">
             </div>
@@ -176,6 +179,7 @@ import mariaApi from '@scripts/util/mariaApi.js';
 import { getResourceList } from '@scripts/util/common/SettingResource.js';
 import { userSession } from '@scripts/util/user-session';
 
+const route = useRoute();
 // ==========================================
 // 1. 공통 상태 및 옵션
 // ==========================================

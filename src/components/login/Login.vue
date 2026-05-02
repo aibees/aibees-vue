@@ -2,12 +2,12 @@
     <div id="login-component">
         <div class="contents">
             <div class="login-title">
-                <h1>쀼 가계부(가제)</h1>
+                <h1>준서하은쀼의<br>돈을 모아봄</h1>
             </div>
             <div class="loginform">
                 <form>
-                    <input id="loginId" class="loginInput" placeholder="아이디 입력해주세요." />
-                    <input id="loginPw" type="password" class="loginInput" placeholder="비밀번호 입력해주세요." autocomplete="off" />
+                    <input id="loginId" class="loginInput" placeholder="아이디" />
+                    <input id="loginPw" type="password" class="loginInput" placeholder="비밀번호" autocomplete="off" />
                     <div id="loginButton" class="loginForm" @click="login">로그인</div>
                 </form>
             </div>

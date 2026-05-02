@@ -1,9 +1,7 @@
 <template>
     <div class="card-clearing-management">
-        <header class="page-header">
-            <h2>신용카드 미지급금 정밀 반제</h2>
-            <p>할부(부분 반제) 및 청구할인, 수수료 등의 보정 내역을 추가하여 명세서와 1원까지 정확히 대사합니다.</p>
-        </header>
+        <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
+
 
         <section class="clearing-setup d-panel">
             <div class="setup-grid">
@@ -156,6 +154,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
 
+const route = useRoute();
 // 1. 기초 데이터
 const creditCards = ref([
     { id: 'CARD_001', name: '현대카드 Zero' },
