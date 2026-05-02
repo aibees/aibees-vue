@@ -1,0 +1,89 @@
+{
+    "menuList": [
+        {
+            "name": "가계부 입력",
+            "id": "account",
+            "linkTo": "/account",
+            "subMenu": [
+                {
+                    "name": "현금흐름표",
+                    "linkTo": "Account-cashflow"
+                },
+                {
+                    "name": "가계부 입력",
+                    "linkTo": "Account-entry"
+                },
+                {
+                    "name": "월별 마감",
+                    "linkTo": "Account-closing"
+                },
+                {
+                    "name": "가계부 조회",
+                    "linkTo": "Account-search"
+                },
+                {
+                    "name": "고정비 관리",
+                    "linkTo": "Account-fixed"
+                },
+                {
+                    "name": "고정비 월별 집행",
+                    "linkTo": "Account-fixed-monthly"
+                },
+                {
+                    "name": "계좌/카드 정보",
+                    "linkTo": "Account-info"
+                },
+                {
+                    "name": "카드대금 반제처리",
+                    "linkTo": "Account-apply"
+                },
+                {
+                    "name": "일괄 업로드",
+                    "linkTo": "Account-upload"
+                }
+            ]
+        },
+        {
+            "name": "가계부 통계",
+            "id": "chart",
+            "linkTo": "/chart",
+            "subMenu": [
+                {
+                    "name": "비용 통계",
+                    "linkTo": "Chart-expense"
+                }
+            ]
+        },
+        {
+            "name": "가계부 설정",
+            "id": "system",
+            "linkTo": "/system",
+            "subMenu": [
+                {
+                    "name": "홈",
+                    "linkTo": "System-main"
+                },
+                {
+                    "name": "계정과목 설정",
+                    "linkTo": "System-acctCd"
+                },
+                {
+                    "name": "출처범주 설정",
+                    "linkTo": "System-source"
+                },
+                {
+                    "name": "프리셋 설정",
+                    "linkTo": "System-preset"
+                },
+                {
+                    "name": "프리셋 매핑 설정",
+                    "linkTo": "System-preset-mapping"
+                },
+                {
+                    "name": "공통코드 설정",
+                    "linkTo": "System-setting"
+                }
+            ]
+        }
+    ]
+}

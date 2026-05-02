@@ -19,7 +19,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@@': path.resolve(__dirname, './sass'),
       '@image': path.resolve(__dirname, './src/img'),
-      '@scripts': path.resolve(__dirname, './src/scripts')
+      '@scripts': path.resolve(__dirname, './src/scripts'),
+      '@json': path.resolve(__dirname, './src/pageinfo')
     }
   },
   devServer : {

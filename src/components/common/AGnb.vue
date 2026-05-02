@@ -1,13 +1,13 @@
 <template>
-    <div id="footer" class="container">
+    <div id="footer" class="container" v-if="session.isUserSession()">
         <nav class="footer-nav">
             <div class="logo" v-if="!isMobile">
                 <img src="https://static.aibeesworld.com/static/img/logo_image.png" />
             </div>
             <ul class="footer-nav-list">
-                <li class="footer-nav-item" v-for="(nv, idx) in navItem" :key="idx" >
-                    <RouterLink :to="nv.linkTo" class="footer-nav-link" :aria-label="nv.label" v-slot="{ isActive }">
-                        <div class="footer-nav-link" :class="{ 'is-active': isActive }">
+                <li class="footer-nav-item" v-for="(nv, idx) in navItem" :key="idx">
+                    <RouterLink :to="nv.linkTo" class="footer-nav-link" :aria-label="nv.label" v-slot="{ isActive }" :class="{ 'disabled-link': !isEnabled(nv) }">
+                        <div class="footer-nav-link" :class="{ 'is-active': isActive }" v-show="isEnabled(nv)">
                             <div v-if="isMobile">
                                 <font-awesome-icons class="footer-nav-icon" :icon="['fa-solid', nv.icon]" :class="{ 'is-active': isActive }"  aria-hidden="true" />
                             </div>
@@ -39,22 +39,32 @@
         {
             linkTo: '/home',
             icon: 'fa-home',
-            label: '홈'
+            label: '홈',
+            env: 'A'
         },
         {
             linkTo: '/account',
             icon: 'fa-book',
-            label: '가계부 입력관리'
+            label: '가계부 입력관리',
+            env: 'W'
         },
         {
             linkTo: '/chart',
-            icon: 'fa-book',
-            label: '가계부 통계'
+            icon: 'fa-chart-pie',
+            label: '가계부 통계',
+            env: 'W'
         },
         {
             linkTo: '/system',
             icon: 'fa-gear',
-            label: '설정'
+            label: '설정',
+            env: 'W'
+        },
+        {
+            linkTo: '/menu',
+            icon: 'fa-bars',
+            label: '메뉴',
+            env: 'M'
         }
     ]);
 
@@ -65,6 +75,10 @@
     const logout = () => {
         session.logoutUpdate();
         goToLogin();
+    }
+
+    const isEnabled = (nv) => {
+        return (isMobile.value && nv.env != 'W') || (!isMobile.value && nv.env != 'M');
     }
 
     const isMobile = ref(window.innerWidth < 1200)

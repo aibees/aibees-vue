@@ -15,7 +15,7 @@
         margin: 20px;
         gap: 20px;
         height: 80vh;
-        
+
         .lnb {
             width: 240px;
             flex-shrink: 0;
@@ -24,6 +24,7 @@
             border-radius: 8px;
 
         }
+
         .contents {
             flex: 1;
             flex-shrink: 0;
@@ -63,12 +64,12 @@
 }
 
 .d-menu-scroll {
-    height: calc(100vh - 232px);     
+    height: calc(100vh - 232px);
     overflow: scroll;
 }
 
-.d-menu-scroll::-webkit-scrollbar{
-    width: 6px;  
+.d-menu-scroll::-webkit-scrollbar {
+    width: 6px;
 }
 
 .d-menu-scroll::-webkit-scrollbar-track {
@@ -85,8 +86,8 @@
     // background-color: #353535;
 }
 
-.container-scroll::-webkit-scrollbar{
-    width: 6px;  
+.container-scroll::-webkit-scrollbar {
+    width: 6px;
 }
 
 .container-scroll::-webkit-scrollbar-track {
@@ -106,7 +107,7 @@
     overflow: scroll;
 }
 
-.d-menu-no-scroll::-webkit-scrollbar{
+.d-menu-no-scroll::-webkit-scrollbar {
     display: none;
 }
 
@@ -135,13 +136,12 @@
 }
 
 .d-panel {
-    background: #ffffff;
-    border-radius: 8px;
-    border: 2px solid $color-border-frame;
-    padding: 10px 20px 12px;
-    box-shadow: 0 8px 20px $color-shadow-frame;
-    margin: 16px;
-    white-space: nowrap;
+    background: $bg-white;
+    border-radius: 10px;
+    border: 1px solid $border-color;
+    padding: 16px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    margin: 1.3rem;
 
     .d-panel-header {
         display: flex;
@@ -196,18 +196,25 @@
         height: calc(100% - 100px);
         overflow: auto;
     }
+
     .d-scrollable::-webkit-scrollbar {
         display: none;
     }
 }
 
-
+.d-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: 'Pretendard', sans-serif;
+    color: $text-main;
+}
 
 .d-custom {
     display: flex;
     align-items: stretch;
     margin: 10px;
-    
+
 
     .d-custom-labels {
         height: $component-height;
@@ -225,12 +232,12 @@
     .d-custom-inputs {
         position: relative;
         height: $component-height;
-        
+
         @include mobile {
             width: 100%;
         }
 
-        input {
+        .d-inputs {
             width: 100%;
             height: 100%;
             appearance: none;
@@ -247,7 +254,11 @@
             outline: 0;
             padding: .1532rem .425rem;
         }
+
+        .no-label {
+            border-left: 1px solid #ccc;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
     }
 }
-
-

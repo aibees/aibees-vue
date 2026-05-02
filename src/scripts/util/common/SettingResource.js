@@ -10,8 +10,12 @@ const getResourceList = async (systemCd, codeType) => {
     return data.detailList; 
 }
 
-const getResourceItem = (depart, category, code, id) => {
-    return null;
+const getResourceItem = async (systemCd, codeType, code) => {
+    const searchParam = {
+        systemCd, codeType, code
+    }
+    const { data } = await mariaApi.get('/api/settings/details/resource-item', { params: searchParam });
+    return data.detailList; 
 }
 
 export { getResourceItem, getResourceList }

@@ -10,7 +10,8 @@ export const userSession = defineStore('user', () => {
             admin: false
         },
         roleList: [],
-        accessTime: null
+        accessTime: null,
+        family: []
     });
 
     if (sessionStorage.getItem('user')) {
@@ -23,6 +24,8 @@ export const userSession = defineStore('user', () => {
     } 
 
     const getUserInfo = computed(() => user.loginInfo);
+
+    const getUserFamily = computed(() => user.family);
 
     const isUserSession = () => {
         return (typeof user.loginInfo.accessToken == 'undefined' || user.loginInfo.accessToken !== "")
@@ -38,12 +41,14 @@ export const userSession = defineStore('user', () => {
         user.loginInfo.admin = info.admin;
         user.roleList = info.roleList;
         user.accessTime = info.accessTime;
+        user.family = info.family;
 
         const sessItem = {
             accessToken : info.accessToken,
             name : info.name,
             accessTime : info.accessTime,
-            uuid: info.uuid
+            uuid: info.uuid,
+            family: info.family
         }
 
         sessionStorage.setItem('user', JSON.stringify(sessItem));
@@ -58,15 +63,16 @@ export const userSession = defineStore('user', () => {
             uuid: "",
             accessToken: "",
             name: "",
-            admin: false
+            admin: false,
         },
         user.roleList = [];
+        user.family = [];
         user.accessTime = null;
         sessionStorage.removeItem('user')
     }
 
     return {
-        getUserInfo,
+        getUserInfo, getUserFamily,
         isUserSession, loginUpdate, logoutUpdate
     }
 })

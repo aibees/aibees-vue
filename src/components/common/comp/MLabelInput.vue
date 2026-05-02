@@ -3,7 +3,7 @@
         <div v-if="!props.noLabel" class="d-custom-labels" :hidden="props.label === undefined || props.label === ''">{{ props.label }}</div>
         <div class="d-custom-inputs"
             :style="`width: ${setWidth()}`">
-            <input 
+            <input class="d-inputs" 
                 :id="`${props.id}`"
                 :type="`${setType()}`"
                 :placeholder="props.placeholder"
@@ -35,15 +35,15 @@
 
     const setWidth = () => {
         if (props.size === undefined || props.size == '') {
-            return '250px';
+            return '150px';
         } else if (props.size === 'lg') {
             return '350px';
         } else if (props.size === 'md') {
             return '250px';
         } else if (props.size === 'sm') {
             return '150px';
-        } else {
-            return '250px';
+        } else if (props.size === 'full') {
+            return '100%';
         }
     }
 </script>

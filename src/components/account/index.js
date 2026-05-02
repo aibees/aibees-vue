@@ -8,6 +8,7 @@ import AccountCashflow from './AccountCashflow.vue'
 import AccountInfo from './AccountInfo.vue'
 import AccountPrepaid from './AccountPrepaid.vue'
 import AccountFixed from './AccountFixed.vue'
+import AccountFixedMonthly from './AccountFixedMonthly.vue'
 import AccountApply from './AccountApply.vue'
 
 export default {
@@ -20,6 +21,7 @@ export default {
     , AccountInfo
     , AccountPrepaid
     , AccountFixed
+    , AccountFixedMonthly
     , AccountApply
     , AccountCashflow
 }

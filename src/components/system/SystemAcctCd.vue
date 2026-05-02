@@ -264,7 +264,11 @@
             result = await mariaApi.post('/api/system-infos/acct', formData);
         }
 
-
+        if (result.success) {
+            await getAccountList();
+        } else {
+            alert(result);
+        }
         closeModal();
     };
 </script>

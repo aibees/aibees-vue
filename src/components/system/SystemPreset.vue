@@ -33,6 +33,7 @@
                             <th class="col-name">프리셋 이름</th>
                             <th class="col-desc">설명</th>
                             <th class="col-status">상태</th>
+                            <th class="col-mapping">매핑</th>
                             <th class="col-action">관리</th>
                         </tr>
                     </thead>
@@ -46,6 +47,10 @@
                                 <span :class="['status-pill', preset.enabledFlag === 'Y' ? 'is-active' : 'is-inactive']">
                                     {{ preset.enabledFlag === 'Y' ? '사용중' : '중지' }}
                                 </span>
+                            </td>
+                            <td class="col-mapping" @click="goToMapping(preset.presetCd)">
+                                <span :class="['status-pill', preset.mappingCount > 0 ? 'is-active' : 'is-inactive']">{{ preset.mappingCount > 0 ? '완료' : '미매핑' }}</span>
+                                <span><font-awesome-icons id="glass" :icon="['fa-solid', 'fa-right-from-bracket']" /></span>
                             </td>
                             <td class="col-action">
                                 <button class="btn-edit-sm" @click.stop="openPresetModal('EDIT', preset)">수정</button>
@@ -182,7 +187,7 @@
 
 <script setup>
 import mariaApi from '@scripts/util/mariaApi.js';
-
+const router = useRouter();
 // --- 원본 데이터 State ---
 const presetGroups = ref([]);
 const presetMasters = ref([]);
@@ -229,6 +234,14 @@ const selectGroup = async (code, flag) => {
     }
 };
 
+const goToMapping = (presetCd) => {
+    router.push({
+        path: '/system/preset-mapping',
+        query: {
+            presetCd: presetCd
+        }
+    })
+}
 
 // =====================================
 // 1. Group Modal Logic
@@ -273,9 +286,9 @@ const saveGroup = async () => {
         }
 
     } else {
-        await mariaApi.put('/api/system-infos/preset/groups', payload);
+        const result = await mariaApi.put('/api/system-infos/preset/groups', payload);
         if (result.success) {
-            await getPresetGroupList();
+            
         }
     }
     closeGroupModal();
@@ -527,30 +540,34 @@ $danger: #e03131;
     }
 
     .col-order {
-        width: 80px;
+        width: 3.6rem;
         text-align: center;
         color: $text-light;
     }
 
     .col-code {
-        width: 180px;
+        width: 10rem;
     }
 
     .col-name {
-        width: auto;
+        min-width: 11rem;
     }
 
     .col-desc {
-        width: auto;
+        min-width: 11rem;
     }
 
     .col-status {
-        width: 100px;
+        width: 5.2rem;
+        text-align: center;
+    }
+
+    .col-mapping {
         text-align: center;
     }
 
     .col-action {
-        width: 90px;
+        width: 5.5rem;
         text-align: center;
     }
 

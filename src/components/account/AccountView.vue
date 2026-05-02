@@ -8,65 +8,14 @@
 </template>
 
 <script setup>
+    import menu from '@json/menuList.json';
 const route = useRoute();
 
 let menuList = ref([]);
 
 onMounted(() => {
-    getsystemMenu();
+    menuList.value = menu.menuList.filter(m => m.id == 'account')[0].subMenu;
 });
-
-const getsystemMenu = () => {
-    menuList.value = [
-        {
-            'name': '가계부 입력',
-            'linkTo': 'Account-entry'
-        }
-        ,
-        {
-            'name': '일괄 업로드',
-            'linkTo': 'Account-upload'
-        }
-        ,
-        {
-            'name': '확정 처리',
-            'linkTo': 'Account-confirm'
-        }
-        ,
-        {
-            'name': '월별 마감',
-            'linkTo': 'Account-closing'
-        }
-        ,
-        {
-            'name': '가계부 조회',
-            'linkTo': 'Account-search'
-        }
-        ,
-        {
-            'name': '현금흐름표',
-            'linkTo': 'Account-cashflow'
-        }
-        ,
-        {
-            'name': '고정비 관리',
-            'linkTo': 'Account-fixed'
-        }
-        ,
-        {
-            'name': '선급비용 관리',
-            'linkTo': 'Account-prepaid'
-        },
-        {
-            'name': '계좌/카드 정보',
-            'linkTo': 'Account-info'
-        },
-        {
-            'name': '카드대금 반제처리',
-            'linkTo': 'Account-apply'
-        }
-    ]
-};
 </script>
 
 <style lang="scss" scoped></style>

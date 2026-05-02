@@ -147,20 +147,36 @@
                             <table class="lines-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 50px;">No.</th>
-                                        <th style="width: 200px;">계정과목 (acctCd)</th>
-                                        <th style="width: 130px;">차변 금액 (Dr)</th>
-                                        <th style="width: 130px;">대변 금액 (Cr)</th>
+                                        <th style="width: 40px;">No.</th>
+                                        <th style="width: 160px;">계정과목 (acctCd) <span class="text-red">*</span></th>
+                                        <th style="width: 160px;">귀속 계좌 (bankId) <span class="text-red">*</span></th>
+                                        <th style="width: 120px;">차변 금액 (Dr)</th>
+                                        <th style="width: 120px;">대변 금액 (Cr)</th>
                                         <th>라인 적요 (remark)</th>
-                                        <th style="width: 100px;">속성 (attr1)</th>
-                                        <th style="width: 50px;">삭제</th>
+                                        <th style="width: 80px;">속성 (attr)</th>
+                                        <th style="width: 40px;">삭제</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(line, idx) in detailModal.lines" :key="idx">
+                                    <tr v-for="(line, idx) in detailModal.lines" :key="idx"
+                                        :class="{ 'is-invalid-row': !line.bankId || !line.acctCd }">
                                         <td class="text-center mono">{{ idx + 1 }}</td>
-                                        <td><input type="text" v-model="line.acctCd" list="account-list" class="grid-input"
-                                                placeholder="코드/명 검색"></td>
+
+                                        <td>
+                                            <input type="text" v-model="line.acctCd" list="account-list" class="grid-input"
+                                                placeholder="코드/명 검색">
+                                        </td>
+
+                                        <td>
+                                            <select v-model="line.bankId" class="grid-input"
+                                                :class="{ 'input-error': !line.bankId }">
+                                                <option value="" disabled>계좌 선택</option>
+                                                <option v-for="bank in myBankAccounts" :key="bank.id" :value="bank.id">
+                                                    {{ bank.name }}
+                                                </option>
+                                            </select>
+                                        </td>
+
                                         <td><input type="number" v-model.number="line.amountDr"
                                                 class="grid-input text-right text-blue mono font-bold" placeholder="0"></td>
                                         <td><input type="number" v-model.number="line.amountCr"
@@ -176,7 +192,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="2" class="text-right font-bold">합 계</td>
+                                        <td colspan="3" class="text-right font-bold">합 계</td>
                                         <td class="text-right mono font-bold text-blue">{{ totalDr.toLocaleString() }}</td>
                                         <td class="text-right mono font-bold text-red">{{ totalCr.toLocaleString() }}</td>
                                         <td colspan="3" class="diff-msg font-bold"
@@ -194,11 +210,15 @@
                     <footer class="modal-footer flex-between">
                         <div class="left-actions">
                             <span class="hint-text text-red" v-if="totalDr !== totalCr">* 대차 합계가 일치해야 저장할 수 있습니다.</span>
+                            <span class="hint-text text-red" v-else-if="hasMissingLineData">* 계정과목 및 귀속 계좌가 누락된 라인이
+                                있습니다.</span>
                         </div>
                         <div class="right-actions">
                             <button class="btn-secondary" @click="closeLinesModal">취소</button>
                             <button class="btn-primary" @click="saveLines"
-                                :disabled="totalDr !== totalCr || detailModal.lines.length === 0">💾 라인 수정내역 저장</button>
+                                :disabled="totalDr !== totalCr || hasMissingLineData || detailModal.lines.length === 0">
+                                💾 라인 수정내역 저장
+                            </button>
                         </div>
                     </footer>
                 </div>
@@ -221,7 +241,7 @@ const getCurrentMonthStr = () => {
 };
 
 const allAccounts = ref([
-    { acctCd: '1110', acctNm: '보통예금 (신한)' },
+    { acctCd: '1110', acctNm: '보통예금' },
     { acctCd: '2110', acctNm: '미지급금 (신용카드)' },
     { acctCd: '4110', acctNm: '급여수익' },
     { acctCd: '5110', acctNm: '식비' },
@@ -232,6 +252,13 @@ const presetMasters = ref([
     { presetCd: 'EXP_MEAL', presetNm: '식비 결제' },
     { presetCd: 'EXP_TRANS', presetNm: '교통비 결제' },
     { presetCd: 'INC_SALARY', presetNm: '급여 입금' }
+]);
+
+// 💡 귀속 계좌(Bank) 마스터 리스트
+const myBankAccounts = ref([
+    { id: 'ACC_SH_01', name: '신한은행 생활비' },
+    { id: 'ACC_KB_01', name: '국민은행 비상금' },
+    { id: 'CRD_HD_01', name: '현대카드 제로' }
 ]);
 
 // ==========================================
@@ -250,17 +277,35 @@ const selectedIds = ref([]);
 onMounted(() => searchData());
 
 const searchData = () => {
-    // 💡 날짜(date) input 바인딩을 위해 txDate(YYYY-MM-DD) 분리
+    // 💡 테스트를 위해 journal 데이터 내부에 lines 배열 포함 (bankId 누락된 케이스 포함)
     journalList.value = [
-        { jeHeaderId: 101, jeHeaderNo: '202603-000101-M', txDate: '2026-03-08', presetCd: 'EXP_MEAL', amount: 15000, remark: '강남역 점심', status: 'INIT' },
-        { jeHeaderId: 102, jeHeaderNo: '202603-000102-X', txDate: '2026-03-08', presetCd: 'EXP_TRANS', amount: 5500, remark: '택시비 (야근)', status: 'INIT' },
-        { jeHeaderId: 103, jeHeaderNo: '202603-000103-M', txDate: '2026-03-09', presetCd: 'INC_SALARY', amount: 3500000, remark: '3월 정기 급여', status: 'POSTED' }
+        {
+            jeHeaderId: 101, jeHeaderNo: '202603-000101-M', txDate: '2026-03-08', presetCd: 'EXP_MEAL', amount: 15000, remark: '강남역 점심', status: 'INIT',
+            lines: [
+                { acctCd: '5110', bankId: 'CRD_HD_01', amountDr: 15000, amountCr: 0, remark: '강남역 점심' },
+                { acctCd: '2110', bankId: 'CRD_HD_01', amountDr: 0, amountCr: 15000, remark: '강남역 점심' }
+            ]
+        },
+        {
+            jeHeaderId: 102, jeHeaderNo: '202603-000102-X', txDate: '2026-03-08', presetCd: 'EXP_TRANS', amount: 5500, remark: '택시비 (야근) - 에러테스트', status: 'INIT',
+            lines: [
+                { acctCd: '5120', bankId: 'CRD_HD_01', amountDr: 5500, amountCr: 0, remark: '택시비' },
+                { acctCd: '2110', bankId: '', amountDr: 0, amountCr: 5500, remark: '택시비 (계좌 누락!)' } // 🚨 bankId 누락 케이스
+            ]
+        },
+        {
+            jeHeaderId: 103, jeHeaderNo: '202603-000103-M', txDate: '2026-03-09', presetCd: 'INC_SALARY', amount: 3500000, remark: '3월 정기 급여', status: 'POSTED',
+            lines: [
+                { acctCd: '1110', bankId: 'ACC_SH_01', amountDr: 3500000, amountCr: 0, remark: '급여 입금' },
+                { acctCd: '4110', bankId: 'ACC_SH_01', amountDr: 0, amountCr: 3500000, remark: '급여 입금' }
+            ]
+        }
     ];
     selectedIds.value = [];
 };
 
 // ==========================================
-// 3. 일괄 확정 / 개별 토글 액션
+// 3. 일괄 확정 / 개별 토글 액션 (Validation 포함)
 // ==========================================
 const isAllSelected = computed(() => {
     return journalList.value.length > 0 && selectedIds.value.length === journalList.value.length;
@@ -271,18 +316,38 @@ const toggleSelectAll = (e) => {
     else selectedIds.value = [];
 };
 
+// 💡 3-1. 개별 확정 Validation
 const toggleStatus = (journal) => {
     const nextStatus = journal.status === 'POSTED' ? 'INIT' : 'POSTED';
     const actionName = nextStatus === 'POSTED' ? '확정' : '확정 취소';
 
+    // 확정 처리하려 할 때 Lines 누락 검증
+    if (nextStatus === 'POSTED') {
+        const hasMissingBankId = journal.lines.some(l => !l.bankId || !l.acctCd);
+        if (hasMissingBankId) {
+            alert(`[${journal.jeHeaderNo}] 전표 라인에 '계정과목' 또는 '귀속 계좌'가 누락되어 확정할 수 없습니다.\n[📝 라인변경] 버튼을 눌러 수정해주세요.`);
+            return;
+        }
+    }
+
     if (confirm(`해당 전표를 ${actionName} 하시겠습니까?`)) {
-        // 이 시점에서 인라인 수정된 헤더 데이터(txDate, presetCd, remark)도 서버로 함께 보내 업데이트 가능
         journal.status = nextStatus;
     }
 };
 
+// 💡 3-2. 일괄 확정 Validation
 const batchConfirm = () => {
-    if (confirm(`선택한 ${selectedIds.value.length}건의 전표를 일괄 확정(POSTED) 처리하시겠습니까?`)) {
+    // 선택된 전표 중 bankId나 acctCd가 누락된 전표 찾기
+    const invalidJournals = journalList.value.filter(j =>
+        selectedIds.value.includes(j.jeHeaderId) && j.lines.some(l => !l.bankId || !l.acctCd)
+    );
+
+    if (invalidJournals.length > 0) {
+        alert(`선택하신 전표 중 계정/계좌가 누락된 전표가 ${invalidJournals.length}건 있습니다.\n해당 전표를 수정하거나 선택 해제 후 진행해주세요.`);
+        return;
+    }
+
+    if (confirm(`검증 완료: 선택한 ${selectedIds.value.length}건의 전표를 일괄 확정(POSTED) 처리하시겠습니까?`)) {
         journalList.value.forEach(j => {
             if (selectedIds.value.includes(j.jeHeaderId)) j.status = 'POSTED';
         });
@@ -302,10 +367,8 @@ const detailModal = reactive({
 
 const openLinesModal = (journal) => {
     detailModal.header = journal;
-    detailModal.lines = [
-        { jeHeaderId: journal.jeHeaderId, lineNum: 1, acctCd: '5110', amountDr: journal.amount, amountCr: 0, remark: journal.remark, attribute1: '', attribute2: '', lineType: 'ITEM' },
-        { jeHeaderId: journal.jeHeaderId, lineNum: 2, acctCd: '2110', amountDr: 0, amountCr: journal.amount, remark: journal.remark, attribute1: 'CARD_001', attribute2: '', lineType: 'LIABILITY' }
-    ];
+    // 취소 시 원복을 위해 깊은 복사(Deep Copy) 사용
+    detailModal.lines = JSON.parse(JSON.stringify(journal.lines));
     detailModal.open = true;
 };
 
@@ -313,9 +376,7 @@ const closeLinesModal = () => detailModal.open = false;
 
 const addLine = () => {
     detailModal.lines.push({
-        jeHeaderId: detailModal.header.jeHeaderId,
-        lineNum: detailModal.lines.length + 1,
-        acctCd: '', amountDr: 0, amountCr: 0, remark: '', attribute1: '', attribute2: '', lineType: 'MANUAL'
+        acctCd: '', bankId: '', amountDr: 0, amountCr: 0, remark: '', attribute1: ''
     });
 };
 
@@ -324,12 +385,19 @@ const removeLine = (idx) => detailModal.lines.splice(idx, 1);
 const totalDr = computed(() => detailModal.lines.reduce((s, l) => s + (Number(l.amountDr) || 0), 0));
 const totalCr = computed(() => detailModal.lines.reduce((s, l) => s + (Number(l.amountCr) || 0), 0));
 
+// 라인 모달 내 필수값 누락 여부 확인
+const hasMissingLineData = computed(() => {
+    return detailModal.lines.some(l => !l.acctCd || !l.bankId);
+});
+
+// 💡 4-1. 라인 저장 및 동기화
 const saveLines = () => {
     if (totalDr.value !== totalCr.value) return alert('차변(Dr)과 대변(Cr) 합계가 일치하지 않아 저장할 수 없습니다.');
-    if (detailModal.lines.some(l => !l.acctCd)) return alert('모든 분개 라인에 계정과목을 지정해주세요.');
+    if (hasMissingLineData.value) return alert('모든 분개 라인에 계정과목과 귀속 계좌를 지정해주세요.');
 
-    detailModal.lines.forEach((l, idx) => l.lineNum = idx + 1);
-    detailModal.header.amount = totalDr.value; // 헤더 총 금액 싱크
+    // 헤더 총 금액 및 원본 Lines 배열 싱크 (Deep Copy 덮어쓰기)
+    detailModal.header.amount = totalDr.value;
+    detailModal.header.lines = JSON.parse(JSON.stringify(detailModal.lines));
 
     alert('분개 라인이 성공적으로 수정되었습니다.');
     closeLinesModal();
@@ -349,8 +417,9 @@ $danger: #ef4444;
 $blue: #2563eb;
 $green: #10b981;
 
+/* (기존 최상단 구조 CSS 생략 없이 유지) */
 .journal-posting-management {
-    max-width: 1300px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
     font-family: 'Pretendard', sans-serif;
@@ -446,7 +515,7 @@ $green: #10b981;
     }
 }
 
-/* 2. 전표 리스트 영역 (수정) */
+/* 2. 전표 리스트 영역 */
 .data-list-section {
     padding: 0;
     overflow: hidden;
@@ -563,7 +632,6 @@ $green: #10b981;
             text-align: center;
         }
 
-        /* 💡 인라인 그리드 인풋 디자인 */
         .grid-input {
             width: 100%;
             height: 32px;
@@ -692,7 +760,7 @@ $green: #10b981;
     }
 }
 
-/* 3. 라인 수정 팝업 */
+/* 3. 라인 수정 팝업 (bankId 컬럼 및 에러 표시 추가) */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -717,7 +785,7 @@ $green: #10b981;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
 
     &.modal-xl {
-        max-width: 1000px;
+        max-width: 1100px;
         max-height: 90vh;
     }
 
@@ -784,6 +852,11 @@ $green: #10b981;
                 vertical-align: middle;
             }
 
+            tr.is-invalid-row {
+                background-color: #fef2f2;
+                /* 에러 있는 행은 빨간 배경 */
+            }
+
             .grid-input {
                 width: 100%;
                 padding: 8px;
@@ -805,6 +878,13 @@ $green: #10b981;
                     background: #fff;
                     box-shadow: 0 0 0 2px rgba($primary, 0.1);
                 }
+
+                &.input-error {
+                    border-color: $danger;
+                    background: #fff;
+                }
+
+                /* 에러 인풋 하이라이트 */
             }
 
             .btn-icon-danger {
@@ -872,6 +952,7 @@ $green: #10b981;
     }
 }
 
+/* 4. 공통 버튼 및 유틸 */
 .btn-primary {
     background: $primary;
     color: white;

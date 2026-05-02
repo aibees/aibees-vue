@@ -8,22 +8,28 @@
 </template>
 
 <script setup>
-const route = useRoute();
+    import menu from '@json/menuList.json';
 
-let menuList = ref([]);
+    const route = useRoute();
+    let menuList = ref([]);
 
-onMounted(() => {
-    getsystemMenu();
-});
+    onMounted(() => {
+        menuList.value = menu.menuList.filter(m => m.id == 'chart')[0].subMenu;
+    });
+        
+    const isMobile = ref(window.innerWidth < 1200)
 
-const getsystemMenu = () => {
-    menuList.value = [
-        {
-            'name': '비용 통계',
-            'linkTo': 'Chart-expense'
-        }
-    ]
-};
+    const handleResize = () => {
+        isMobile.value = window.innerWidth < 1200;
+    }
+
+    onMounted(() => {
+        window.addEventListener('resize', handleResize);
+    });
+
+    onUnmounted(() => {
+        window.removeEventListener('resize', handleResize);
+    });
 </script>
 
 <style lang="scss" scoped></style>

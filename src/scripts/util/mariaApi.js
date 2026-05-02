@@ -11,15 +11,21 @@ const mariaApi = axios.create({
     baseURL: aibeesGlobal.API_SERVER_URL
 });
 
-const exceptUrl = ['/login']
+const exceptUrl = ['/login', '/api/excel']
 
 // interceptors
 mariaApi.interceptors.request.use(
     async (config) => {
         const url = config.url;
         const method = config.method?.toLowerCase();
+        let isExcept = false;
+        exceptUrl.forEach(ex => {
+            if (url.startsWith(ex)) {
+                isExcept = true;
+            }
+        });
 
-        if (!exceptUrl.includes(url) && ['post', 'put', 'delete'].includes(method) && !config.skipConfirm) {
+        if (!isExcept && ['post', 'put', 'delete'].includes(method) && !config.skipConfirm) {
             let confirmMsg = '진행';
 
             if (method === 'delete') { confirmMsg = '삭제'; }
@@ -37,7 +43,12 @@ mariaApi.interceptors.request.use(
 
         config.headers['Authorization'] = userSession().getUserInfo.accessToken;
         config.headers['AuthorId'] = userSession().getUserInfo.uuid;
-        config.headers['Content-Type'] = 'application/json';
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        } else {
+            // 그 외 일반적인 API 요청은 JSON 처리
+            config.headers['Content-Type'] = 'application/json';
+        }
 
         return config;
     },

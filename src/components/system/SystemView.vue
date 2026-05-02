@@ -11,47 +11,14 @@
 </template>
 
 <script setup>
+    import menu from '@json/menuList.json';
     const route = useRoute();
 
     let menuList = ref([]);
 
     onMounted(() => {
-        getsystemMenu();
+        menuList.value = menu.menuList.filter(m => m.id == 'system')[0].subMenu;
     });
-
-    const getsystemMenu = () => {
-        menuList.value = [
-            {
-                'name': '홈',
-                'linkTo': 'System-main'
-            }
-            ,
-            {
-                'name': '계정과목 설정',
-                'linkTo': 'System-acctCd'
-            }
-            ,
-            {
-                'name': '출처범주 설정',
-                'linkTo': 'System-source'
-            }
-            ,
-            {
-                'name': '프리셋 설정',
-                'linkTo': 'System-preset'
-            }
-            ,
-            {
-                'name': '프리셋 매핑 설정',
-                'linkTo': 'System-preset-mapping'
-            }
-            ,
-            {
-                'name': '공통코드 설정',
-                'linkTo': 'System-setting'
-            }
-        ]
-    };
     
     const isMobile = ref(window.innerWidth < 1200)
 

@@ -1,19 +1,22 @@
 <template>
-    <div class="excel-upload-management">
+    <div id="journal-upload-management" class="d-container">
         <section class="top-action-bar d-panel">
             <div class="base-account-selector">
-                <label>거래 귀속 계좌/카드 (bank_id) <span class="required">*</span></label>
-                <select v-model="globalState.baseAccountId">
-                    <option value="" disabled>일괄 적용될 계좌/카드를 선택하세요</option>
+                <label>거래 귀속 계좌/카드<span class="required">*</span></label>
+                <select v-model="selectedAccount">
+                    <option :value="null" disabled>선택하세요</option>
                     <optgroup v-for="group in myAccounts" :key="group.type" :label="group.type">
-                        <option v-for="acc in group.items" :key="acc.id" :value="acc.id">
-                            {{ acc.name }} ({{ acc.number || '번호없음' }})
+                        <option v-for="acc in group.items" :key="acc.id" :value="acc">
+                            {{ acc.name }}
                         </option>
                     </optgroup>
                 </select>
             </div>
 
             <div class="action-buttons">
+                <button class="btn-ghost" @click="downloadTemplate">
+                    📥 엑셀 양식 다운로드
+                </button>
                 <button class="btn-primary" @click="saveAllEntries"
                     :disabled="!globalState.baseAccountId || entries.length === 0 || !isAllValid">
                     💾 검증 완료 및 저장
@@ -43,20 +46,20 @@
             <div class="entry-grid-header">
                 <div class="col-no">No.</div>
                 <div class="col-status">검증</div>
-                <div class="col-date">거래 일자 <span class="required">*</span></div>
-                <div class="col-time">거래 시간 <span class="required">*</span></div>
+                <div class="col-date">거래 일자</div>
+                <div class="col-entry">입출금</div>
                 <div class="col-preset">프리셋 (Preset) <span class="required">*</span></div>
-                <div class="col-amt">금액 (원) <span class="required">*</span></div>
+                <div class="col-amt">금액 (원)</div>
                 <div class="col-remark">적요 (메모)</div>
-                <div class="col-action">관리</div>
             </div>
 
             <div class="entry-list-body">
                 <TransitionGroup name="list">
-                    <div class="entry-strip" v-for="(entry, index) in entries" :key="entry._id">
-
+                    <div class="entry-strip" v-for="(entry, index) in entries" :key="index">
+                        <!-- No. -->
                         <div class="col-no mono text-light">{{ index + 1 }}</div>
 
+                        <!-- 검증 -->
                         <div class="col-status">
                             <span class="status-badge" :class="validateRow(entry) === 'OK' ? 'ok' : 'error'"
                                 :title="validateRow(entry)">
@@ -64,21 +67,25 @@
                             </span>
                         </div>
 
+                        <!-- 거래일자 -->
                         <div class="col-date">
-                            <input type="date" v-model="entry.txDate" required class="compact-input"
-                                :class="{ 'is-invalid': !entry.txDate }">
+                            <div class="ymd">{{ entry.ymd }}</div>
+                            <div class="times">{{ entry.times }}</div>
+                            <!-- <input type="date" v-model="entry.ymd" required class="compact-input"
+                                :class="{ 'is-invalid': !entry.ymd }"> -->
                         </div>
 
-                        <div class="col-time">
-                            <input type="time" step="1" v-model="entry.txTime" required class="compact-input"
-                                :class="{ 'is-invalid': !entry.txTime }">
+                        <!-- 입출금 -->
+                        <div class="col-entry">
+                            {{ entry.entryNm }}
                         </div>
 
+                        <!-- 프리셋 -->
                         <div class="col-preset">
-                            <select v-model="entry.presetCd" class="compact-input" :class="{ 'is-invalid': !entry.presetCd }">
+                            <select v-model="entry.presetCd" class="compact-input" :class="{ 'is-invalid': !entry.presetCd }" placeholder="프리셋 코드를 매핑하세요">
                                 <option value="" disabled>프리셋 코드를 매핑하세요</option>
-                                <optgroup v-for="g in presetGroups" :key="g.presetGroupCd" :label="g.presetGroupNm">
-                                    <option v-for="p in getPresetsByGroup(g.presetGroupCd)" :key="p.presetCd"
+                                <optgroup v-for="g in presetGroupList" :key="g.presetGroupCd" :label="g.presetGroupNm">
+                                    <option v-for="p in g.headerList" :key="p.presetCd"
                                         :value="p.presetCd">
                                         [{{ p.presetCd }}] {{ p.presetNm }}
                                     </option>
@@ -87,17 +94,13 @@
                         </div>
 
                         <div class="col-amt">
-                            <input type="number" v-model.number="entry.amount" placeholder="0" min="0"
+                            <input type="number" v-model.number="entry.amount" placeholder="0" min="0" readonly
                                 class="compact-input text-right font-bold text-blue"
                                 :class="{ 'is-invalid': !entry.amount || entry.amount <= 0 }">
                         </div>
 
                         <div class="col-remark">
                             <input type="text" v-model="entry.remark" placeholder="내용 입력" class="compact-input">
-                        </div>
-
-                        <div class="col-action action-group">
-                            <button class="btn-icon danger" @click="removeEntry(index)" title="이 행 삭제">✕</button>
                         </div>
 
                     </div>
@@ -108,46 +111,56 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
-// import mariaApi from '@scripts/util/mariaApi.js';
+    import mariaApi from '@scripts/util/mariaApi.js';
+    import { getResourceList } from '@scripts/util/common/SettingResource.js';
 
-// ==========================================
-// 1. 기초 마스터 데이터
-// ==========================================
-const myAccounts = ref([
-    {
-        type: '입출금 통장',
-        items: [{ id: 'ACC_001', name: '신한 주거래통장' }, { id: 'ACC_002', name: '카카오뱅크 생활비' }]
-    },
-    {
-        type: '신용/체크카드',
-        items: [{ id: 'CARD_001', name: '현대카드 Zero' }]
+    // ==========================================
+    // State Management
+    // ==========================================
+    const globalState = reactive({ baseAccountId: '' });
+    const entries = ref([]);
+    const isDragging = ref(false);
+    const fileInput = ref(null);
+    const selectedAccount = ref(null);
+    let entryIdCounter = 0;
+
+    const myAccounts = ref([]);
+    const presetGroupList = ref([]);
+
+
+    onMounted(async () => {
+        await getMyAccountList();
+    });
+
+    const getPresetGroupList = async () => {
+        if (selectedAccount.value == null) {
+            alert("선택된 계좌/카드 유형이 없습니다.");
+            return false;
+        }
+
+        const param = {
+
+        }
+
+        const { data } = await mariaApi.get('/api/system-infos/preset/headers/groups');
+        data.forEach(d => {
+            presetGroupList.value.push(d);
+        })
     }
-]);
 
-const presetGroups = ref([
-    { presetGroupCd: 'EXPENSE', presetGroupNm: '지출' },
-    { presetGroupCd: 'INCOME', presetGroupNm: '수입' }
-]);
+    const getMyAccountList = async () => {
+        const cardCdList = await getResourceList('ACCOUNT', 'CARD_CODE');
+        const bankCdList = await getResourceList('ACCOUNT', 'BANK_CODE');
 
-const presetMasters = ref([
-    { presetCd: 'EXP_MEAL', presetNm: '식비 결제', presetGroupCd: 'EXPENSE' },
-    { presetCd: 'EXP_TRANS', presetNm: '교통비 결제', presetGroupCd: 'EXPENSE' },
-    { presetCd: 'INC_SALARY', presetNm: '급여 입금', presetGroupCd: 'INCOME' }
-]);
-
-const getPresetsByGroup = (groupCd) => {
-    return presetMasters.value.filter(p => p.presetGroupCd === groupCd);
-};
-
-// ==========================================
-// 2. State Management
-// ==========================================
-const globalState = reactive({ baseAccountId: '' });
-const entries = ref([]);
-const isDragging = ref(false);
-const fileInput = ref(null);
-let entryIdCounter = 0;
+        myAccounts.value.push({
+            type: '입출금계좌',
+            items: bankCdList.map(c => { return { id: c.code, name: c.name, group: 'bank' } })
+        },
+        {
+            type: '신용/체크카드',
+            items: cardCdList.map(c => { return { id: c.code, name: c.name, group: 'card' } })
+        });
+    }
 
 // ==========================================
 // 3. File Upload & Processing
@@ -156,8 +169,37 @@ const triggerFileInput = () => fileInput.value.click();
 
 const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    if (file) processExcelFile(file);
+    if (file) {
+        processExcelFile(file);
+    }
     event.target.value = ''; // 초기화
+};
+
+// 실제로는 xlsx 라이브러리로 파싱해야 하지만, 여기서는 파싱되었다고 가정하고 Mock Data 세팅
+const processExcelFile = async (file) => {
+    let cdType = '';
+    if (!selectedAccount.value) {
+        alert("업로드 타입 선택이 안되어있습니다.");
+        return false;
+    }
+    if (file == null) {
+        return false;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    if (selectedAccount.value.group == 'bank') { cdType = 'bankCd'; } 
+    else { cdType = 'cardCd'; }
+    formData.append(cdType, selectedAccount.value.id);
+
+    const { data } = await mariaApi.post('/api/excel/journal', formData);
+    entries.value = data || [];
+    
+    if (entries.value.length < 1) {
+        alert("추출된 거래내역이 없습니다.");
+    } else {
+        await getPresetGroupList();
+    }
 };
 
 const handleDrop = (event) => {
@@ -166,28 +208,19 @@ const handleDrop = (event) => {
     if (file) processExcelFile(file);
 };
 
-// 실제로는 xlsx 라이브러리로 파싱해야 하지만, 여기서는 파싱되었다고 가정하고 Mock Data 세팅
-const processExcelFile = (file) => {
-    console.log('업로드된 파일:', file.name);
-
-    // 시뮬레이션용 파싱 결과 (정상 데이터, 금액 누락 데이터, 프리셋 오타 데이터 섞음)
-    entries.value = [
-        { _id: `entry_${entryIdCounter++}`, txDate: '2026-03-08', txTime: '12:30:00', presetCd: 'EXP_MEAL', amount: 15000, remark: '점심 식대' },
-        { _id: `entry_${entryIdCounter++}`, txDate: '2026-03-08', txTime: '18:45:00', presetCd: 'EXP_TRANS', amount: 2500, remark: '퇴근 택시' },
-        { _id: `entry_${entryIdCounter++}`, txDate: '2026-03-09', txTime: '09:00:00', presetCd: '', amount: 5000, remark: '프리셋 누락 테스트' },
-        { _id: `entry_${entryIdCounter++}`, txDate: '', txTime: '10:00:00', presetCd: 'INC_SALARY', amount: 0, remark: '날짜/금액 누락 테스트' }
-    ];
-};
-
 const clearData = () => {
     if (confirm('작업 중인 내용을 지우고 파일을 다시 업로드하시겠습니까?')) {
         entries.value = [];
     }
 };
 
+// 💡 엑셀 양식 다운로드 함수
 const downloadTemplate = () => {
-    alert('엑셀 템플릿 파일(.xlsx) 다운로드를 트리거합니다.');
-    // location.href = '/api/system/preset/excel-template';
+    // public 폴더 기준 절대 경로를 적어줍니다.
+    const link = document.createElement('a');
+    link.href = '/assets/excel/upload_template.xlsx'; // public 폴더 안의 파일 경로
+    link.download = '일괄업로드_양식.xlsx'; // 다운로드될 때의 파일명
+    link.click();
 };
 
 // ==========================================
@@ -199,8 +232,8 @@ const totalAmount = computed(() => entries.value.reduce((sum, entry) => sum + (N
 
 // 각 행별 검증 로직
 const validateRow = (entry) => {
-    if (!entry.txDate) return '날짜가 누락되었습니다.';
-    if (!entry.txTime) return '시간이 누락되었습니다.';
+    if (!entry.ymd) return '날짜가 누락되었습니다.';
+    if (!entry.times) return '시간이 누락되었습니다.';
     if (!entry.presetCd) return '프리셋 코드가 지정되지 않았습니다.';
     if (!entry.amount || entry.amount <= 0) return '금액은 0보다 커야 합니다.';
     return 'OK';
@@ -224,7 +257,7 @@ const saveAllEntries = async () => {
         presetCd: e.presetCd,
         amount: e.amount,
         remark: e.remark,
-        sourceCd: 'EXCEL_UPLOAD', // 엑셀 업로드 출처 명시
+        sourceCd: 'EXCEL_UPLOAD', 
         status: 'INIT'
     }));
 
@@ -241,6 +274,8 @@ const saveAllEntries = async () => {
 </script>
 
 <style lang="scss" scoped>
+@use '@@/common.scss' as *;
+
 $primary: #4b74ff;
 $primary-hover: #3848c7;
 $text-main: #111827;
@@ -252,39 +287,6 @@ $border-color: #e5e7eb;
 $danger: #ef4444;
 $blue: #2563eb;
 $success: #10b981;
-
-.excel-upload-management {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px;
-    font-family: 'Pretendard', sans-serif;
-    color: $text-main;
-
-    .page-header {
-        margin-bottom: 20px;
-
-        h2 {
-            margin: 0 0 4px 0;
-            font-size: 22px;
-            font-weight: 800;
-        }
-
-        p {
-            margin: 0;
-            color: $text-sub;
-            font-size: 13px;
-        }
-    }
-}
-
-.d-panel {
-    background: $bg-white;
-    border-radius: 10px;
-    border: 1px solid $border-color;
-    padding: 16px 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-    margin-bottom: 20px;
-}
 
 /* 상단 액션 바 */
 .top-action-bar {
@@ -315,7 +317,7 @@ $success: #10b981;
             font-size: 14px;
             font-weight: 600;
             outline: none;
-            width: 280px;
+            width: fit-content;
 
             &:focus {
                 border-color: $primary;
@@ -377,7 +379,6 @@ $success: #10b981;
 }
 
 /* 그리드 레이아웃 (엑셀 뷰) */
-/* 비율: No(40) | Status(80) | Date(130) | Time(110) | Preset(220) | Amt(130) | Remark(1fr) | Action(50) */
 .compact-list-container {
     padding: 0;
     overflow: hidden;
@@ -409,7 +410,7 @@ $success: #10b981;
 
 .entry-grid-header {
     display: grid;
-    grid-template-columns: 35px 50px 130px 140px 200px 130px 1fr 50px;
+    grid-template-columns: 35px 50px 100px 60px 200px 130px 1fr 50px;
     gap: 8px;
     background: #f8fafc;
     padding: 10px 16px;
@@ -439,7 +440,7 @@ $success: #10b981;
 
 .entry-strip {
     display: grid;
-    grid-template-columns: 35px 50px 130px 140px 200px 130px 1fr 50px;
+    grid-template-columns: 35px 50px 100px 60px 200px 130px 1fr 50px;
     gap: 8px;
     padding: 8px 16px;
     border-bottom: 1px solid #f1f3f5;
@@ -458,6 +459,26 @@ $success: #10b981;
     .col-status {
         text-align: center;
         width: 50px;
+    }
+
+    .col-date {
+        .ymd {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: $text-main;
+        }
+        .times {
+            text-align: center;
+            font-size: 12px;
+            color: $text-sub;
+        }
+    }
+
+    .col-entry {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
     }
 
     .col-action {
@@ -628,4 +649,5 @@ $success: #10b981;
 .list-leave-to {
     opacity: 0;
     transform: translateY(-10px);
-}</style>
+}
+</style>

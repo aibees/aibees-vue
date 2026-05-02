@@ -219,6 +219,7 @@
 <script setup>
 import mariaApi from '@scripts/util/mariaApi.js';
 
+const route = useRoute();
 // ==========================================
 // State & Computed
 // ==========================================
@@ -228,8 +229,14 @@ const validationMsg = ref('');
 const presetGroups = ref([]);
 
 onMounted(async () => {
+    selectedPresetCd.value = route.query.presetCd ? route.query.presetCd : '';
+
     document.addEventListener('click', closeDropdown);
     await getPresetGroupList();
+
+    if (selectedPresetCd.value != '') {
+        await loadMappingLines();
+    }
 });
 
 onUnmounted(() => {
@@ -295,7 +302,7 @@ const handleInput = (index, keyword, dcFlag) => {
 const fetchAccounts = async (keyword, dcFlag) => {
     isSearching.value = true;
     try {
-        const searchParam = { searchTxt: keyword, dcFlag: dcFlag, enabledFlag: 'Y', finalFlag: 'Y' };
+        const searchParam = { searchTxt: keyword, enabledFlag: 'Y', finalFlag: 'Y' };
         const { data } = await mariaApi.get('/api/system-infos/acct/search', { params: searchParam });
 
         filteredAccounts.value = data.length > 0 ? data : [];
