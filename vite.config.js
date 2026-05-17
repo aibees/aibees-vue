@@ -60,7 +60,7 @@ export default defineConfig({
       dts: 'src/auto-imports.d.ts' // 자동 타입 선언 파일 경로
     }),
     AutoComponent({
-      dirs: ['src/components/common'],
+      dirs: ['src/components/common', 'src/components/common/comp'],
       dts: 'src/auto-components.d.ts' // 자동 타입 선언 파일 경로
     })
   ]

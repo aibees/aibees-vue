@@ -1,0 +1,511 @@
+@use '@@/__variables.scss' as *;
+@use '@@/common.scss' as *;
+
+$primary:      #4b74ff;
+$primary-dark: #3848c7;
+$text-main:    #111827;
+$text-sub:     #4b5563;
+$text-light:   #9ca3af;
+$bg-white:     #ffffff;
+$bg-light:     #f8fafc;
+$border:       #e5e7eb;
+$danger:       #ef4444;
+$green:        #10b981;
+$amber:        #f59e0b;
+
+/* ==========================================
+   레이아웃
+========================================== */
+.invoice-management {
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Pretendard', sans-serif;
+    color: $text-main;
+    padding-bottom: 60px;
+}
+
+.d-panel {
+    background: $bg-white;
+    border-radius: 12px;
+    border: 1px solid $border;
+    padding: 20px 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    margin-bottom: 16px;
+}
+
+/* ==========================================
+   상단 액션 바
+========================================== */
+.top-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    .bar-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+
+        .attach-count   { color: $text-main; font-weight: 800; }
+        .attach-sep     { color: $text-light; }
+        .attach-done    { color: $green; }
+        .attach-pending { color: $amber; }
+        .attach-hint    { color: $text-light; font-style: italic; font-weight: 400; }
+    }
+
+    .bar-right {
+        display: flex;
+        gap: 10px;
+
+        button {
+            height: 38px;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.15s;
+            border: none;
+
+            &:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+        }
+
+        .btn-draft {
+            background: $bg-white;
+            border: 1px solid $border !important;
+            color: $text-sub;
+            &:not(:disabled):hover { background: #f1f5f9; }
+        }
+
+        .btn-submit {
+            background: $primary;
+            color: #fff;
+            &:not(:disabled):hover { background: $primary-dark; }
+        }
+    }
+}
+
+/* ==========================================
+   업로드 존
+========================================== */
+.upload-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    border: 2px dashed $border;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    padding: 32px;
+
+    &:hover, &.drag-over {
+        border-color: $primary;
+        background: #f0f4ff;
+    }
+
+    .upload-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        pointer-events: none;
+
+        .upload-icon {
+            font-size: 36px;
+            margin-bottom: 4px;
+        }
+
+        .upload-main {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: $text-sub;
+        }
+
+        .upload-sub {
+            margin: 0;
+            font-size: 13px;
+            color: $text-light;
+        }
+    }
+}
+
+/* ==========================================
+   영수증 카드
+========================================== */
+.receipt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.receipt-card {
+    padding: 0;
+    overflow: hidden;
+
+    /* ---- 카드 헤더 ---- */
+    .rc-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        border-bottom: 1px solid $border;
+        background: $bg-light;
+
+        .rc-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .rc-num {
+                font-size: 13px;
+                font-weight: 800;
+                color: $text-light;
+                font-family: monospace;
+            }
+
+            .rc-filename {
+                font-size: 13px;
+                font-weight: 600;
+                color: $text-sub;
+                max-width: 280px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .rc-status {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: 0.02em;
+
+                &.status-pending { background: #f1f5f9; color: #64748b; }
+                &.status-loading { background: #eff6ff; color: #2563eb; }
+                &.status-done    { background: #d1fae5; color: #047857; }
+                &.status-error   { background: #fee2e2; color: #b91c1c; }
+            }
+        }
+
+        .rc-header-right {
+            display: flex;
+            gap: 8px;
+
+            .btn-reocr {
+                background: $bg-white;
+                border: 1px solid $border;
+                color: $text-sub;
+                padding: 5px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                font-family: inherit;
+                transition: 0.15s;
+                &:hover { background: #f1f5f9; }
+            }
+
+            .btn-remove {
+                background: transparent;
+                border: none;
+                color: $text-light;
+                font-size: 16px;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 6px;
+                line-height: 1;
+                transition: 0.15s;
+                &:hover { background: #fee2e2; color: $danger; }
+            }
+        }
+    }
+
+    /* ---- 카드 본문 ---- */
+    .rc-body {
+        display: flex;
+        gap: 0;
+
+        @media (max-width: 768px) { flex-direction: column; }
+    }
+
+    /* ---- 이미지 영역 ---- */
+    .rc-image-wrap {
+        flex: 0 0 260px;
+        border-right: 1px solid $border;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        min-height: 320px;
+
+        @media (max-width: 768px) {
+            flex: none;
+            border-right: none;
+            border-bottom: 1px solid $border;
+            min-height: 200px;
+        }
+
+        .rc-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            object-fit: contain;
+        }
+    }
+
+    /* ---- 결과 영역 ---- */
+    .rc-result {
+        flex: 1;
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* ---- 상태 메시지 (대기/로딩/오류) ---- */
+    .result-state {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+        color: $text-light;
+        font-size: 14px;
+        font-weight: 600;
+
+        .state-icon { font-size: 32px; }
+
+        &.result-error {
+            color: #b91c1c;
+            .state-icon { font-size: 28px; }
+        }
+    }
+
+    /* ---- 스피너 ---- */
+    .spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #e2e8f0;
+        border-top-color: $primary;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    /* ---- 신뢰도 바 ---- */
+    .confidence-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .confidence-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: $text-light;
+            white-space: nowrap;
+        }
+
+        .confidence-bar {
+            flex: 1;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+
+            .confidence-fill {
+                height: 100%;
+                border-radius: 999px;
+                transition: width 0.6s ease;
+
+                &.conf-high { background: $green; }
+                &.conf-mid  { background: $amber; }
+                &.conf-low  { background: $danger; }
+            }
+        }
+
+        .confidence-pct {
+            font-size: 12px;
+            font-weight: 800;
+            color: $text-sub;
+            white-space: nowrap;
+            min-width: 36px;
+            text-align: right;
+        }
+    }
+
+    /* ---- 기본 필드 그리드 ---- */
+    .result-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+
+        .result-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+            &.result-field-full { grid-column: 1 / -1; }
+
+            label {
+                font-size: 12px;
+                font-weight: 700;
+                color: $text-sub;
+
+                .required { color: $danger; margin-left: 2px; }
+            }
+
+            input {
+                height: 36px;
+                padding: 0 10px;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                font-size: 13px;
+                font-family: inherit;
+                outline: none;
+                transition: 0.15s;
+                background: $bg-white;
+
+                &:focus {
+                    border-color: $primary;
+                    box-shadow: 0 0 0 2px rgba($primary, 0.1);
+                }
+
+                &.amount-input {
+                    font-weight: 700;
+                    color: #1d4ed8;
+                    font-family: monospace;
+                    text-align: right;
+                }
+            }
+        }
+    }
+
+    /* ---- 품목 리스트 ---- */
+    .result-items {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .items-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: $text-light;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+
+        .item-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+
+            input {
+                height: 32px;
+                padding: 0 8px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 13px;
+                font-family: inherit;
+                outline: none;
+                background: $bg-white;
+                transition: 0.15s;
+
+                &:focus { border-color: $primary; }
+            }
+
+            .item-name  { flex: 1; }
+            .item-qty   { width: 60px; text-align: center; }
+            .item-price { width: 90px; text-align: right; font-family: monospace; }
+
+            .btn-remove-item {
+                background: transparent;
+                border: none;
+                color: $text-light;
+                cursor: pointer;
+                font-size: 13px;
+                padding: 4px 6px;
+                border-radius: 4px;
+                transition: 0.15s;
+                &:hover { background: #fee2e2; color: $danger; }
+            }
+        }
+
+        .btn-add-item {
+            align-self: flex-start;
+            background: transparent;
+            border: 1px dashed #cbd5e1;
+            color: $text-sub;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.15s;
+            margin-top: 2px;
+            &:hover { border-color: $primary; color: $primary; }
+        }
+    }
+
+    /* ---- 전표 생성 푸터 ---- */
+    .result-footer {
+        margin-top: auto;
+        padding-top: 8px;
+        border-top: 1px solid $border;
+
+        .btn-create-entry {
+            width: 100%;
+            height: 40px;
+            background: $primary;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.15s;
+
+            &:hover:not(:disabled) { background: $primary-dark; }
+
+            &.already-created {
+                background: #d1fae5;
+                color: #047857;
+                cursor: default;
+            }
+
+            &:disabled:not(.already-created) {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+        }
+    }
+}
+
+/* ==========================================
+   TransitionGroup 애니메이션
+========================================== */
+.receipt-enter-active { transition: all 0.3s ease; }
+.receipt-leave-active { transition: all 0.25s ease; }
+.receipt-enter-from  { opacity: 0; transform: translateY(-10px); }
+.receipt-leave-to    { opacity: 0; transform: translateX(20px); }
+
+/* ==========================================
+   스피너 키프레임
+========================================== */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

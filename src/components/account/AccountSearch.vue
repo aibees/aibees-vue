@@ -4,17 +4,16 @@
 
         <section class="search-filter-section d-panel">
             <div class="filter-wrap">
-                <div class="form-group period-group">
-                    <label>조회 기간 (전표 일자)</label>
-                    <div class="date-range">
-                        <input type="date" v-model="filters.schStartDt">
-                        <span class="tilde">~</span>
-                        <input type="date" v-model="filters.schEndDt">
-                    </div>
+                <div class="form-group">
+                    <label>조회 기간</label>
+                    <MDatePicker
+                        :model-value="{ start: filters.schStartDt, end: filters.schEndDt }"
+                        @update:model-value="onDateChange"
+                    />
                 </div>
 
                 <div class="form-group">
-                    <label>거래 계좌/카드</label>
+                    <label>계좌/카드</label>
                     <select v-model="filters.bankId">
                         <option value="">전체 (All)</option>
                         <optgroup v-for="group in myAccounts" :key="group.type" :label="group.type">
@@ -187,6 +186,9 @@
 
 <script setup>
     import mariaApi from '@scripts/util/mariaApi.js';
+    import MDatePicker    from '@/components/common/comp/MDatePicker.vue';
+    import MMultiCheckBox from '@/components/common/comp/MMultiCheckBox.vue';
+
     const route = useRoute();
     // ==========================================
     // 1. Mock Data & Masters
@@ -199,7 +201,7 @@
     const getTodayStr = () => new Date().toISOString().split('T')[0];
     const getFirstDayOfMonth = () => {
         const d = new Date();
-        return new Date(d.getFullYear(), d.getMonth() - 1, 2).toISOString().split('T')[0];
+        return new Date(d.getFullYear(), d.getMonth() - 2, 2).toISOString().split('T')[0];
     };
 
     const filters = reactive({
@@ -219,6 +221,7 @@
 
     const searchData = async () => {
         const { data } = await mariaApi.get('/api/account/journal', { params: filters })
+        console.log(data);
         journalList.value = data;
     };
 
@@ -288,6 +291,12 @@ const exportExcel = () => alert('조회된 목록을 엑셀로 다운로드합�
 // ==========================================
 // 4. Utility Functions
 // ==========================================
+    const onDateChange = ({ start, end }) => {
+        filters.schStartDt = start;
+        filters.schEndDt   = end;
+        searchData();
+    };
+
 const formatDateTime = (dt) => dt ? dt.substring(0, 16) : '';
 const getStatusName = (status) => ({ 'INIT': '초기 입력', 'POSTED': '확정', 'CONFIRM': '마감 완료' }[status] || status);
 const getStatusClass = (status) => ({ 'INIT': 'bg-gray', 'POSTED': 'bg-green', 'CONFIRM': 'bg-purple' }[status] || 'bg-gray');

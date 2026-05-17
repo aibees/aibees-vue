@@ -10,6 +10,7 @@ import AccountPrepaid from './AccountPrepaid.vue'
 import AccountFixed from './AccountFixed.vue'
 import AccountFixedMonthly from './AccountFixedMonthly.vue'
 import AccountApply from './AccountApply.vue'
+import AccountInvoice from './AccountInvoice.vue'
 
 export default {
       AccountView
@@ -24,4 +25,5 @@ export default {
     , AccountFixedMonthly
     , AccountApply
     , AccountCashflow
+    , AccountInvoice
 }

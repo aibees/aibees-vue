@@ -6,6 +6,7 @@ import SystemSource from './SystemSource.vue'
 import SystemPreset from './SystemPreset.vue'
 import SystemPresetMap from './SystemPresetMap.vue'
 import SystemSetting from './SystemSetting.vue'
+import SystemUser from './SystemUser.vue'
 
 export default {
 SystemView
@@ -15,4 +16,5 @@ SystemView
 , SystemPreset
 , SystemPresetMap
 , SystemSetting
+, SystemUser
 }

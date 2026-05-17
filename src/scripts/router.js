@@ -119,6 +119,14 @@ const routes=[
                 meta: {
                     title: '신용카드 사용내역 확인'
                 }
+            },
+            {
+                path: 'invoice',
+                name: 'Account-invoice',
+                component: Account.AccountInvoice,
+                meta: {
+                    title: '영수증 첨부 입력'
+                }
             }
         ]
     },
@@ -190,6 +198,14 @@ const routes=[
                 path: 'setting',
                 name: 'System-setting',
                 component: System.SystemSetting,
+                meta: {
+                    title: '공통코드 관리'
+                }
+            },
+            {
+                path: 'user',
+                name: 'System-user',
+                component: System.SystemUser,
                 meta: {
                     title: '공통코드 관리'
                 }

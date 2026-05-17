@@ -31,6 +31,11 @@
                     "group": "입력"
                 },
                 {
+                    "name": "영수증 첨부 입력",
+                    "linkTo": "Account-invoice",
+                    "group": "입력"
+                },
+                {
                     "name": "월별 마감 입력",
                     "linkTo": "Account-closing",
                     "group": "입력"
@@ -86,6 +91,10 @@
                 {
                     "name": "공통코드 설정",
                     "linkTo": "System-setting"
+                },
+                {
+                    "name": "사용자 설정",
+                    "linkTo": "System-user"
                 }
             ]
         }

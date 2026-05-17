@@ -3,28 +3,43 @@
         <h2 style="text-align: start; margin: 0 1.3rem;">{{ route.meta.title }}</h2>
 
         <section class="top-action-bar d-panel">
-            <div class="base-account-selector">
-                <label>거래 귀속 계좌/카드<span class="required">*</span></label>
-                <select v-model="selectedAccount">
-                    <option :value="null" disabled>선택하세요</option>
-                    <optgroup v-for="group in myAccounts" :key="group.type" :label="group.type">
-                        <option v-for="acc in group.items" :key="acc.id" :value="acc">
-                            {{ acc.name }}
-                        </option>
-                    </optgroup>
-                </select>
-            </div>
+            <div class="left-controls">
+                <div class="base-account-selector">
+                    <label>거래 귀속 계좌/카드<span class="required">*</span></label>
+                    <MSelect 
+                        v-model="selectedAccount"
+                        :groups="baseAccountGroups"
+                        placeholder="선택하세요"
+                        :grid="true"
+                        code-label="계좌번호"
+                        name-label="계좌명"
+                    />
+                </div>
 
-            <div class="action-buttons">
-                <button class="btn-ghost" @click="downloadTemplate">
-                    📥 엑셀 양식 다운로드
-                </button>
-                <button class="btn-primary" @click="saveAllEntries"
-                    :disabled="!globalState.baseAccountId || entries.length === 0 || !isAllValid">
-                    💾 검증 완료 및 저장
-                </button>
+                <div class="divider-v" v-if="tempFileList.length > 0"></div>
+
+                <div class="temp-file-selector" v-if="tempFileList.length > 0">
+                    <label>임시저장 불러오기</label>
+                    <select v-model="selectedTempFile" @change="loadTempFile">
+                        <option :value="null">파일을 선택하세요</option>
+                        <option v-for="fileName in tempFileList" :key="fileName" :value="fileName">
+                            {{ fileName }}
+                        </option>
+                    </select>
+                </div>
             </div>
         </section>
+
+
+        <div class="action-buttons">
+            <button class="btn-ghost" @click="tempSave" :disabled="entries.length === 0">
+                임시저장
+            </button>
+            <button class="btn-primary" @click="saveAllEntries"
+                :disabled="!globalState.baseAccountId || entries.length === 0 || !isAllValid">
+                💾 검증 완료 및 저장
+            </button>
+        </div>
 
         <section class="upload-zone d-panel" v-if="entries.length === 0">
             <div class="drop-area" :class="{ 'is-dragover': isDragging }" @dragover.prevent="isDragging = true"
@@ -79,24 +94,25 @@
 
                         <!-- 입출금 -->
                         <div class="col-entry">
-                            {{ entry.entryNm }}
+                            {{ entry.entryCd == '' ? entry.entryNm : (entry.entryCd == '1' ? '지출' : '수익' ) }}
                         </div>
 
                         <!-- 프리셋 -->
                         <div class="col-preset">
-                            <select v-model="entry.presetCd" class="compact-input" :class="{ 'is-invalid': !entry.presetCd }" placeholder="프리셋 코드를 매핑하세요">
-                                <option value="" disabled>프리셋 코드를 매핑하세요</option>
-                                <optgroup v-for="g in presetGroupList" :key="g.presetGroupCd" :label="g.presetGroupNm">
-                                    <option v-for="p in g.headerList" :key="p.presetCd"
-                                        :value="p.presetCd">
-                                        [{{ p.presetCd }}] {{ p.presetNm }}
-                                    </option>
-                                </optgroup>
-                            </select>
+                            <!--   -->
+                            <MSelect
+                                v-model="entry.presetCd"
+                                :groups="presetSelectGroups"
+                                placeholder="프리셋 코드를 매핑하세요"
+                                :is-invalid="!entry.presetCd"
+                                :grid="true"
+                                code-label="코드"
+                                name-label="프리셋명"
+                            />
                         </div>
 
                         <div class="col-amt">
-                            <input type="number" v-model.number="entry.amount" placeholder="0" min="0" readonly
+                            <input type="text" :value="entry.amount ? entry.amount.toLocaleString() : ''" placeholder="0" readonly
                                 class="compact-input text-right font-bold text-blue"
                                 :class="{ 'is-invalid': !entry.amount || entry.amount <= 0 }">
                         </div>
@@ -115,6 +131,7 @@
 <script setup>
     import mariaApi from '@scripts/util/mariaApi.js';
     import { getResourceList } from '@scripts/util/common/SettingResource.js';
+    import MSelect from '@/components/common/comp/MSelect.vue';
 
     const route = useRoute();
     // ==========================================
@@ -125,44 +142,154 @@
     const isDragging = ref(false);
     const fileInput = ref(null);
     const selectedAccount = ref(null);
-    let entryIdCounter = 0;
+    const fileData = ref(null);
 
-    const myAccounts = ref([]);
     const presetGroupList = ref([]);
+    const tempFileList = ref([]);
+    const selectedTempFile = ref(null);
+
+    const options = reactive({
+        cardCdList: [],
+        bankCdList: [],
+        baseAccountId: []
+    });
+
+    // MSelect groups 포맷으로 변환 (grid 모드: code/name 분리)
+    const presetSelectGroups = computed(() =>
+        presetGroupList.value.map(g => ({
+            label: g.presetGroupNm,
+            items: (g.headerList || []).map(p => ({
+                value: p.presetCd,
+                code: p.presetCd,
+                name: p.presetNm
+            }))
+        }))
+    );
+
+    const baseAccountGroups = computed(() => {
+        return options.baseAccountId.map(g => ({
+            label: g.type,
+            items: (g.items).map(p => ({
+                value: p.id,
+                code: p.number,
+                name: p.name
+            }))
+        }))
+    })
+
+    // selectedAccount 변경 시 globalState 동기화 및 프리셋 목록 초기화
+    watch(selectedAccount, async (newVal) => {
+        if (!newVal) {
+            globalState.baseAccountId = '';
+            presetGroupList.value = [];
+            return;
+        }
+        globalState.baseAccountId = newVal;
+        presetGroupList.value = [];
+
+        const cdType = getAccountType(newVal);
+        await getPresetGroupList(cdType);
+    })
+
+    // 선택된 계좌 id가 bank/card 중 어느 그룹인지 반환
+    const getAccountType = (accountId) => {
+        const bankGroup = options.baseAccountId.find(g => g.type === '입출금 통장');
+        const isBank = bankGroup?.items.some(item => item.id == accountId);
+        return isBank ? 'bank' : 'card';
+    }
 
 
     onMounted(async () => {
         await getMyAccountList();
+        await getTempFileList();
     });
 
-    const getPresetGroupList = async () => {
-        if (selectedAccount.value == null) {
-            alert("선택된 계좌/카드 유형이 없습니다.");
-            return false;
+    const getTempFileList = async () => {
+        try {
+            const { data } = await mariaApi.get('/api/account/journal/temp/files');
+            tempFileList.value = data || [];
+        } catch (e) {
+            console.error('임시저장 파일 목록 조회 실패:', e);
         }
+    };
+
+    const loadTempFile = async () => {
+        if (!selectedTempFile.value) return;
+
+        try {
+            entries.value = [];
+            const { data } = await mariaApi.get('/api/account/journal/temp', {
+                params: { tempFileNm: selectedTempFile.value }
+            });
+            const loadedEntries = Array.isArray(data) ? data : (data?.jeHeaderList ?? []);
+            entries.value = loadedEntries;
+            console.log(entries.value);
+
+            if (entries.value.length === 0) {
+                alert('불러온 임시저장 파일에 데이터가 없습니다.');
+                return;
+            }
+
+            // 계좌/카드가 선택된 경우 프리셋 목록도 로드
+            if (!selectedAccount.value && presetGroupList.value.length === 0) {
+                const tempAcctId = entries.value[0].acctId;
+                
+                // options.baseAccountId 에서 tempAcctId 에 해당하는 계좌를 찾아 selectedAccount 설정
+                let found = false;
+                for (const g of options.baseAccountId) {
+                    for (const t of g.items) {
+                        if (t.id == tempAcctId) {
+                            selectedAccount.value = t.id;
+                            globalState.baseAccountId = tempAcctId;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+
+                const cdType = getAccountType(tempAcctId);
+                await getPresetGroupList(cdType);
+            }
+        } catch (e) {
+            console.error('임시저장 파일 불러오기 실패:', e);
+            alert('임시저장 파일을 불러오는 중 오류가 발생했습니다.');
+        }
+    };
+
+    const getPresetGroupList = async (cdType) => {
+        // if (selectedAccount.value == null || selectedAccount.value == '') {
+        //     alert("선택된 계좌/카드 유형이 없습니다.");
+        //     return false;
+        // }
 
         const param = {
-
+            payType: cdType.toUpperCase()
         }
 
-        const { data } = await mariaApi.get('/api/system-infos/preset/headers/groups');
+        const { data } = await mariaApi.get('/api/system-infos/preset/headers/groups', { params: param });
         data.forEach(d => {
             presetGroupList.value.push(d);
         })
     }
 
     const getMyAccountList = async () => {
-        const cardCdList = await getResourceList('ACCOUNT', 'CARD_CODE');
-        const bankCdList = await getResourceList('ACCOUNT', 'BANK_CODE');
+        const params = {
+            enabledFlag: 'Y'
+        }
 
-        myAccounts.value.push({
-            type: '입출금계좌',
-            items: bankCdList.map(c => { return { id: c.code, name: c.name, group: 'bank' } })
-        },
-        {
-            type: '신용/체크카드',
-            items: cardCdList.map(c => { return { id: c.code, name: c.name, group: 'card' } })
-        });
+        const bankResult = await mariaApi.get('/api/account/info/bank-accounts', {params: params });
+        options.baseAccountId.push({
+            type: '입출금 통장',
+            items: bankResult.data.map(b => { return {id: b.bankId, name: b.bankNm, number: b.bankAcct} })
+        })
+        const cardResult = await mariaApi.get('/api/account/info/card-accounts', { params: params });
+        options.baseAccountId.push({
+            type: '결제 카드',
+            items: cardResult.data.map(c => { return {id: c.cardId, name: c.cardNm, number: c.cardNo} })
+        })
+
+        console.log(options.baseAccountId)
     }
 
 // ==========================================
@@ -178,9 +305,7 @@ const handleFileSelect = (event) => {
     event.target.value = ''; // 초기화
 };
 
-// 실제로는 xlsx 라이브러리로 파싱해야 하지만, 여기서는 파싱되었다고 가정하고 Mock Data 세팅
 const processExcelFile = async (file) => {
-    let cdType = '';
     if (!selectedAccount.value) {
         alert("업로드 타입 선택이 안되어있습니다.");
         return false;
@@ -188,20 +313,19 @@ const processExcelFile = async (file) => {
     if (file == null) {
         return false;
     }
+    fileData.value = file;
     const formData = new FormData();
     formData.append('file', file);
     
-    if (selectedAccount.value.group == 'bank') { cdType = 'bankCd'; } 
-    else { cdType = 'cardCd'; }
-    formData.append(cdType, selectedAccount.value.id);
+    const accountType = getAccountType(selectedAccount.value);
+    const cdType = accountType === 'bank' ? 'bankCd' : 'cardCd';
+    formData.append(cdType, selectedAccount.value);
 
     const { data } = await mariaApi.post('/api/excel/journal', formData);
     entries.value = data || [];
     
     if (entries.value.length < 1) {
         alert("추출된 거래내역이 없습니다.");
-    } else {
-        await getPresetGroupList();
     }
 };
 
@@ -218,13 +342,13 @@ const clearData = () => {
 };
 
 // 💡 엑셀 양식 다운로드 함수
-const downloadTemplate = () => {
-    // public 폴더 기준 절대 경로를 적어줍니다.
-    const link = document.createElement('a');
-    link.href = '/assets/excel/upload_template.xlsx'; // public 폴더 안의 파일 경로
-    link.download = '일괄업로드_양식.xlsx'; // 다운로드될 때의 파일명
-    link.click();
-};
+// const downloadTemplate = () => {
+//     // public 폴더 기준 절대 경로를 적어줍니다.
+//     const link = document.createElement('a');
+//     link.href = '/assets/excel/upload_template.xlsx'; // public 폴더 안의 파일 경로
+//     link.download = '일괄업로드_양식.xlsx'; // 다운로드될 때의 파일명
+//     link.click();
+// };
 
 // ==========================================
 // 4. Grid Validation & Save
@@ -250,30 +374,64 @@ const errorCount = computed(() => {
 // 전체 유효성 패스 여부 (저장 버튼 활성화 용도)
 const isAllValid = computed(() => entries.value.length > 0 && errorCount.value === 0);
 
+/**
+ * 임시저장
+ */
+const tempSave = async () => {
+    console.log(selectedAccount.value);
+    // try {
+    //     const bodyParam = {
+    //         tempList: entries.value,
+    //         tempFileName: selectedTempFile.value || fileData.value.name.split('.')[0],
+    //         acctId: `${selectedAccount.value}`
+    //     }
+    //     const result = await mariaApi.post('/api/account/journal/temp', bodyParam)
+
+    //     if (result.success) {
+    //         await getTempFileList();
+    //     }
+    // } catch(e) {
+    //     console.error(e)
+    // }
+}
+
+/**
+ * 검증 완료 및 저장
+ */
 const saveAllEntries = async () => {
     if (!isAllValid.value) return alert('오류가 있는 행을 수정하거나 삭제한 후 저장해주세요.');
     if (!globalState.baseAccountId) return alert('거래 계좌/카드를 선택해 주세요.');
 
     const journalHeaders = entries.value.map(e => ({
         bankId: globalState.baseAccountId,
-        jeDate: `${e.txDate} ${e.txTime}`,
+        jeDate: e.ymd,
+        jeTimes: e.times,
         presetCd: e.presetCd,
         amount: e.amount,
         remark: e.remark,
-        sourceCd: 'EXCEL_UPLOAD', 
+        sourceCd: 'MA', 
+        categoryCd: 'BULK',
         status: 'INIT'
     }));
 
-    console.log('Payload:', journalHeaders);
-
     try {
-        // await mariaApi.post('/api/journals/batch', journalHeaders);
+
+        const { data } = await mariaApi.post('/api/account/journal', {
+            jeHeaderList: journalHeaders,
+            tempFileNm: selectedTempFile.value || fileData.value.name.split('.')[0]
+        });
+
         alert(`${entries.value.length}건 엑셀 일괄 등록 완료!`);
         entries.value = []; // 성공 시 비움
     } catch (error) {
         console.error('저장 실패:', error);
     }
 };
+
+// ==========================================
+// 4. Handler
+// ==========================================
+
 </script>
 
 <style lang="scss" scoped>
@@ -294,10 +452,23 @@ $success: #10b981;
 /* 상단 액션 바 */
 .top-action-bar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: left;
 
-    .base-account-selector {
+    .left-controls {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .divider-v {
+        width: 1px;
+        height: 28px;
+        background: $border-color;
+    }
+
+    .base-account-selector,
+    .temp-file-selector {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -307,6 +478,7 @@ $success: #10b981;
             font-weight: 700;
             color: $text-sub;
             margin: 0;
+            white-space: nowrap;
 
             .required {
                 color: $danger;
@@ -328,10 +500,21 @@ $success: #10b981;
         }
     }
 
-    .action-buttons {
-        display: flex;
-        gap: 10px;
+    .temp-file-selector {
+        select {
+            color: $text-main;
+            font-weight: 500;
+            min-width: 180px;
+        }
     }
+
+    
+}
+.action-buttons {
+    margin: 0rem 1.3rem;
+    display: flex;
+    gap: 10px;
+    justify-content: end;
 }
 
 /* 파일 업로드 영역 */
@@ -482,6 +665,10 @@ $success: #10b981;
         text-align: center;
         font-size: 14px;
         font-weight: 600;
+    }
+
+    .col-preset {
+        width: 16rem;
     }
 
     .col-action {

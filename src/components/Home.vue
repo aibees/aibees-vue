@@ -1,224 +1,851 @@
 <template>
-  <div class="manager-container">
-    <header class="page-header">
-      <div>
-        <h1>분개장 관리 (Journal Ledger)</h1>
-        <p class="subtitle">모든 거래 내역을 확인하고 관리합니다.</p>
-      </div>
-      <button class="btn-create" @click="openModal">
-        <span class="material-icons-outlined">edit_note</span>
-        전표 작성하기
-      </button>
-    </header>
+    <div class="d-container home-dashboard">
 
-    <div class="journal-list">
-      <div v-if="journalEntries.length === 0" class="empty-state">
-        <p>입력된 전표가 없습니다. 새로운 전표를 작성해보세요!</p>
-      </div>
-
-      <div v-for="entry in sortedEntries" :key="entry.id" class="journal-card">
-        <div class="card-left">
-          <div class="date-box">
-            <span class="day">{{ getDay(entry.date) }}</span>
-            <span class="ym">{{ getYearMonth(entry.date) }}</span>
-          </div>
-        </div>
-        
-        <div class="card-body">
-          <div class="entry-header">
-            <h4>{{ entry.description }}</h4>
-            <span class="entry-id">No. {{ entry.id }}</span>
-          </div>
-          
-          <div class="mini-ledger">
-            <div class="ledger-row" v-for="(line, idx) in entry.lines" :key="idx">
-              <div class="acc-name">
-                <span class="badge" :class="line.type">
-                  {{ line.type === 'debit' ? '차' : '대' }}
-                </span>
-                {{ line.accountId }}
-              </div>
-              <div class="amount-area">
-                <span v-if="line.type === 'debit'" class="debit-amt">{{ formatCurrency(line.amount) }}</span>
-                <span v-else class="credit-amt">{{ formatCurrency(line.amount) }}</span>
-              </div>
+        <!-- 헤더 -->
+        <div class="home-header">
+            <div class="title-area">
+                <h2>홈 대시보드</h2>
+                <p class="subtitle">이번 달 가계부 현황을 한눈에 확인하세요.</p>
             </div>
-            <div class="ledger-total">
-              <span>합계</span>
-              <span class="total-amt">₩ {{ formatCurrency(getEntryTotal(entry)) }}</span>
+            <div class="month-nav d-panel" style="margin:0; padding: 10px 16px;">
+                <button class="nav-btn" @click="changeMonth(-1)">◀</button>
+                <input type="month" v-model="targetMonth" @change="loadData" class="month-input" />
+                <button class="nav-btn" @click="changeMonth(1)">▶</button>
             </div>
-          </div>
         </div>
 
-        <div class="card-actions">
-           <button class="btn-icon" @click="deleteEntry(entry.id)" title="삭제">
-             <span class="material-icons-outlined">delete</span>
-           </button>
+        <!-- 요약 카드 3개 -->
+        <div class="summary-cards">
+            <div class="summary-card d-panel" style="margin: 0;">
+                <div class="card-label">이번달 수입</div>
+                <div class="card-value text-blue mono">+{{ summary.income.toLocaleString() }}원</div>
+                <div class="card-sub" :class="summary.incomeChange >= 0 ? 'positive' : 'negative'">
+                    전월 대비 {{ summary.incomeChange >= 0 ? '▲' : '▼' }} {{ Math.abs(summary.incomeChange).toLocaleString() }}원
+                </div>
+            </div>
+            <div class="summary-card d-panel" style="margin: 0;">
+                <div class="card-label">이번달 지출</div>
+                <div class="card-value text-red mono">-{{ summary.expense.toLocaleString() }}원</div>
+                <div class="card-sub" :class="summary.expenseChange <= 0 ? 'positive' : 'negative'">
+                    전월 대비 {{ summary.expenseChange >= 0 ? '▲' : '▼' }} {{ Math.abs(summary.expenseChange).toLocaleString() }}원
+                </div>
+            </div>
+            <div class="summary-card d-panel" style="margin: 0;">
+                <div class="card-label">순 증감</div>
+                <div class="card-value mono" :class="summary.net >= 0 ? 'text-blue' : 'text-red'">
+                    {{ summary.net >= 0 ? '+' : '' }}{{ summary.net.toLocaleString() }}원
+                </div>
+                <div class="card-sub neutral">
+                    수입 - 지출
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- 차트 영역 (좌: 월별 흐름 / 우: 지출 구성) -->
+        <div class="chart-grid">
+            <!-- 월별 자산 흐름 라인 차트 -->
+            <section class="d-panel chart-section">
+                <div class="d-panel-header">
+                    <div>
+                        <h3>월별 수입·지출 흐름</h3>
+                        <p class="panel-sub">최근 6개월 수입/지출 추이</p>
+                    </div>
+                </div>
+                <div class="line-chart-wrap">
+                    <canvas ref="lineCanvas"></canvas>
+                </div>
+            </section>
+
+            <!-- 이번달 지출 구성 도넛 차트 -->
+            <section class="d-panel chart-section">
+                <div class="d-panel-header">
+                    <div>
+                        <h3>이번달 지출 구성</h3>
+                        <p class="panel-sub">계정과목별 지출 비중</p>
+                    </div>
+                    <span class="total-badge">총 {{ summary.expense.toLocaleString() }}원</span>
+                </div>
+                <div class="donut-wrap">
+                    <div class="donut-box">
+                        <canvas ref="donutCanvas"></canvas>
+                        <div class="donut-center">
+                            <span class="donut-label">지출 합계</span>
+                            <span class="donut-value">{{ (summary.expense / 10000).toFixed(1) }}만</span>
+                        </div>
+                    </div>
+                    <div class="donut-legend">
+                        <div v-for="(item, idx) in expenseItems" :key="item.name" class="legend-row">
+                            <div class="legend-left">
+                                <span class="legend-dot" :style="{ backgroundColor: chartColors[idx % chartColors.length] }"></span>
+                                <span class="legend-name">{{ item.name }}</span>
+                            </div>
+                            <div class="legend-right">
+                                <span class="legend-pct">{{ getPercent(item.amount, summary.expense) }}%</span>
+                                <span class="legend-amt mono">{{ item.amount.toLocaleString() }}원</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 하단 영역 (좌: 최근 내역 / 우: 고정비 현황) -->
+        <div class="bottom-grid">
+            <!-- 최근 거래 내역 -->
+            <section class="d-panel bottom-section">
+                <div class="d-panel-header">
+                    <div>
+                        <h3>최근 거래 내역</h3>
+                        <p class="panel-sub">최근 입력된 10건</p>
+                    </div>
+                    <button class="btn btn--ghost" @click="goTo('Account-cashflow')">전체 보기</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-date">일자</th>
+                                <th>유형</th>
+                                <th>적요</th>
+                                <th class="text-right">금액 (원)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="tx in recentTx" :key="tx.id"
+                                class="data-row"
+                                :class="tx.flowType === 'IN' ? 'row-income' : 'row-expense'">
+                                <td class="col-date mono text-light">{{ tx.date }}</td>
+                                <td>
+                                    <span class="preset-badge" :class="tx.flowType === 'IN' ? 'badge-income' : 'badge-expense'">
+                                        {{ tx.presetNm }}
+                                    </span>
+                                </td>
+                                <td class="desc-text">{{ tx.remark }}</td>
+                                <td class="text-right mono font-bold"
+                                    :class="tx.flowType === 'IN' ? 'text-blue' : 'text-red'">
+                                    {{ tx.flowType === 'IN' ? '+' : '-' }}{{ tx.amount.toLocaleString() }}
+                                </td>
+                            </tr>
+                            <tr v-if="recentTx.length === 0">
+                                <td colspan="4" class="empty-state">거래 내역이 없습니다.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 이번달 고정비 현황 -->
+            <section class="d-panel bottom-section">
+                <div class="d-panel-header">
+                    <div>
+                        <h3>이번달 고정비 현황</h3>
+                        <p class="panel-sub">{{ targetMonth }} 처리 현황</p>
+                    </div>
+                    <button class="btn btn--ghost" @click="goTo('Account-fixed')">고정비 관리</button>
+                </div>
+
+                <!-- 처리 현황 요약 바 -->
+                <div class="fixed-summary">
+                    <div class="fixed-stat">
+                        <span class="fs-label">처리 완료</span>
+                        <span class="fs-value text-blue">{{ fixedDone }}건</span>
+                    </div>
+                    <div class="fixed-stat">
+                        <span class="fs-label">미처리</span>
+                        <span class="fs-value text-red">{{ fixedPending }}건</span>
+                    </div>
+                    <div class="fixed-stat">
+                        <span class="fs-label">완료 금액</span>
+                        <span class="fs-value mono font-bold">{{ fixedDoneAmt.toLocaleString() }}원</span>
+                    </div>
+                </div>
+
+                <!-- 진행률 바 -->
+                <div class="progress-wrap">
+                    <div class="progress-bar">
+                        <div class="progress-fill" :style="{ width: fixedProgress + '%' }"></div>
+                    </div>
+                    <span class="progress-label">{{ fixedProgress }}% 완료</span>
+                </div>
+
+                <!-- 고정비 목록 -->
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>항목명</th>
+                                <th class="text-right">금액 (원)</th>
+                                <th class="text-center">결제일</th>
+                                <th class="text-center">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="fx in fixedList" :key="fx.id" class="data-row"
+                                :class="{ 'is-disabled': fx.status !== 'DONE' }">
+                                <td class="font-bold">{{ fx.name }}</td>
+                                <td class="text-right mono text-blue">{{ fx.amount.toLocaleString() }}</td>
+                                <td class="text-center mono text-light">{{ fx.payDay }}일</td>
+                                <td class="text-center">
+                                    <span class="status-badge" :class="fx.status === 'DONE' ? 'badge-done' : 'badge-pending'">
+                                        {{ fx.status === 'DONE' ? '완료' : '미처리' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr v-if="fixedList.length === 0">
+                                <td colspan="4" class="empty-state">등록된 고정비가 없습니다.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
     </div>
-
-    <JournalFormModal 
-      :is-open="isModalOpen"
-      @close="isModalOpen = false"
-      @save="addEntry"
-    />
-  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import JournalFormModal from './JournalFormModal.vue'; // 위에서 만든 컴포넌트 import
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import Chart from 'chart.js/auto';
 
-const isModalOpen = ref(false);
-const journalEntries = ref([
-  // 초기 샘플 데이터
-  {
-    id: 1,
-    date: '2024-10-26',
-    description: '사무실 임차료 지급',
-    lines: [
-      { type: 'debit', accountId: '임차료', amount: 1000000 },
-      { type: 'credit', accountId: '보통예금', amount: 1000000 }
-    ]
-  },
-  {
-    id: 2,
-    date: '2024-10-25',
-    description: '상품 매출 발생',
-    lines: [
-      { type: 'debit', accountId: '현금', amount: 50000 },
-      { type: 'credit', accountId: '상품매출', amount: 50000 }
-    ]
-  }
-]);
+const router = useRouter();
 
-// 날짜 내림차순 정렬
-const sortedEntries = computed(() => {
-  return [...journalEntries.value].sort((a, b) => new Date(b.date) - new Date(a.date));
+// ==========================================
+// 상태
+// ==========================================
+const targetMonth = ref(new Date().toISOString().slice(0, 7));
+const chartColors = ['#4b74ff', '#20c997', '#fab005', '#ff6b6b', '#be4bdb', '#15aabf', '#fd7e14'];
+
+const summary = ref({ income: 0, expense: 0, net: 0, incomeChange: 0, expenseChange: 0 });
+const expenseItems = ref([]);
+const recentTx = ref([]);
+const fixedList = ref([]);
+
+// ==========================================
+// Computed
+// ==========================================
+const fixedDone    = computed(() => fixedList.value.filter(f => f.status === 'DONE').length);
+const fixedPending = computed(() => fixedList.value.filter(f => f.status !== 'DONE').length);
+const fixedDoneAmt = computed(() => fixedList.value.filter(f => f.status === 'DONE').reduce((s, f) => s + f.amount, 0));
+const fixedProgress = computed(() => {
+    if (fixedList.value.length === 0) return 0;
+    return Math.round((fixedDone.value / fixedList.value.length) * 100);
 });
 
-// 기능 메서드
-const openModal = () => isModalOpen.value = true;
+const getPercent = (amt, total) => total > 0 ? ((amt / total) * 100).toFixed(1) : 0;
 
-const addEntry = (newEntryData) => {
-  // 간단한 ID 생성 로직 (실무에선 DB ID 사용)
-  const newId = journalEntries.value.length > 0 ? Math.max(...journalEntries.value.map(e => e.id)) + 1 : 1;
-  
-  journalEntries.value.unshift({
-    id: newId,
-    ...newEntryData
-  });
+// ==========================================
+// 차트
+// ==========================================
+const lineCanvas = ref(null);
+const donutCanvas = ref(null);
+let lineChart = null;
+let donutChart = null;
+
+const renderLineChart = (labels, incomes, expenses) => {
+    if (lineChart) lineChart.destroy();
+    if (!lineCanvas.value) return;
+    lineChart = new Chart(lineCanvas.value.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: '수입',
+                    data: incomes,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    tension: 0.35,
+                    fill: true,
+                },
+                {
+                    label: '지출',
+                    data: expenses,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.06)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    tension: 0.35,
+                    fill: true,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 12, weight: '700' }, padding: 16 } },
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: v => (v / 10000).toFixed(0) + '만',
+                        font: { size: 11 },
+                    },
+                    grid: { color: '#f0f0f0' },
+                },
+                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            },
+        },
+    });
 };
 
-const deleteEntry = (id) => {
-  if(confirm('이 전표를 삭제하시겠습니까?')) {
-    journalEntries.value = journalEntries.value.filter(e => e.id !== id);
-  }
+const renderDonutChart = () => {
+    if (donutChart) donutChart.destroy();
+    if (!donutCanvas.value) return;
+    donutChart = new Chart(donutCanvas.value.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: expenseItems.value.map(i => i.name),
+            datasets: [{
+                data: expenseItems.value.map(i => i.amount),
+                backgroundColor: chartColors,
+                borderWidth: 0,
+                hoverOffset: 8,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '72%',
+            plugins: { legend: { display: false } },
+        },
+    });
 };
 
-// 포맷팅 유틸리티
-const getDay = (dateStr) => dateStr.split('-')[2];
-const getYearMonth = (dateStr) => {
-  const parts = dateStr.split('-');
-  return `${parts[0]}.${parts[1]}`;
+// ==========================================
+// 데이터 로드 (Mock)
+// ==========================================
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+const loadData = async () => {
+    // --- 요약 카드 ---
+    const income  = rand(280, 350) * 10000;
+    const expense = rand(150, 250) * 10000;
+    const prevIncome  = rand(260, 340) * 10000;
+    const prevExpense = rand(140, 240) * 10000;
+    summary.value = {
+        income,
+        expense,
+        net: income - expense,
+        incomeChange:  income  - prevIncome,
+        expenseChange: expense - prevExpense,
+    };
+
+    // --- 지출 구성 ---
+    const items = [
+        { name: '식비',       amount: rand(30, 80) * 10000 },
+        { name: '월세',       amount: rand(50, 70) * 10000 },
+        { name: '교통비',     amount: rand(5, 20)  * 10000 },
+        { name: '통신비',     amount: rand(5, 10)  * 10000 },
+        { name: '문화/여가',  amount: rand(5, 30)  * 10000 },
+        { name: '기타',       amount: rand(5, 20)  * 10000 },
+    ];
+    expenseItems.value = items;
+
+    // --- 최근 거래 10건 ---
+    const PRESETS = [
+        { presetNm: '급여',      flowType: 'IN'  },
+        { presetNm: '식비',      flowType: 'OUT' },
+        { presetNm: '교통비',    flowType: 'OUT' },
+        { presetNm: '월세',      flowType: 'OUT' },
+        { presetNm: '공과금',    flowType: 'OUT' },
+        { presetNm: '이자수익',  flowType: 'IN'  },
+        { presetNm: '쇼핑',      flowType: 'OUT' },
+        { presetNm: '통신비',    flowType: 'OUT' },
+    ];
+    const REMARKS = {
+        '급여':     '월급 이체',
+        '식비':     ['배달의민족', '마켓컬리', '점심 - 국밥', '편의점'][rand(0, 3)],
+        '교통비':   ['티머니 충전', 'KTX 승차권', '택시'][rand(0, 2)],
+        '월세':     '이번달 월세 이체',
+        '공과금':   ['전기요금', '가스요금', '관리비'][rand(0, 2)],
+        '이자수익': '정기예금 이자',
+        '쇼핑':     ['쿠팡 주문', '올리브영', '다이소'][rand(0, 2)],
+        '통신비':   'KT 휴대폰 요금',
+    };
+    const [y, m] = targetMonth.value.split('-').map(Number);
+    const days = new Date(y, m, 0).getDate();
+    recentTx.value = Array.from({ length: 10 }, (_, i) => {
+        const p = PRESETS[rand(0, PRESETS.length - 1)];
+        const day = String(rand(1, days)).padStart(2, '0');
+        return {
+            id: i,
+            date: `${targetMonth.value}-${day}`,
+            presetNm: p.presetNm,
+            flowType: p.flowType,
+            remark: REMARKS[p.presetNm],
+            amount: p.flowType === 'IN' ? rand(20, 35) * 10000 : rand(1, 15) * 10000,
+        };
+    }).sort((a, b) => b.date.localeCompare(a.date));
+
+    // --- 고정비 현황 ---
+    fixedList.value = [
+        { id: 1, name: '월세',         amount: 600000, payDay: 1,  status: 'DONE'    },
+        { id: 2, name: '넷플릭스',     amount: 17000,  payDay: 7,  status: 'DONE'    },
+        { id: 3, name: '헬스장 회비',  amount: 70000,  payDay: 10, status: 'PENDING' },
+        { id: 4, name: 'KT 통신비',   amount: 65000,  payDay: 15, status: 'DONE'    },
+        { id: 5, name: '공과금',       amount: 85000,  payDay: 20, status: 'PENDING' },
+    ];
+
+    // --- 6개월 라인 차트 데이터 ---
+    const labels = [];
+    const incomes = [];
+    const expenses = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(y, m - 1 - i, 1);
+        labels.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+        incomes.push(rand(250, 380) * 10000);
+        expenses.push(rand(140, 270) * 10000);
+    }
+    // 현재 달은 실제 값
+    incomes[5]  = income;
+    expenses[5] = expense;
+
+    await nextTick();
+    renderLineChart(labels, incomes, expenses);
+    renderDonutChart();
 };
-const getEntryTotal = (entry) => {
-  // 차변 합계만 표시 (대차평형이므로)
-  return entry.lines.filter(l => l.type === 'debit').reduce((acc, cur) => acc + cur.amount, 0);
+
+const changeMonth = (offset) => {
+    const [y, m] = targetMonth.value.split('-').map(Number);
+    const d = new Date(y, m - 1 + offset, 1);
+    targetMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    loadData();
 };
-const formatCurrency = (val) => new Intl.NumberFormat('ko-KR').format(val);
+
+const goTo = (name) => router.push({ name });
+
+onMounted(() => loadData());
+onBeforeUnmount(() => {
+    if (lineChart)  lineChart.destroy();
+    if (donutChart) donutChart.destroy();
+});
 </script>
 
 <style lang="scss" scoped>
-/* 페이지 레이아웃 */
-.manager-container {
-  max-width: 900px; margin: 0 auto; padding: 2rem;
-  font-family: 'Suit', sans-serif; color: #334155;
+@use '@@/__variables.scss' as *;
+@use '@@/common.scss' as *;
+
+/* 색상 */
+$primary:      #4b74ff;
+$danger:       #ef4444;
+$blue:         #2563eb;
+$green:        #10b981;
+$amber:        #f59e0b;
+$text-main:    #111827;
+$text-sub:     #4b5563;
+$text-light:   #9ca3af;
+$bg-white:     #ffffff;
+$border-color: #e5e7eb;
+
+/* ==========================================
+   전체 컨테이너
+========================================== */
+.home-dashboard {
+    padding-bottom: 60px;
+    font-family: 'Pretendard', sans-serif;
+    color: $text-main;
 }
 
-.page-header {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;
-  h1 { margin: 0; font-size: 1.8rem; color: #1e293b; }
-  .subtitle { margin: 5px 0 0; color: #64748b; font-size: 0.9rem; }
-  
-  .btn-create {
-    display: flex; align-items: center; gap: 8px;
-    background: #3b82f6; color: white; border: none; padding: 0.8rem 1.5rem;
-    border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.2s;
-    &:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); }
-  }
+/* ==========================================
+   헤더
+========================================== */
+.home-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 1.3rem 1.3rem;
+
+    .title-area {
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0 0 4px;
+            color: $text-main;
+        }
+        .subtitle {
+            margin: 0;
+            font-size: 0.82rem;
+            color: $text-light;
+        }
+    }
+
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .month-input {
+            border: none;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            outline: none;
+            color: $text-main;
+        }
+
+        .nav-btn {
+            background: #f1f5f9;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 9px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: $text-sub;
+            &:hover { background: #e2e8f0; }
+        }
+    }
 }
 
-/* 리스트 스타일 */
-.journal-list { display: flex; flex-direction: column; gap: 1.5rem; }
-.empty-state { text-align: center; padding: 4rem; background: #f8fafc; border-radius: 12px; color: #94a3b8; }
+/* ==========================================
+   요약 카드 3열
+========================================== */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 0 1.3rem 0;
 
-.journal-card {
-  display: flex; background: white; border-radius: 12px;
-  border: 1px solid #e2e8f0; overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: box-shadow 0.2s;
-  
-  &:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+    .summary-card {
+        padding: 18px 20px;
+        border-radius: 10px;
 
-  /* 왼쪽 날짜 영역 */
-  .card-left {
-    background: #f1f5f9; width: 80px; display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; border-right: 1px solid #e2e8f0;
-    
-    .date-box {
-      text-align: center;
-      .day { display: block; font-size: 1.8rem; font-weight: 800; color: #334155; line-height: 1; }
-      .ym { display: block; font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+        .card-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: $text-light;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 1.45rem;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .card-sub {
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
     }
-  }
+}
 
-  /* 본문 영역 */
-  .card-body { flex: 1; padding: 1.5rem; }
+/* ==========================================
+   차트 그리드 (2열)
+========================================== */
+.chart-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 0;
 
-  .entry-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
-    h4 { margin: 0; font-size: 1.1rem; color: #1e293b; }
-    .entry-id { font-size: 0.75rem; color: #cbd5e1; }
-  }
-
-  /* 미니 테이블 */
-  .mini-ledger {
-    background: #fafafa; border-radius: 8px; padding: 0.8rem; border: 1px solid #f1f5f9;
-    
-    .ledger-row {
-      display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e2e8f0;
-      &:last-child { border-bottom: none; }
-      
-      .acc-name { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-      .badge {
-        font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;
-        &.debit { background: #dbeafe; color: #3b82f6; }
-        &.credit { background: #fee2e2; color: #ef4444; }
-      }
-      
-      .amount-area {
-        font-family: monospace; font-size: 0.95rem; width: 140px; text-align: right;
-        .debit-amt { color: #3b82f6; }
-        .credit-amt { color: #ef4444; }
-      }
+    .chart-section {
+        .d-panel-header {
+            margin-bottom: 12px;
+        }
     }
 
-    .ledger-total {
-      margin-top: 8px; padding-top: 8px; border-top: 2px solid #e2e8f0;
-      display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9rem;
+    .line-chart-wrap {
+        height: 260px;
     }
-  }
 
-  /* 삭제 버튼 영역 */
-  .card-actions {
-    width: 50px; display: flex; align-items: center; justify-content: center;
-    border-left: 1px solid #f1f5f9;
-    
-    .btn-icon {
-      background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 8px;
-      &:hover { color: #ef4444; background: #fef2f2; border-radius: 50%; }
+    .total-badge {
+        background: #eff6ff;
+        color: $blue;
+        border: 1px solid #bfdbfe;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        white-space: nowrap;
     }
-  }
+
+    /* 도넛 차트 */
+    .donut-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .donut-box {
+            position: relative;
+            height: 180px;
+
+            .donut-center {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                pointer-events: none;
+
+                .donut-label {
+                    display: block;
+                    font-size: 0.7rem;
+                    color: $text-light;
+                    font-weight: 600;
+                }
+
+                .donut-value {
+                    font-size: 1.05rem;
+                    font-weight: 900;
+                    color: $text-main;
+                }
+            }
+        }
+
+        .donut-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+
+            .legend-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.82rem;
+
+                .legend-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+
+                    .legend-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        flex-shrink: 0;
+                    }
+
+                    .legend-name {
+                        font-weight: 600;
+                        color: $text-sub;
+                    }
+                }
+
+                .legend-right {
+                    display: flex;
+                    gap: 10px;
+
+                    .legend-pct {
+                        color: $text-light;
+                        font-weight: 700;
+                        width: 38px;
+                        text-align: right;
+                    }
+
+                    .legend-amt {
+                        font-weight: 700;
+                        width: 90px;
+                        text-align: right;
+                        color: $text-sub;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* ==========================================
+   하단 그리드 (2열)
+========================================== */
+.bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+
+    .bottom-section {
+        .d-panel-header {
+            margin-bottom: 10px;
+        }
+    }
+}
+
+/* ==========================================
+   고정비 현황
+========================================== */
+.fixed-summary {
+    display: flex;
+    gap: 0;
+    background: #f8fafc;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+
+    .fixed-stat {
+        flex: 1;
+        padding: 10px 14px;
+        border-right: 1px solid $border-color;
+        &:last-child { border-right: none; }
+
+        .fs-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: $text-light;
+            margin-bottom: 4px;
+        }
+
+        .fs-value {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+    }
+}
+
+.progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+
+    .progress-bar {
+        flex: 1;
+        height: 7px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+
+        .progress-fill {
+            height: 100%;
+            background: $primary;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+    }
+
+    .progress-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: $primary;
+        white-space: nowrap;
+    }
+}
+
+/* ==========================================
+   공통 테이블
+========================================== */
+.table-wrap {
+    overflow-x: auto;
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.83rem;
+
+        thead th {
+            background: #f8fafc;
+            padding: 9px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: $text-sub;
+            border-bottom: 1px solid $border-color;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid $border-color;
+            vertical-align: middle;
+        }
+
+        .data-row {
+            transition: background 0.12s;
+            &:hover { background: #f8fafc; }
+
+            &.row-income:hover  { background: #eff6ff; }
+            &.row-expense:hover { background: #fff5f5; }
+
+            &.is-disabled td { color: $text-light; }
+        }
+
+        .col-date { width: 90px; white-space: nowrap; }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: $text-light;
+            font-size: 0.83rem;
+        }
+
+        .preset-badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+
+            &.badge-income  { background: #dbeafe; color: #1e40af; }
+            &.badge-expense { background: #fee2e2; color: #991b1b; }
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+
+            &.badge-done    { background: #d1fae5; color: #065f46; }
+            &.badge-pending { background: #fee2e2; color: #991b1b; }
+        }
+
+        .desc-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+    }
+}
+
+/* ==========================================
+   패널 헤더 공통
+========================================== */
+.d-panel-header {
+    h3 {
+        font-size: 0.95rem;
+        font-weight: 800;
+        margin: 0 0 3px;
+        color: $text-main;
+    }
+    .panel-sub {
+        font-size: 0.75rem;
+        color: $text-light;
+        margin: 0;
+    }
+}
+
+/* ==========================================
+   유틸리티
+========================================== */
+.text-blue   { color: $blue; }
+.text-red    { color: $danger; }
+.text-light  { color: $text-light; }
+.mono        { font-family: monospace; }
+.font-bold   { font-weight: 700; }
+.text-right  { text-align: right; }
+.text-center { text-align: center; }
+.positive    { color: $green; }
+.negative    { color: $danger; }
+.neutral     { color: $text-light; }
+
+.btn {
+    border-radius: 999px;
+    border: none;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-weight: 700;
+
+    &--ghost {
+        background: #ffffff;
+        color: $text-sub;
+        border: 1px solid $border-color;
+        &:hover { background: #f8fafc; }
+    }
 }
 </style>
